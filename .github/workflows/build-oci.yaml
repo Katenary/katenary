@@ -1,37 +1,43 @@
-name: Build OCI image
+name: Build and push OCI image
 
 on:
-  release:
-    types:
-      - published
+  push:
+    tags:
+      - "**"
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  VERSION: ${{ github.ref_name }}
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Log in to the Container registry
-        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./oci/katenary/Containerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            VERSION=${{github.ref_name}}
+
+      - name: Install Buildah
+        run: |-
+          if ! comamnd -v buildah 2>/dev/null; then
+            echo "Install Buildah"
+            apt-get update
+            apt-get install -y buildah
+          else
+            echo "Buildah already installed"
+          fi
+
+      - name: Build and tag
+        run: |-
+          buildah build --build-arg VERSION=$VERSION -t katenary -f ./oci/katenary/Containerfile .
+          buildah tag katenary $REGISTRY/${IMAGE_NAME,,}:$VERSION
+          buildah tag katenary $REGISTRY/${IMAGE_NAME,,}:latest
+
+      - name: Push image
+        run: |-
+          buildah login $REGISTRY -u ${{ github.actor }} -p ${{ secret.GITHUB_TOKEN }}
+          buildah push $REGISTRY/${IMAGE_NAME,,}:$VERSION
+          buildah push $REGISTRY/${IMAGE_NAME,,}:latest
