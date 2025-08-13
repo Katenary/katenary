@@ -38,6 +38,6 @@ jobs:
 
       - name: Push image
         run: |-
-          buildah login $REGISTRY -u ${{ github.actor }} -p ${{ secret.GITHUB_TOKEN }}
+          buildah login $REGISTRY -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
           buildah push $REGISTRY/${IMAGE_NAME,,}:$VERSION
           buildah push $REGISTRY/${IMAGE_NAME,,}:latest
