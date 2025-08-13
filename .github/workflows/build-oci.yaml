@@ -24,8 +24,8 @@ jobs:
         run: |-
           if ! comamnd -v buildah 2>/dev/null; then
             echo "Install Buildah"
-            apt-get update
-            apt-get install -y buildah
+            sudo apt-get update
+            sudo apt-get install -y buildah
           else
             echo "Buildah already installed"
           fi
