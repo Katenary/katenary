@@ -1,4 +1,4 @@
-name: Build OCI image
+name: Build and push OCI image
 
 on:
   push:
@@ -8,32 +8,36 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  VERSION: ${{ github.ref_name }}
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      packages: write
       contents: read
+      packages: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Build image
-        id: build-image
-        uses: redhat-actions/buildah-build@v2
-        with:
-          image: ghcr.io/katenary/katenary
-          tags: latest ${{ github.ref_name }}
-          containerfiles: |
-            ./oci/katenary/Containerfile
-          build-args: |
-            VERSION=${{ github.ref_name }}
+
+      - name: Install Buildah
+        run: |-
+          if ! comamnd -v buildah 2>/dev/null; then
+            echo "Install Buildah"
+            sudo apt-get update
+            sudo apt-get install -y buildah
+          else
+            echo "Buildah already installed"
+          fi
+
+      - name: Build and tag
+        run: |-
+          buildah build --build-arg VERSION=$VERSION -t katenary -f ./oci/katenary/Containerfile .
+          buildah tag katenary $REGISTRY/${IMAGE_NAME,,}:$VERSION
+          buildah tag katenary $REGISTRY/${IMAGE_NAME,,}:latest
+
       - name: Push image
-        id: push-to-quay
-        uses: redhat-actions/push-to-registry@v2
-        with:
-          image: ${{ steps.build-image.outputs.image }}
-          tags: ${{ steps.build-image.outputs.tags }}
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+        run: |-
+          buildah login $REGISTRY -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+          buildah push $REGISTRY/${IMAGE_NAME,,}:$VERSION
+          buildah push $REGISTRY/${IMAGE_NAME,,}:latest
