@@ -1,11 +1,20 @@
 ARG GOVERSION=1.24
 
 FROM docker.io/golang:${GOVERSION} AS builder
+ARG VERSION
+RUN \
+  if [ "${VERSION}" = "" ]; then\ 
+  echo "You must set VERSION build argument"; \
+  exit 1; \
+  fi
+COPY go.mod go.sum /go/src/github.com/katenary/katenary/
+COPY cmd /go/src/github.com/katenary/katenary/cmd
+COPY internal /go/src/github.com/katenary/katenary/internal
 WORKDIR /go/src/github.com/katenary/katenary
-COPY . .
-ARG VERSION=master
+ENV CGO_ENABLED=0
 RUN set -xe; \
-  CGO_ENABLED=0 go build -ldflags="-X 'github.com/katenary/katenary/internal/generator.Version=$VERSION'" -trimpath -o katenary ./cmd/katenary
+  go build -ldflags="-X 'github.com/katenary/katenary/internal/generator.Version=v${VERSION}'" -trimpath -o katenary ./cmd/katenary
+
 
 FROM scratch
 LABEL org.opencontainers.image.source=https://github.com/katenary/katenary
