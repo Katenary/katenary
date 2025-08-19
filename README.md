@@ -5,13 +5,9 @@
 <div style="text-align:center; margin: auto 0 4em 0" align="center">
 
 [![Documentation Status](https://readthedocs.org/projects/katenary/badge/?version=latest)](https://katenary.readthedocs.io/latest/?badge=latest)
-[![Go Report Card](https://goreportcard.com/badge/github.com/Katenary/katenary)](https://goreportcard.com/report/github.com/Katenary/katenary)
-[![GitHub release](https://img.shields.io/github/v/release/Katenary/katenary)](https://github.com/Katenary/katenary/releases)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=metal3d_katenary&metric=coverage)](https://sonarcloud.io/summary/new_code?id=metal3d_katenary)
-[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=metal3d_katenary&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=metal3d_katenary)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=metal3d_katenary&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=metal3d_katenary)
-
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=metal3d_katenary&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=metal3d_katenary)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=katenary_katenary&metric=coverage)](https://sonarcloud.io/summary/new_code?id=katenary_katenary)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=katenary_katenary&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=katenary_katenary)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=katenary_katenary&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=katenary_katenary)
 
 </div>
 
