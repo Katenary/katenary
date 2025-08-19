@@ -3,7 +3,7 @@ package generator
 import (
 	"fmt"
 
-	"repo.katenary.io/katenary/katenary/internal/generator/labels"
+	"katenary.io/internal/generator/labels"
 )
 
 var componentLabel = labels.LabelName("component")

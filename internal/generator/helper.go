@@ -4,7 +4,7 @@ import (
 	_ "embed"
 	"strings"
 
-	"repo.katenary.io/katenary/katenary/internal/generator/labels"
+	"katenary.io/internal/generator/labels"
 )
 
 // helmHelper is a template for the _helpers.tpl file in the chart templates directory.

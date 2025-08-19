@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"repo.katenary.io/katenary/katenary/internal/generator/labels"
+	"katenary.io/internal/generator/labels"
 
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"

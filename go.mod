@@ -1,4 +1,4 @@
-module repo.katenary.io/katenary/katenary
+module katenary.io
 
 go 1.25
 

@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"repo.katenary.io/katenary/katenary/internal/generator/labels"
+	"katenary.io/internal/generator/labels"
 
 	v1 "k8s.io/api/networking/v1"
 	"sigs.k8s.io/yaml"

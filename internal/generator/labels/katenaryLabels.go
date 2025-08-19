@@ -11,7 +11,7 @@ import (
 	"text/tabwriter"
 	"text/template"
 
-	"repo.katenary.io/katenary/katenary/internal/utils"
+	"katenary.io/internal/utils"
 
 	"sigs.k8s.io/yaml"
 )

@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"testing"
 
-	"repo.katenary.io/katenary/katenary/internal/parser"
+	"katenary.io/internal/parser"
 )
 
 const unmarshalError = "Failed to unmarshal the output: %s"

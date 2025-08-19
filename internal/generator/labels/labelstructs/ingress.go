@@ -3,7 +3,7 @@ package labelstructs
 import (
 	"fmt"
 
-	"repo.katenary.io/katenary/katenary/internal/utils"
+	"katenary.io/internal/utils"
 
 	"gopkg.in/yaml.v3"
 )

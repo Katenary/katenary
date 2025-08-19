@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"repo.katenary.io/katenary/katenary/internal/generator/labels"
-	"repo.katenary.io/katenary/katenary/internal/utils"
+	"katenary.io/internal/generator/labels"
+	"katenary.io/internal/utils"
 
 	"github.com/compose-spec/compose-go/cli"
 )
