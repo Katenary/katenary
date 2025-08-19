@@ -1,0 +1,68 @@
+name: Go-Tests
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+  push:
+    branches:
+      - "master"
+      - "main"
+env:
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+jobs:
+  tests:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.25
+      - name: Install helm
+        run: |
+          command -v helm || curl -sSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+      - name: Tidy
+        run: |
+          go mod tidy
+      - name: Launch Test
+        run: |
+          go vet ./...
+          go test -coverprofile=coverprofile.out -json -v ./... > gotest.json
+      # - uses: actions/upload-artifact@v4
+      - name: Upload artifact
+        uses: christopherhx/gitea-upload-artifact@v4
+        with:
+          name: tests-results
+          path: |
+            coverprofile.out
+            gotest.json
+  sonar:
+    permissions:
+      contents: read
+      pull-requests: read
+    runs-on: ubuntu-latest
+    needs: tests
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      #- uses: actions/download-artifact@v4
+      - name: Download artifact
+        uses: christopherhx/gitea-download-artifact@v4
+        with:
+          name: tests-results
+      - name: Sonar
+        run: |
+          export SONAR_SCANNER_VERSION=7.2.0.5079
+          export SONAR_SCANNER_HOME=$HOME/.sonar/sonar-scanner-$SONAR_SCANNER_VERSION-linux-x64
+          curl --create-dirs -sSLo $HOME/.sonar/sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-$SONAR_SCANNER_VERSION-linux-x64.zip
+          unzip -o $HOME/.sonar/sonar-scanner.zip -d $HOME/.sonar/
+          export PATH=$SONAR_SCANNER_HOME/bin:$PATH
+          sonar-scanner \
+            -Dsonar.organization=katenary \
+            -Dsonar.projectKey=katenary_katenary
