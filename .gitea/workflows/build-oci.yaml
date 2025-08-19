@@ -6,9 +6,10 @@ on:
       - "**"
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-  VERSION: ${{ github.ref_name }}
+  REGISTRY: repo.katenary.io
+  IMAGE_NAME: ${{ gitea.repository }}
+  VERSION: ${{ gitea.ref_name }}
+  STORAGE_DRIVER: vfs
 
 jobs:
   build:
@@ -17,27 +18,30 @@ jobs:
       contents: read
       packages: write
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Install Buildah
         run: |-
-          if ! comamnd -v buildah 2>/dev/null; then
+          env
+          if ! command -v buildah 2>/dev/null; then
             echo "Install Buildah"
             sudo apt-get update
             sudo apt-get install -y buildah
           else
             echo "Buildah already installed"
           fi
+      - name: Login to repository
+        run: |
+          buildah login $REGISTRY -u ${{ gitea.actor }} -p ${{ secrets.ACCESS_TOKEN }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Build and tag
         run: |-
-          buildah build --build-arg VERSION=$VERSION -t katenary -f ./oci/katenary/Containerfile .
+          buildah build --isolation=chroot --build-arg VERSION=$VERSION -t katenary -f ./oci/katenary/Containerfile .
           buildah tag katenary $REGISTRY/${IMAGE_NAME,,}:$VERSION
           buildah tag katenary $REGISTRY/${IMAGE_NAME,,}:latest
 
       - name: Push image
         run: |-
-          buildah login $REGISTRY -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
           buildah push $REGISTRY/${IMAGE_NAME,,}:$VERSION
           buildah push $REGISTRY/${IMAGE_NAME,,}:latest

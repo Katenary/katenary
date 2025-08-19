@@ -13,7 +13,7 @@ CUR_BRANCH=$(shell git branch --show-current)
 VERSION=$(shell git describe --exact-match --tags $(CUR_SHA) 2>/dev/null || echo $(CUR_BRANCH)-$(CUR_SHA))# use by golang flags
 
 # Go build command and environment variables for target OS and architecture
-GOVERSION=1.24
+GOVERSION=1.25
 GO=container# container, local
 OUTPUT=katenary
 GOOS=linux
