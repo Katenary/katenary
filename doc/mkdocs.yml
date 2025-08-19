@@ -51,7 +51,7 @@ copyright: Copyright &copy; 2021 - 2024 - Katenary authors
 extra:
   generator: false
   social:
-    - icon: fontawesome/brands/github
+    - icon: fontawesome/brands/git
       link: https://repo.katenary.io/katenary/katenary
 nav:
   - "Home": index.md
