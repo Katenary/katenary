@@ -29,7 +29,6 @@ jobs:
 
       - name: Tidy
         run: |
-          export GOPROXY='https://proxy.golang.org,direct'
           go mod tidy
       - name: Launch Test
         run: |
