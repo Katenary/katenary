@@ -33,20 +33,25 @@ Today, it's partially developed in collaboration with [Klee Group](https://www.k
 and **will stay an open source and free (as freedom) project**. We are convinced that the best way to make it better is to
 share it with the community.
 
-The main developer is [Patrice FERLET](https://github.com/metal3d).
+The main developer is [Patrice FERLET](https://repo.katenary.io/metal3d).
 
 ## Install
 
-You can download the binaries from the [Release](https://github.com/Katenary/katenary/releases) section. Copy the binary
+You can download the binaries from the [Release](https://repo.katenary.io/Katenary/katenary/releases) section. Copy the binary
 and rename it to `katenary`. Place the binary inside your `PATH`. You should now be able to call the `katenary` command.
 
-You can of course get the binary with `go install -u github.com/Katenary/katenary/cmd/katenary/...` but the `main` branch
-is continuously updated. It's preferable to use releases.
-
-You can use this commands on Linux:
+On Linux, you can use the `install.sh` from the repository to install it in your `$HOME/.local/bin` directory:
 
 ```bash
 sh <(curl -sSL https://repo.katenary.io/Katenary/katenary/raw/branch/master/install.sh)
+```
+
+All OS, if you've installed Go on your computer, you can install using:
+
+```bash
+go install -u katenary.io/cmd@latest
+# or use a release
+go install -u katenary.io/cmd@v3.0.0
 ```
 
 ## Or, build yourself
@@ -252,7 +257,7 @@ web:
 
 To validate the `katenary.yaml` file, you can use the JSON schema using the "master" raw content:
 
-`https://raw.githubusercontent.com/Katenary/katenary/refs/heads/master/katenary.json`
+`https://repo.katenary.io/Katenary/katenary/raw/branch/master/katenary.json`
 
 It's easy to configure in [LazyVim](https://www.lazyvim.org/), using `nvim-lspconfig`,
 create a Lua file in your `plugins` directory, or apply the settings as the example below:
