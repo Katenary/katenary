@@ -2,9 +2,10 @@ package generator
 
 import (
 	"fmt"
-	"github.com/katenary/katenary/internal/utils"
 	"regexp"
 	"strings"
+
+	"repo.katenary.io/katenary/katenary/internal/utils"
 
 	"github.com/compose-spec/compose-go/types"
 	v1 "k8s.io/api/core/v1"

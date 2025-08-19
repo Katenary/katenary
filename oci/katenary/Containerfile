@@ -7,20 +7,20 @@ RUN \
   echo "You must set VERSION build argument"; \
   exit 1; \
   fi
-COPY go.mod go.sum /go/src/github.com/katenary/katenary/
-COPY cmd /go/src/github.com/katenary/katenary/cmd
-COPY internal /go/src/github.com/katenary/katenary/internal
-WORKDIR /go/src/github.com/katenary/katenary
+COPY go.mod go.sum /go/src/repo.katenary.io/katenary/katenary/
+COPY cmd /go/src/repo.katenary.io/katenary/katenary/cmd
+COPY internal /go/src/repo.katenary.io/katenary/katenary/internal
+WORKDIR /go/src/repo.katenary.io/katenary/katenary
 ENV CGO_ENABLED=0
 RUN set -xe; \
-  go build -ldflags="-X 'github.com/katenary/katenary/internal/generator.Version=v${VERSION}'" -trimpath -o katenary ./cmd/katenary
+  go build -ldflags="-X 'repo.katenary.io/katenary/katenary/internal/generator.Version=v${VERSION}'" -trimpath -o katenary ./cmd/katenary
 
 
 FROM scratch
-LABEL org.opencontainers.image.source=https://github.com/katenary/katenary
+LABEL org.opencontainers.image.source=https://repo.katenary.io/katenary/katenary
 LABEL org.opencontainers.image.description="Katenary converts compose files to Helm Chart"
 LABEL org.opencontainers.image.licenses=MIT
-COPY --from=builder /go/src/github.com/katenary/katenary/katenary /katenary
+COPY --from=builder /go/src/repo.katenary.io/katenary/katenary/katenary /katenary
 VOLUME /project
 WORKDIR /project
 ENTRYPOINT ["/katenary"]

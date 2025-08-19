@@ -46,7 +46,7 @@ is continuously updated. It's preferable to use releases.
 You can use this commands on Linux:
 
 ```bash
-sh <(curl -sSL https://raw.githubusercontent.com/Katenary/katenary/master/install.sh)
+sh <(curl -sSL https://repo.katenary.io/Katenary/katenary/raw/branch/master/install.sh)
 ```
 
 ## Or, build yourself
@@ -269,7 +269,7 @@ return {
           settings = {
             yaml = {
               schemas = {
-                ["https://raw.githubusercontent.com/Katenary/katenary/master/katenary.json"] = "katenary.yaml",
+                ["https://repo.katenary.io/Katenary/katenary/raw/branch/master/katenary.json"] = "katenary.yaml",
               },
             },
           },
@@ -285,7 +285,7 @@ Use this address to validate the `katenary.yaml` file in VSCode:
 ```json
 {
     "yaml.schemas": {
-        "https://raw.githubusercontent.com/Katenary/katenary/master/katenary.json": "katenary.yaml"
+        "https://repo.katenary.io/Katenary/katenary/raw/branch/master/katenary.json": "katenary.yaml"
     }
 }
 ```

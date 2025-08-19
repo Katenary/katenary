@@ -4,9 +4,9 @@ import (
 	"log"
 	"strings"
 
-	"github.com/katenary/katenary/internal/generator/labels"
-	"github.com/katenary/katenary/internal/generator/labels/labelstructs"
-	"github.com/katenary/katenary/internal/utils"
+	"repo.katenary.io/katenary/katenary/internal/generator/labels"
+	"repo.katenary.io/katenary/katenary/internal/generator/labels/labelstructs"
+	"repo.katenary.io/katenary/katenary/internal/utils"
 
 	"github.com/compose-spec/compose-go/types"
 	networkv1 "k8s.io/api/networking/v1"

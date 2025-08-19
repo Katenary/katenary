@@ -4,13 +4,14 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
-	"github.com/katenary/katenary/internal/utils"
 	"log"
 	"regexp"
 	"sort"
 	"strings"
 	"text/tabwriter"
 	"text/template"
+
+	"repo.katenary.io/katenary/katenary/internal/utils"
 
 	"sigs.k8s.io/yaml"
 )

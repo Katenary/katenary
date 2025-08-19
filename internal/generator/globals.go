@@ -3,7 +3,7 @@ package generator
 import (
 	"regexp"
 
-	"github.com/katenary/katenary/internal/generator/labels"
+	"repo.katenary.io/katenary/katenary/internal/generator/labels"
 )
 
 var (

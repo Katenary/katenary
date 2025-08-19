@@ -2,10 +2,11 @@ package generator
 
 import (
 	"fmt"
-	"github.com/katenary/katenary/internal/generator/labels"
 	"os"
 	"strings"
 	"testing"
+
+	"repo.katenary.io/katenary/katenary/internal/generator/labels"
 
 	yaml3 "gopkg.in/yaml.v3"
 	v1 "k8s.io/api/apps/v1"

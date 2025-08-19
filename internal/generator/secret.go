@@ -2,9 +2,10 @@ package generator
 
 import (
 	"encoding/base64"
-	"github.com/katenary/katenary/internal/generator/labels"
-	"github.com/katenary/katenary/internal/utils"
 	"strings"
+
+	"repo.katenary.io/katenary/katenary/internal/generator/labels"
+	"repo.katenary.io/katenary/katenary/internal/utils"
 
 	"github.com/compose-spec/compose-go/types"
 	corev1 "k8s.io/api/core/v1"

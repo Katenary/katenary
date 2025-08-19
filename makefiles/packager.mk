@@ -3,7 +3,7 @@
 DESCRIPTION := $(shell cat oci/description | sed ':a;N;$$!ba;s/\n/\\n/g')
 
 FPM_OPTS=--name katenary \
-	--url https://katenary.org \
+	--url https://katenary.io \
 	--vendor "Katenary Project" \
 	--maintainer "Patrice Ferlet <metal3d@gmail.com>" \
 	--license "MIT" \

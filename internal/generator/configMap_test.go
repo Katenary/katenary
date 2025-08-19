@@ -3,10 +3,11 @@ package generator
 import (
 	"fmt"
 	"io"
-	"github.com/katenary/katenary/internal/generator/labels"
 	"os"
 	"regexp"
 	"testing"
+
+	"repo.katenary.io/katenary/katenary/internal/generator/labels"
 
 	"github.com/compose-spec/compose-go/types"
 	v1 "k8s.io/api/core/v1"

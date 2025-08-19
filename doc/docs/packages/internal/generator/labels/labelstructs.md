@@ -3,12 +3,12 @@
 # labelstructs
 
 ```go
-import "github.com/katenary/katenary/internal/generator/labels/labelstructs"
+import "repo.katenary.io/katenary/katenary/internal/generator/labels/labelstructs"
 ```
 
 Package labelstructs is a package that contains the structs used to represent the labels in the yaml files.
 
-## type [ConfigMapFiles](<https://github.com/katenary/katenary/blob/master/internal/generator/labels/labelstructs/configMap.go#L5>)
+## type [ConfigMapFiles](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/labelstructs/configMap.go#L5>)
 
 
 
@@ -17,7 +17,7 @@ type ConfigMapFiles []string
 ```
 
 <a name="ConfigMapFileFrom"></a>
-### func [ConfigMapFileFrom](<https://github.com/katenary/katenary/blob/master/internal/generator/labels/labelstructs/configMap.go#L7>)
+### func [ConfigMapFileFrom](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/labelstructs/configMap.go#L7>)
 
 ```go
 func ConfigMapFileFrom(data string) (ConfigMapFiles, error)
@@ -26,7 +26,7 @@ func ConfigMapFileFrom(data string) (ConfigMapFiles, error)
 
 
 <a name="CronJob"></a>
-## type [CronJob](<https://github.com/katenary/katenary/blob/master/internal/generator/labels/labelstructs/cronJob.go#L5-L10>)
+## type [CronJob](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/labelstructs/cronJob.go#L5-L10>)
 
 
 
@@ -40,7 +40,7 @@ type CronJob struct {
 ```
 
 <a name="CronJobFrom"></a>
-### func [CronJobFrom](<https://github.com/katenary/katenary/blob/master/internal/generator/labels/labelstructs/cronJob.go#L12>)
+### func [CronJobFrom](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/labelstructs/cronJob.go#L12>)
 
 ```go
 func CronJobFrom(data string) (*CronJob, error)
@@ -49,7 +49,7 @@ func CronJobFrom(data string) (*CronJob, error)
 
 
 <a name="Dependency"></a>
-## type [Dependency](<https://github.com/katenary/katenary/blob/master/internal/generator/labels/labelstructs/dependencies.go#L6-L12>)
+## type [Dependency](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/labelstructs/dependencies.go#L6-L12>)
 
 Dependency is a dependency of a chart to other charts.
 
@@ -64,7 +64,7 @@ type Dependency struct {
 ```
 
 <a name="DependenciesFrom"></a>
-### func [DependenciesFrom](<https://github.com/katenary/katenary/blob/master/internal/generator/labels/labelstructs/dependencies.go#L15>)
+### func [DependenciesFrom](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/labelstructs/dependencies.go#L15>)
 
 ```go
 func DependenciesFrom(data string) ([]Dependency, error)
@@ -73,7 +73,7 @@ func DependenciesFrom(data string) ([]Dependency, error)
 DependenciesFrom returns a slice of dependencies from the given string.
 
 <a name="EnvFrom"></a>
-## type [EnvFrom](<https://github.com/katenary/katenary/blob/master/internal/generator/labels/labelstructs/envFrom.go#L5>)
+## type [EnvFrom](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/labelstructs/envFrom.go#L5>)
 
 
 
@@ -82,7 +82,7 @@ type EnvFrom []string
 ```
 
 <a name="EnvFromFrom"></a>
-### func [EnvFromFrom](<https://github.com/katenary/katenary/blob/master/internal/generator/labels/labelstructs/envFrom.go#L8>)
+### func [EnvFromFrom](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/labelstructs/envFrom.go#L8>)
 
 ```go
 func EnvFromFrom(data string) (EnvFrom, error)
@@ -91,7 +91,7 @@ func EnvFromFrom(data string) (EnvFrom, error)
 EnvFromFrom returns a EnvFrom from the given string.
 
 <a name="ExchangeVolume"></a>
-## type [ExchangeVolume](<https://github.com/katenary/katenary/blob/master/internal/generator/labels/labelstructs/exchangeVolume.go#L5-L10>)
+## type [ExchangeVolume](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/labelstructs/exchangeVolume.go#L5-L10>)
 
 
 
@@ -105,7 +105,7 @@ type ExchangeVolume struct {
 ```
 
 <a name="NewExchangeVolumes"></a>
-### func [NewExchangeVolumes](<https://github.com/katenary/katenary/blob/master/internal/generator/labels/labelstructs/exchangeVolume.go#L12>)
+### func [NewExchangeVolumes](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/labelstructs/exchangeVolume.go#L12>)
 
 ```go
 func NewExchangeVolumes(data string) ([]*ExchangeVolume, error)
@@ -114,7 +114,7 @@ func NewExchangeVolumes(data string) ([]*ExchangeVolume, error)
 
 
 <a name="HealthCheck"></a>
-## type [HealthCheck](<https://github.com/katenary/katenary/blob/master/internal/generator/labels/labelstructs/probes.go#L11-L14>)
+## type [HealthCheck](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/labelstructs/probes.go#L11-L14>)
 
 
 
@@ -126,7 +126,7 @@ type HealthCheck struct {
 ```
 
 <a name="ProbeFrom"></a>
-### func [ProbeFrom](<https://github.com/katenary/katenary/blob/master/internal/generator/labels/labelstructs/probes.go#L16>)
+### func [ProbeFrom](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/labelstructs/probes.go#L16>)
 
 ```go
 func ProbeFrom(data string) (*HealthCheck, error)
@@ -135,7 +135,7 @@ func ProbeFrom(data string) (*HealthCheck, error)
 
 
 <a name="Ingress"></a>
-## type [Ingress](<https://github.com/katenary/katenary/blob/master/internal/generator/labels/labelstructs/ingress.go#L14-L22>)
+## type [Ingress](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/labelstructs/ingress.go#L15-L23>)
 
 
 
@@ -152,7 +152,7 @@ type Ingress struct {
 ```
 
 <a name="IngressFrom"></a>
-### func [IngressFrom](<https://github.com/katenary/katenary/blob/master/internal/generator/labels/labelstructs/ingress.go#L25>)
+### func [IngressFrom](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/labelstructs/ingress.go#L26>)
 
 ```go
 func IngressFrom(data string) (*Ingress, error)
@@ -161,7 +161,7 @@ func IngressFrom(data string) (*Ingress, error)
 IngressFrom creates a new Ingress from a compose service.
 
 <a name="MapEnv"></a>
-## type [MapEnv](<https://github.com/katenary/katenary/blob/master/internal/generator/labels/labelstructs/mapenv.go#L5>)
+## type [MapEnv](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/labelstructs/mapenv.go#L5>)
 
 
 
@@ -170,7 +170,7 @@ type MapEnv map[string]string
 ```
 
 <a name="MapEnvFrom"></a>
-### func [MapEnvFrom](<https://github.com/katenary/katenary/blob/master/internal/generator/labels/labelstructs/mapenv.go#L8>)
+### func [MapEnvFrom](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/labelstructs/mapenv.go#L8>)
 
 ```go
 func MapEnvFrom(data string) (MapEnv, error)
@@ -179,7 +179,7 @@ func MapEnvFrom(data string) (MapEnv, error)
 MapEnvFrom returns a MapEnv from the given string.
 
 <a name="Ports"></a>
-## type [Ports](<https://github.com/katenary/katenary/blob/master/internal/generator/labels/labelstructs/ports.go#L5>)
+## type [Ports](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/labelstructs/ports.go#L5>)
 
 
 
@@ -188,7 +188,7 @@ type Ports []uint32
 ```
 
 <a name="PortsFrom"></a>
-### func [PortsFrom](<https://github.com/katenary/katenary/blob/master/internal/generator/labels/labelstructs/ports.go#L8>)
+### func [PortsFrom](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/labelstructs/ports.go#L8>)
 
 ```go
 func PortsFrom(data string) (Ports, error)
@@ -197,7 +197,7 @@ func PortsFrom(data string) (Ports, error)
 PortsFrom returns a Ports from the given string.
 
 <a name="Secrets"></a>
-## type [Secrets](<https://github.com/katenary/katenary/blob/master/internal/generator/labels/labelstructs/secrets.go#L5>)
+## type [Secrets](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/labelstructs/secrets.go#L5>)
 
 
 
@@ -206,7 +206,7 @@ type Secrets []string
 ```
 
 <a name="SecretsFrom"></a>
-### func [SecretsFrom](<https://github.com/katenary/katenary/blob/master/internal/generator/labels/labelstructs/secrets.go#L7>)
+### func [SecretsFrom](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/labelstructs/secrets.go#L7>)
 
 ```go
 func SecretsFrom(data string) (Secrets, error)
@@ -215,7 +215,7 @@ func SecretsFrom(data string) (Secrets, error)
 
 
 <a name="TLS"></a>
-## type [TLS](<https://github.com/katenary/katenary/blob/master/internal/generator/labels/labelstructs/ingress.go#L10-L12>)
+## type [TLS](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/labelstructs/ingress.go#L11-L13>)
 
 
 
@@ -226,7 +226,7 @@ type TLS struct {
 ```
 
 <a name="ValueFrom"></a>
-## type [ValueFrom](<https://github.com/katenary/katenary/blob/master/internal/generator/labels/labelstructs/valueFrom.go#L5>)
+## type [ValueFrom](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/labelstructs/valueFrom.go#L5>)
 
 
 
@@ -235,7 +235,7 @@ type ValueFrom map[string]string
 ```
 
 <a name="GetValueFrom"></a>
-### func [GetValueFrom](<https://github.com/katenary/katenary/blob/master/internal/generator/labels/labelstructs/valueFrom.go#L7>)
+### func [GetValueFrom](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/labelstructs/valueFrom.go#L7>)
 
 ```go
 func GetValueFrom(data string) (*ValueFrom, error)
