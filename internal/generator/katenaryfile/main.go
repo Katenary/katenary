@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/katenary/katenary/internal/generator/labels"
-	"github.com/katenary/katenary/internal/generator/labels/labelstructs"
-	"github.com/katenary/katenary/internal/utils"
 	"log"
 	"os"
 	"reflect"
 	"strings"
+
+	"katenary.io/internal/generator/labels"
+	"katenary.io/internal/generator/labels/labelstructs"
+	"katenary.io/internal/utils"
 
 	"github.com/compose-spec/compose-go/types"
 	"github.com/invopop/jsonschema"

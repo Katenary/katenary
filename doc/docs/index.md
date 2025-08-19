@@ -39,10 +39,10 @@ share it with the community.
 ![](./statics/klee.svg)
 </div>
 
-The main developer is [Patrice FERLET](https://github.com/metal3d).
+The main developer is [Patrice FERLET](https://repo.katenary.io/metal3d).
 
 The project source
-code is hosted on the [:fontawesome-brands-github: Katenary GitHub Repository](https://github.com/Katenary/katenary).
+code is hosted on the [:fontawesome-brands-git: Katenary Repository](https://repo.katenary.io/Katenary/katenary).
 
 ## Install Katenary
 
@@ -57,7 +57,7 @@ If you are a Linux user, you can use the "one line installation command" which w
 `$HOME/.local/bin` directory if it exists.
 
 ```bash
-sh <(curl -sSL https://raw.githubusercontent.com/Katenary/katenary/master/install.sh)
+sh <(curl -sSL https://repo.katenary.io/Katenary/katenary/raw/branch/master/install.sh)
 ```
 
 !!! Info "Upgrading is integrated to the `katenary` command"
@@ -77,7 +77,7 @@ You can also build and install it yourself, the provided Makefile has got a `bui
 To compile it, you can use the following commands:
 
 ```bash
-git clone https://github.com/Katenary/katenary.git
+git clone https://repo.katenary.io/Katenary/katenary.git
 cd katenary
 make build
 make install

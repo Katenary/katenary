@@ -12,12 +12,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/katenary/katenary/internal/generator/extrafiles"
-	"github.com/katenary/katenary/internal/generator/katenaryfile"
-	"github.com/katenary/katenary/internal/generator/labels"
-	"github.com/katenary/katenary/internal/generator/labels/labelstructs"
-	"github.com/katenary/katenary/internal/parser"
-	"github.com/katenary/katenary/internal/utils"
+	"katenary.io/internal/generator/extrafiles"
+	"katenary.io/internal/generator/katenaryfile"
+	"katenary.io/internal/generator/labels"
+	"katenary.io/internal/generator/labels/labelstructs"
+	"katenary.io/internal/parser"
+	"katenary.io/internal/utils"
 
 	"github.com/compose-spec/compose-go/types"
 )

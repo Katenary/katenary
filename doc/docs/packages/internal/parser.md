@@ -3,12 +3,12 @@
 # parser
 
 ```go
-import "github.com/katenary/katenary/internal/parser"
+import "repo.katenary.io/katenary/katenary/internal/parser"
 ```
 
 Package parser is a wrapper around compose\-go to parse compose files.
 
-## func [Parse](<https://github.com/katenary/katenary/blob/master/internal/parser/main.go#L29>)
+## func [Parse](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/parser/main.go#L29>)
 
 ```go
 func Parse(profiles []string, envFiles []string, dockerComposeFile ...string) (*types.Project, error)

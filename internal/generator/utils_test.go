@@ -2,11 +2,12 @@ package generator
 
 import (
 	"fmt"
-	"github.com/katenary/katenary/internal/generator/labels"
-	"github.com/katenary/katenary/internal/utils"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"katenary.io/internal/generator/labels"
+	"katenary.io/internal/utils"
 
 	"github.com/compose-spec/compose-go/cli"
 )

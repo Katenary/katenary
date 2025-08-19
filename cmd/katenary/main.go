@@ -10,10 +10,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/katenary/katenary/internal/generator"
-	"github.com/katenary/katenary/internal/generator/katenaryfile"
-	"github.com/katenary/katenary/internal/generator/labels"
-	"github.com/katenary/katenary/internal/utils"
+	"katenary.io/internal/generator"
+	"katenary.io/internal/generator/katenaryfile"
+	"katenary.io/internal/generator/labels"
+	"katenary.io/internal/utils"
 
 	"github.com/compose-spec/compose-go/cli"
 	"github.com/spf13/cobra"

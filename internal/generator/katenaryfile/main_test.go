@@ -1,11 +1,12 @@
 package katenaryfile
 
 import (
-	"github.com/katenary/katenary/internal/generator/labels"
 	"log"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"katenary.io/internal/generator/labels"
 
 	"github.com/compose-spec/compose-go/cli"
 )

@@ -2,8 +2,9 @@ package generator
 
 import (
 	_ "embed"
-	"github.com/katenary/katenary/internal/generator/labels"
 	"strings"
+
+	"katenary.io/internal/generator/labels"
 )
 
 // helmHelper is a template for the _helpers.tpl file in the chart templates directory.

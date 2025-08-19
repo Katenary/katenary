@@ -2,15 +2,16 @@ package generator
 
 import (
 	"fmt"
-	"github.com/katenary/katenary/internal/generator/labels"
-	"github.com/katenary/katenary/internal/generator/labels/labelstructs"
-	"github.com/katenary/katenary/internal/utils"
 	"log"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
+
+	"katenary.io/internal/generator/labels"
+	"katenary.io/internal/generator/labels/labelstructs"
+	"katenary.io/internal/utils"
 
 	"github.com/compose-spec/compose-go/types"
 	appsv1 "k8s.io/api/apps/v1"

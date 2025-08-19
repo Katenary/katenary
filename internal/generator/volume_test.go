@@ -5,12 +5,13 @@ import (
 	"image"
 	"image/color"
 	"image/png"
-	"github.com/katenary/katenary/internal/generator/labels"
-	"github.com/katenary/katenary/internal/utils"
 	"log"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"katenary.io/internal/generator/labels"
+	"katenary.io/internal/utils"
 
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

@@ -1,8 +1,9 @@
 package generator
 
 import (
-	"github.com/katenary/katenary/internal/utils"
 	"strings"
+
+	"katenary.io/internal/utils"
 
 	"github.com/compose-spec/compose-go/types"
 	v1 "k8s.io/api/core/v1"

@@ -1,8 +1,9 @@
 package labelstructs_test
 
 import (
-	"github.com/katenary/katenary/internal/generator/labels/labelstructs"
 	"testing"
+
+	"katenary.io/internal/generator/labels/labelstructs"
 )
 
 func TestConfigMapFileFrom(t *testing.T) {
