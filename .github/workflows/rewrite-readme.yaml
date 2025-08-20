@@ -19,8 +19,15 @@ jobs:
       - name: Write header
         run: |
           cp README.md __OLD.md
-          echo "> This repository is a mirror of [repo.katenary.io](https://repo.katenary.io/katenary/katenary)" > README.md
-          echo >> README.md
+
+          cat 1> README.md <<-EOF
+          > **⚠️ Project has moved !⚠️**
+          >
+          > **Project moved to https://repo.katenary.io/katenary/katenary**
+          >
+          > Please, update your bookmaks. Discussion about the move is here : https://github.com/orgs/Katenary/discussions/162
+          EOF
+
           cat __OLD.md >> README.md
       - name: Commit
         uses: EndBug/add-and-commit@v9
