@@ -38,8 +38,8 @@ services:
 	if cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Image != "alpine:latest" {
 		t.Errorf("Expected image to be alpine, got %s", cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Image)
 	}
-	combinedCommand := strings.Join(cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Command, " ")
-	if combinedCommand != "sh -c echo hello" {
+	combinedCommand := strings.Join(cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Args, " ")
+	if combinedCommand != "echo hello" {
 		t.Errorf("Expected command to be sh -c echo hello, got %s", combinedCommand)
 	}
 	if cronJob.Spec.Schedule != "*/1 * * * *" {

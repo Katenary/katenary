@@ -83,9 +83,7 @@ func NewCronJob(service types.ServiceConfig, chart *HelmChart, appName string) (
 									{
 										Name:  "cronjob",
 										Image: "{{ .Values." + service.Name + ".cronjob.repository.image }}:{{ default .Values." + service.Name + ".cronjob.repository.tag \"latest\" }}",
-										Command: []string{
-											"sh",
-											"-c",
+										Args: []string{
 											mapping.Command,
 										},
 									},

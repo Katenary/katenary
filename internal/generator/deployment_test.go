@@ -524,11 +524,42 @@ services:
 		t.Errorf(unmarshalError, err)
 	}
 	// find the command in the container
-	command := dt.Spec.Template.Spec.Containers[0].Command
+	command := dt.Spec.Template.Spec.Containers[0].Args
 	if len(command) != 3 {
 		t.Errorf("Expected command to have 3 elements, got %d", len(command))
 	}
 	if command[0] != "sh" || command[1] != "-c" {
 		t.Errorf("Expected command to be 'sh -c', got %s", strings.Join(command, " "))
+	}
+}
+
+func TestEntryPoint(t *testing.T) {
+	composeFile := `
+services:
+  web:
+    image: nginx:1.29
+    entrypoint: /bin/foo
+    command: bar baz
+`
+	tmpDir := setup(composeFile)
+	defer teardown(tmpDir)
+
+	currentDir, _ := os.Getwd()
+	os.Chdir(tmpDir)
+	defer os.Chdir(currentDir)
+
+	output := internalCompileTest(t, "-s", "templates/web/deployment.yaml")
+	t.Logf("Output: %s", output)
+	deployment := v1.Deployment{}
+	if err := yaml.Unmarshal([]byte(output), &deployment); err != nil {
+		t.Errorf(unmarshalError, err)
+	}
+	entryPoint := deployment.Spec.Template.Spec.Containers[0].Command
+	command := deployment.Spec.Template.Spec.Containers[0].Args
+	if entryPoint[0] != "/bin/foo" {
+		t.Errorf("Expected entrypoint to be /bin/foo, got %s", entryPoint[0])
+	}
+	if len(command) != 2 || command[0] != "bar" || command[1] != "baz" {
+		t.Errorf("Expected command to be 'bar baz', got %s", strings.Join(command, " "))
 	}
 }
