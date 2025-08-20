@@ -1,0 +1,28 @@
+name: Set README on GitHub
+
+# Trigger this workflow every 12 hours.
+on:
+  push:
+    branches:
+      - "**"
+
+jobs:
+  rewrite_readme:
+    name: Append header on README
+    runs-on: ubuntu-latest
+    if: contains(github.server_url, 'github.com')
+    permissions:
+      contents: write
+    steps:
+      - name: Write header
+        run: |
+          cp README.md __OLD.md
+          echo "> This repository is a mirror of [repo.katenary.io](https://repo.katenary.io/katenary/katenary)" > README.md
+          echo >> README.md
+          cat __OLD.md >> README.md
+      - name: Commit
+        uses: EndBug/add-and-commit@v9
+        with:
+          add: README.md
+          message: "Add mirror information"
+          push: true
