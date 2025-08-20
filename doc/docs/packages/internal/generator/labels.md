@@ -3,7 +3,7 @@
 # labels
 
 ```go
-import "repo.katenary.io/katenary/katenary/internal/generator/labels"
+import "katenary.io/internal/generator/labels"
 ```
 
 Package labels provides functionality to parse and manipulate labels.
@@ -17,7 +17,7 @@ const KatenaryLabelPrefix = "katenary.v3"
 ```
 
 <a name="GetLabelHelp"></a>
-## func [GetLabelHelp](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/katenaryLabels.go#L89>)
+## func [GetLabelHelp](<https://repo.katenary.io/Katenary/katenary/blob/fixes/bug-163/internal/generator/labels/katenaryLabels.go#L89>)
 
 ```go
 func GetLabelHelp(asMarkdown bool) string
@@ -26,7 +26,7 @@ func GetLabelHelp(asMarkdown bool) string
 GetLabelHelp return the help for the labels.
 
 <a name="GetLabelHelpFor"></a>
-## func [GetLabelHelpFor](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/katenaryLabels.go#L98>)
+## func [GetLabelHelpFor](<https://repo.katenary.io/Katenary/katenary/blob/fixes/bug-163/internal/generator/labels/katenaryLabels.go#L98>)
 
 ```go
 func GetLabelHelpFor(labelname string, asMarkdown bool) string
@@ -35,7 +35,7 @@ func GetLabelHelpFor(labelname string, asMarkdown bool) string
 GetLabelHelpFor returns the help for a specific label.
 
 <a name="GetLabelNames"></a>
-## func [GetLabelNames](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/katenaryLabels.go#L73>)
+## func [GetLabelNames](<https://repo.katenary.io/Katenary/katenary/blob/fixes/bug-163/internal/generator/labels/katenaryLabels.go#L73>)
 
 ```go
 func GetLabelNames() []string
@@ -44,7 +44,7 @@ func GetLabelNames() []string
 GetLabelNames returns a sorted list of all katenary label names.
 
 <a name="Prefix"></a>
-## func [Prefix](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/katenaryLabels.go#L236>)
+## func [Prefix](<https://repo.katenary.io/Katenary/katenary/blob/fixes/bug-163/internal/generator/labels/katenaryLabels.go#L236>)
 
 ```go
 func Prefix() string
@@ -53,7 +53,7 @@ func Prefix() string
 
 
 <a name="Help"></a>
-## type [Help](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/katenaryLabels.go#L65-L70>)
+## type [Help](<https://repo.katenary.io/Katenary/katenary/blob/fixes/bug-163/internal/generator/labels/katenaryLabels.go#L65-L70>)
 
 Help is the documentation of a label.
 
@@ -67,7 +67,7 @@ type Help struct {
 ```
 
 <a name="Label"></a>
-## type [Label](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/katenaryLabels.go#L58>)
+## type [Label](<https://repo.katenary.io/Katenary/katenary/blob/fixes/bug-163/internal/generator/labels/katenaryLabels.go#L58>)
 
 Label is a katenary label to find in compose files.
 
@@ -99,7 +99,7 @@ const (
 ```
 
 <a name="LabelName"></a>
-### func [LabelName](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/labels/katenaryLabels.go#L60>)
+### func [LabelName](<https://repo.katenary.io/Katenary/katenary/blob/fixes/bug-163/internal/generator/labels/katenaryLabels.go#L60>)
 
 ```go
 func LabelName(name string) Label

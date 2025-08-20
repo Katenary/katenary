@@ -3,12 +3,12 @@
 # extrafiles
 
 ```go
-import "repo.katenary.io/katenary/katenary/internal/generator/extrafiles"
+import "katenary.io/internal/generator/extrafiles"
 ```
 
 Package extrafiles provides function to generate the Chart files that are not objects. Like README.md and notes.txt...
 
-## func [NotesFile](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/extrafiles/notes.go#L13>)
+## func [NotesFile](<https://repo.katenary.io/Katenary/katenary/blob/fixes/bug-163/internal/generator/extrafiles/notes.go#L13>)
 
 ```go
 func NotesFile(services []string) string
@@ -17,7 +17,7 @@ func NotesFile(services []string) string
 NotesFile returns the content of the note.txt file.
 
 <a name="ReadMeFile"></a>
-## func [ReadMeFile](<https://repo.katenary.io/Katenary/katenary/blob/feat-move-to-gitea/internal/generator/extrafiles/readme.go#L46>)
+## func [ReadMeFile](<https://repo.katenary.io/Katenary/katenary/blob/fixes/bug-163/internal/generator/extrafiles/readme.go#L46>)
 
 ```go
 func ReadMeFile(charname, description string, values map[string]any) string

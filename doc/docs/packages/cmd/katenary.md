@@ -3,7 +3,7 @@
 # katenary
 
 ```go
-import "repo.katenary.io/katenary/katenary/cmd/katenary"
+import "katenary.io/cmd/katenary"
 ```
 
 Katenary CLI, main package.
