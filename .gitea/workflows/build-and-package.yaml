@@ -1,0 +1,152 @@
+on:
+  push:
+    tags:
+      - "*"
+
+env:
+  VERSION: ${{ gitea.ref_name }}
+  PACKAGE_API: https://repo.katenary.io/api/packages/katenary
+  CGO_ENABLED: 0
+  BIN_TARGET: /usr/bin/katenary
+  FPM_BASE: ../LICENSE=/usr/share/doc/katenary/LICENSE ../README.md=/usr/share/doc/katenary/README.md
+  FPM_COMMON_FILES: ../doc/share/man/man1/katenary.1=/usr/share/man/man1/katenary.1
+  FPM_COMMON_FILES_ARCHLINUX: ../doc/share/man/man1/katenary.1=/usr/man/man1/katenary.1
+  VENDOR: "Katenary Project"
+  MAINTANER: "Patrice Ferlet <metal3d@gmail.com>"
+  LICENSE: MIT
+  DESCRIPTION: "Effortless conversion from compose files (docker, podman) to Helm Charts"
+  URL: "https://katenary.io"
+
+jobs:
+  build-packages:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        goarch: [amd64, arm64]
+        goos: [linux, freebsd, windows, darwin]
+        exclude:
+          - goos: windows
+            goarch: arm64
+          - goos: darwin
+            goarch: arm64
+
+    steps:
+      - name: Install Unix dependencies
+        if: matrix.goos == 'linux' || matrix.goos == 'freebsd'
+        run: |-
+          sudo apt-get update && sudo apt-get install -y rpm zstd libarchive-tools binutils ruby curl
+          sudo gem install fpm
+
+      - name: Install Windows dependencies
+        if: matrix.goos == 'windows'
+        run: |-
+          sudo apt-get update && sudo apt-get install -y nsis curl
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.25
+
+      - name: Compile binary
+        if: matrix.goos == 'linux' || matrix.goos == 'freebsd' || matrix.goos == 'darwin'
+        run: |-
+          mkdir -p dist
+          GOARCH=${{ matrix.goarch }} GOOS=${{ matrix.goos }}\
+            go build -ldflags="-X 'repo.katenary.io/katenary/katenary/internal/generator.Version=$VERSION'" \
+            -trimpath -o dist/katenary-${{ matrix.goos }}-${{ matrix.goarch }} ./cmd/katenary
+
+      - name: Package (Linux)
+        if: matrix.goos == 'linux'
+        run: |-
+          mkdir -p dist
+          cd dist
+          # rpm and deb
+          for p in rpm deb; do
+            fpm -s dir -t $p \
+              --name katenary \
+              --url "$URL" \
+              --vendor "$VENDOR" \
+              --maintainer "$MAINTANER" \
+              --license "$LICENSE" \
+              --description "$DESCRIPTION" \
+              -a ${{ matrix.goarch }} -f $FPM_OPTS --version=$VERSION \
+              $FPM_BASE $FPM_COMMON_FILES \
+              ./katenary-${{ matrix.goos }}-${{ matrix.goarch }}=$BIN_TARGET
+          done
+          # arch linux
+          fpm -s dir -t pacman \
+            --name katenary \
+            --url "$URL" \
+            --vendor "$VENDOR" \
+            --maintainer "$MAINTANER" \
+            --license "$LICENSE" \
+            --description "$DESCRIPTION" \
+            -a ${{ matrix.goarch }} -f $FPM_OPTS --version=$VERSION \
+            $FPM_BASE $FPM_COMMON_FILES_ARCHLINUX \
+            ./katenary-${{ matrix.goos }}-${{ matrix.goarch }}=$BIN_TARGET
+
+      - name: Package (FreeBSD)
+        if: matrix.goos == 'freebsd'
+        run: |-
+          # freebsd
+          mkdir -p dist
+          cd dist
+          fpm -s dir -t freebsd \
+            --name katenary \
+            --url "$URL" \
+            --vendor "$VENDOR" \
+            --maintainer "$MAINTANER" \
+            --license "$LICENSE" \
+            --description "$DESCRIPTION" \
+            -a ${{ matrix.goarch }} -f $FPM_OPTS --version=$VERSION \
+            $FPM_BASE $FPM_COMMON_FILES \
+            ./katenary-${{ matrix.goos }}-${{ matrix.goarch }}=$BIN_TARGET
+
+      - name: Package setup.exe for windows
+        if: matrix.goos == 'windows'
+        run: |-
+          mkdir -p dist
+          GOARCH=${{ matrix.goarch }} GOOS=${{ matrix.goos }}\
+            go build -ldflags="-X 'repo.katenary.io/katenary/katenary/internal/generator.Version=$VERSION'" \
+            -trimpath -o dist/katenary.exe ./cmd/katenary
+          curl https://nsis.sourceforge.io/mediawiki/images/7/7f/EnVar_plugin.zip -o nsis/EnVar_plugin.zip
+          cd nsis
+          unzip -o EnVar_plugin.zip Plugins/x86-unicode/EnVar.dll
+          mv Plugins/x86-unicode/EnVar.dll EnVar.dll
+          cd ..
+          makensis -DAPP_VERSION=$VERSION nsis/katenary.nsi
+          mv nsis/katenary-windows-setup.exe dist/katenary-windows-setup.exe
+
+      - name: Upload to packages repositories
+        run: |-
+          for file in katenary-{freebsd,linux}-{amd64,arm64} katenary-darwin-amd64 katenary.exe katenary-windows-setup.exe; do
+            [[ -f dist/$file ]] || continue
+            echo "Push $file"
+            curl -sSLf --user ${{ gitea.actor }}:${{ secrets.ACCESS_TOKEN }} \
+              --upload-file dist/$file \
+              ${PACKAGE_API}/generic/katenary/${VERSION}/$(basename $file)
+          done
+          for file in $(find dist -name "*.rpm"); do
+            echo "Push $file"
+            curl -sSLf --user ${{ gitea.actor }}:${{ secrets.ACCESS_TOKEN }} \
+              --upload-file $file \
+              ${PACKAGE_API}/rpm/upload
+          done
+          for file in $(find dist -name "*.deb"); do
+            echo "Push $file"
+            curl -sSLf --user ${{ gitea.actor }}:${{ secrets.ACCESS_TOKEN }} \
+              --upload-file $file \
+              ${PACKAGE_API}/debian/pool/any/main/upload
+          done
+          for file in $(find dist -name "*.zst"); do
+            echo "Push $file"
+            curl -sSLf --user ${{ gitea.actor }}:${{ secrets.ACCESS_TOKEN }} \
+              --upload-file $file \
+              ${PACKAGE_API}/arch/core
+          done

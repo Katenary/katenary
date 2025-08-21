@@ -4,7 +4,7 @@ plugins:
   - search
   - inline-svg
   - manpage:
-      enabled: !ENV [MANPAGE, false]
+      enabled: true
       preprocess: preprocess.py
       pages:
         - title: Katenary

@@ -23,7 +23,7 @@ endif
 # Also generate the windows installer.
 binaries: prepare $(BINARIES)
 dist: binaries upx packages
-dist-full: clean-dist dist gpg-sign check-sign rpm-sign check-dist-all
+dist-full: clean-dist dist check-dist-all
 
 prepare: pull packager-oci-image
 	mkdir -p dist

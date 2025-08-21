@@ -1,5 +1,6 @@
 ## Linux / FreeBSD packages with fpm
 
+PACKAGE_API=https://repo.katenary.io/api/packages/katenary
 DESCRIPTION := $(shell cat oci/description | sed ':a;N;$$!ba;s/\n/\\n/g')
 
 FPM_OPTS=--name katenary \
@@ -16,7 +17,7 @@ FPM_BASES=../LICENSE=/usr/local/share/doc/katenary/LICENSE \
 FPM_COMMON_FILES=$(FPM_BASES) ../doc/share/man/man1/katenary.1=/usr/local/share/man/man1/katenary.1
 
 # ArchLinux has got inconsistent /usr/local/man directory
-FPM_COMMON_FILES_ARCHLINUX=$(FPM_BASES) ../doc/share/man/man1/katenary.1=/usr/local/man/man1/katenary.1 \
+FPM_COMMON_FILES_ARCHLINUX=$(FPM_BASES) ../doc/share/man/man1/katenary.1=/usr/local/man/man1/katenary.1
 
 # Pacman refuses dashes in version, and should start with a number
 PACMAN_VERSION=$(shell echo $(VERSION) | sed 's/-/./g; s/^v//')
@@ -35,6 +36,8 @@ rpm: dist/katenary-linux-$(GOARCH)
 		fpm -s dir -t rpm -a $(GOARCH) -f $(FPM_OPTS) --version=$(VERSION) \
 			$(FPM_COMMON_FILES) \
 			./katenary-linux-$(GOARCH)=/usr/local/bin/katenary
+
+# could be now removed, as gitea sign packages for us
 rpm-sign:
 	[ -f .rpmmacros ]  || echo "$(RPM_MACROS)" > .rpmmacros
 	[ -f .secret.gpg ] || gpg --export-secret-keys -a $(SIGNER) > .secret.gpg
@@ -136,3 +139,30 @@ check-dist-all:
 	$(MAKE) check-dist-debian
 	$(MAKE) check-dist-ubuntu
 	$(MAKE) check-dist-archlinux
+
+push-packages: rpm deb pacman
+	source .gitea.env
+	for file in $$(find dist -type f -name "*.rpm"); do \
+		curl --user $$GITEA_USERNAME:$$GITEA_TOKEN \
+			--upload-file $$file \
+			$(PACKAGE_API)/rpm/upload
+	done
+	for file in $$(find dist -type f -name "*.deb"); do \
+		curl --user $$GITEA_USERNAME:$$GITEA_TOKEN \
+			--upload-file $$file \
+			$(PACKAGE_API)/debian/pool/any/main/upload
+	done
+	for file in $$(find dist -type f -name "*.tar.zst"); do \
+		curl --user $$GITEA_USERNAME:$$GITEA_TOKEN \
+			--upload-file $$file \
+			$(PACKAGE_API)/arch/core
+	done
+
+push-generic-packages: $(BINARIES)
+	@source .gitea.env
+	for bin in $^; do \
+		echo "pushing $$bin to Gitea..."; \
+		curl --user $$GITEA_USERNAME:$$GITEA_TOKEN \
+     --upload-file $$bin \
+     $(PACKAGE_API)/generic/katenary/$(VERSION)/$$(basename $$bin);
+	done

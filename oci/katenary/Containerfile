@@ -1,4 +1,4 @@
-ARG GOVERSION=1.24
+ARG GOVERSION=1.25
 
 FROM docker.io/golang:${GOVERSION} AS builder
 ARG VERSION
