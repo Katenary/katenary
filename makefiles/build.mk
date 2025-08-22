@@ -1,5 +1,5 @@
 ## BUILD
-GO_BUILD=go build -ldflags="-X 'repo.katenary.io/katenary/katenary/internal/generator.Version=$(VERSION)'" -trimpath -o $(OUTPUT) ./cmd/katenary
+GO_BUILD=go build -ldflags="-X 'katenary.io/internal/generator.Version=$(VERSION)'" -trimpath -o $(OUTPUT) ./cmd/katenary
 
 # Simply build the binary for the current OS and architecture
 build: pull katenary

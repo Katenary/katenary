@@ -45,8 +45,10 @@ builder-oci-image:
 	@$(CTN) build -t go-builder:$(GOVERSION) ./oci/builder \
 		--build-arg GOVERSION=$(GOVERSION) 1>/dev/null
 katenary-oci:
-	$(CTN) build -f oci/katenary/Containerfile -t katenary:$(VERSION) \
+	VERSION=$(VERSION) \
+	VERSION=$${VERSION#releases/}; \
+	$(CTN) build -f oci/katenary/Containerfile -t katenary:$$VERSION \
 		--build-arg GOVERSION=$(GOVERSION) \
 		--build-arg VERSION=$(VERSION) \
 		./
-	$(CTN) tag katenary:$(VERSION) katenary:latest
+	$(CTN) tag katenary:$$VERSION katenary:latest

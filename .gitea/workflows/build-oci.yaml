@@ -9,6 +9,7 @@ env:
   REGISTRY: repo.katenary.io
   IMAGE_NAME: ${{ gitea.repository }}
   STORAGE_DRIVER: vfs
+  VERSION: ${{ gitea.ref_name }}
 
 jobs:
   build:
@@ -19,7 +20,8 @@ jobs:
     steps:
       - name: Extract version
         run: |
-          VERSION="${GITEA_REFNAME#releases/}
+          VERSION="${VERSION#releases/}"
+          echo "Exporting variable VERSION=$VERSION"
           echo "VERSION=$VERSION" >> $GITEA_OUTPUT
           echo "VERSION=$VERSION" >> $GITEA_ENV
 
@@ -42,6 +44,7 @@ jobs:
 
       - name: Build and tag
         run: |-
+          echo "Building image $REGISTRY/${IMAGE_NAME,,}:$VERSION / latest"
           buildah build --isolation=chroot --build-arg VERSION=$VERSION -t katenary -f ./oci/katenary/Containerfile .
           buildah tag katenary $REGISTRY/${IMAGE_NAME,,}:$VERSION
           buildah tag katenary $REGISTRY/${IMAGE_NAME,,}:latest

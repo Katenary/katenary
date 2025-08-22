@@ -13,7 +13,8 @@ COPY internal /go/src/repo.katenary.io/katenary/katenary/internal
 WORKDIR /go/src/repo.katenary.io/katenary/katenary
 ENV CGO_ENABLED=0
 RUN set -xe; \
-  go build -ldflags="-X 'repo.katenary.io/katenary/katenary/internal/generator.Version=v${VERSION}'" -trimpath -o katenary ./cmd/katenary
+  export VERSION=${VERSION#releases/}; \
+  go build -ldflags="-X 'katenary.io/internal/generator.Version=v${VERSION}'" -trimpath -o katenary ./cmd/katenary
 
 
 FROM scratch

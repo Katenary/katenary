@@ -15,6 +15,7 @@ env:
   LICENSE: MIT
   DESCRIPTION: "Effortless conversion from compose files (docker, podman) to Helm Charts"
   URL: "https://katenary.io"
+  VERSION: ${{ gitea.ref_name }}
 
 jobs:
   build-packages:
@@ -35,7 +36,8 @@ jobs:
     steps:
       - name: Extract version
         run: |
-          VERSION="${GITEA_REFNAME#releases/}
+          VERSION="${VERSION#releases/}"
+          echo "Exporting variable VERSION=$VERSION"
           echo "VERSION=$VERSION" >> $GITEA_OUTPUT
           echo "VERSION=$VERSION" >> $GITEA_ENV
 
@@ -61,6 +63,7 @@ jobs:
       - name: Compile binary
         if: matrix.goos == 'linux' || matrix.goos == 'freebsd' || matrix.goos == 'darwin'
         run: |-
+          echo "Building binary version $VERSION"
           mkdir -p dist
           GOARCH=${{ matrix.goarch }} GOOS=${{ matrix.goos }}\
             go build -ldflags="-X 'repo.katenary.io/katenary/katenary/internal/generator.Version=$VERSION'" \
