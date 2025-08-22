@@ -1,5 +1,5 @@
 
-## TESTS, security analysis, and code quality
+## TESTS, security analysis, and code quality
 
 # Scan the source code. 
 # - we don't need detection of text/template as it's not a web application, and
