@@ -1,10 +1,9 @@
 on:
   push:
     tags:
-      - "*"
+      - "releases/*"
 
 env:
-  VERSION: ${{ gitea.ref_name }}
   PACKAGE_API: https://repo.katenary.io/api/packages/katenary
   CGO_ENABLED: 0
   BIN_TARGET: /usr/bin/katenary
@@ -34,6 +33,12 @@ jobs:
             goarch: arm64
 
     steps:
+      - name: Extract version
+        run: |
+          VERSION="${GITEA_REFNAME#releases/}
+          echo "VERSION=$VERSION" >> $GITEA_OUTPUT
+          echo "VERSION=$VERSION" >> $GITEA_ENV
+
       - name: Install Unix dependencies
         if: matrix.goos == 'linux' || matrix.goos == 'freebsd'
         run: |-

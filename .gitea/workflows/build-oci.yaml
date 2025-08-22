@@ -3,12 +3,11 @@ name: Build and push OCI image
 on:
   push:
     tags:
-      - "**"
+      - "releases/*"
 
 env:
   REGISTRY: repo.katenary.io
   IMAGE_NAME: ${{ gitea.repository }}
-  VERSION: ${{ gitea.ref_name }}
   STORAGE_DRIVER: vfs
 
 jobs:
@@ -18,6 +17,12 @@ jobs:
       contents: read
       packages: write
     steps:
+      - name: Extract version
+        run: |
+          VERSION="${GITEA_REFNAME#releases/}
+          echo "VERSION=$VERSION" >> $GITEA_OUTPUT
+          echo "VERSION=$VERSION" >> $GITEA_ENV
+
       - name: Install Buildah
         run: |-
           env
