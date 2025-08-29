@@ -62,7 +62,7 @@ func GetMatchLabels(serviceName, appName string) map[string]string
 GetMatchLabels returns the matchLabels for a service. It uses the appName to replace the \_\_replace\_\_ in the labels. This is used to generate the matchLabels in the templates.
 
 <a name="GetVersion"></a>
-## func [GetVersion](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/version.go#L14>)
+## func [GetVersion](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/version.go#L15>)
 
 ```go
 func GetVersion() string
