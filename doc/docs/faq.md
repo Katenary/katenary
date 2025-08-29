@@ -6,9 +6,9 @@ The main author[^1] of Katenary is a big fan of Podman, Docker and makes a huge 
 daily work. When he started to work with Kubernetes, he wanted to have the same experience as with Docker Compose.
 He wanted to have a tool that could convert his `docker-compose` files to Kubernetes manifests, but also to Helm charts.
 
-Kompose was a good option. But the lacks of some options and configuration for the output Helm chart made him think
-about creating a new tool. He wanted to have a tool that could generate a complete Helm chart, with a lot of options
-and flexibility.
+[Kompose](https://kompose.io/) was a good option. But the lacks of some options and configuration for the output Helm
+chart made him think about creating a new tool. He wanted to have a tool that could generate a complete Helm chart,
+with a lot of options and flexibility.
 
 [^1]: I'm talking about myself :sunglasses: - Patrice FERLET, aka Metal3d, Tech Lead and DevOps Engineer at Klee Group.
 
@@ -51,15 +51,6 @@ many indentation levels in the YAML file.
 
 It is also more flexible. You can add or remove labels without changing the others.
 
-## Why not using a configuration file?
-
-The idea was to keep the configuration at a same place, and using the go-compose library to read the labels. It's
-easier to have a single file to manage.
-
-By the way, Katenary auto accepts a `compose.katenary.yaml` file in the same directory. It's a way to separate the
-configuration from the compose file. It uses
-the [overrides' mechanism](https://docs.docker.com/compose/multiple-compose-files/merge/) like "compose" does.
-
 ## Why not developing with Rust?
 
 Seriously...
@@ -98,9 +89,6 @@ We will be happy to communicate your help by putting your logo on the website an
 us by giving us some money, or by giving us some time of your developers, or leaving us some time to work on the project.
 
 ### If you're an individual
-
-All donators will be listed on the website and in the documentation. You can give us some money by using
-the [GitHub Sponsors]()
 
 All main contributors[^3] will be listed on the website and in the documentation.
 

@@ -44,30 +44,52 @@ The main developer is [Patrice FERLET](https://repo.katenary.io/metal3d).
 The project source
 code is hosted on the [:fontawesome-brands-git: Katenary Repository](https://repo.katenary.io/Katenary/katenary).
 
-## Install Katenary
+# Install Katenary
 
-Katenary is developed using the :fontawesome-brands-golang:{ .gopher } [Go](https://go.dev) language.
-The binary is statically linked, so you can simply download it from the [release
-page](https://github.com/Katenary/katenary/releases) of the project in GitHub.
+## Linux / Windows package distribution or setup.exe
+
+The simplest way to install Katenary is to install the package or use Windows installer from the page [packages page](https://repo.katenary.io/Katenary/katenary/packages).
+You will find packages and instructions to install the repository for your distribution for :
+
+- RPM (Fedora, Rocky, Alma, OpenSUSE...)
+- DEB (Debian, Ubuntu, Mint...)
+- Arch Linux (AUR)
+- Windows (in the "generic" packages page, use the "setup" file)
+
+!!! Note "Fedora >= 42"
+
+    The instruction is not updated for newest version of `dnf`. If the command to add the repository doesn't work, you can
+    try:
+
+    ```bash
+    dnf config-manager addrepo \
+    --from-repofile https://repo.katenary.io/api/packages/Katenary/rpm.repo
+    ```
+
+As Katenary is developed using the :fontawesome-brands-golang:{ .gopher } [Go](https://go.dev) language the binary is statically
+linked, so you can simply download it from the [generic package page](https://repo.katenary.io/Katenary/katenary/packages) and get the version
+which is compatible with your operating system and architecture.
 
 You need to select the right binary for your operating system and architecture, and copy the binary in a directory
 that is in your `PATH`.
 
-If you are a Linux user, you can use the "one line installation command" which will download the binary in your
+## Linux - one line installation command
+
+If you are a Linux user, you can use the "one line installation command" which will download the **binary** in your
 `$HOME/.local/bin` directory if it exists.
 
 ```bash
 sh <(curl -sSL https://repo.katenary.io/Katenary/katenary/raw/branch/master/install.sh)
 ```
 
-!!! Info "Upgrading is integrated to the `katenary` command"
-Katenary propose a `upgrade` sub-command to update the current binary to the latest stable release.
+## Compile from sources
 
-    Of course, you need to install Katenary once :smile:
+You can, of course, compile Katenary from sources.
 
 !!! Note "You prefer to compile it, no need to install Go"
-You can also build and install it yourself, the provided Makefile has got a `build` command that uses `podman` or
-`docker` to build the binary.
+
+    You can also build and install it yourself, the provided Makefile has got a `build` command that uses `podman` or
+    `docker` to build the binary.
 
     So, you don't need to install Go compiler :+1:.
 
@@ -107,7 +129,7 @@ source <(katenary completion bash)
 
 Add this line in you `~/.profile`, `~/.bash_aliases` or `~/.bashrc` file to have completion at startup.
 
-## What a name
+# What a name
 
 A catenary is the curve that a hanging chain or cable assumes under its own weight when supported only at its ends.
 I, the maintainer, decided to name "Katenary" this project because it's like a chain that links a boat to a dock.
@@ -119,7 +141,7 @@ Anyway, it's too late to change the name now :smile:
 
     I spent time to find it :wink:
 
-## Special thanks to
+# Special thanks to
 
 I really want to thank all the contributors, testers, and of course, the authors of the packages and tools that are used
 in this project. There is too many to list here. Katenary can work because of all these people. Open source is a great
@@ -157,6 +179,6 @@ thing! :heart:
     <a href="https://www.mkdocs.org/" target="_blank">MkDocs</a> using <a
     href="https://squidfunk.github.io/mkdocs-material/" target="_blank">Material for MkDocs</a> theme template.
 
-## License
+# License
 
 Katenary is an open source project under the MIT license. You can use it, modify it, and distribute it as you want.

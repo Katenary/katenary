@@ -24,7 +24,7 @@
 "main-app":
   short: "Mark the service as the main app."
   long: |-
-    This makes the service to be the main application. Its image tag is 
+    This makes the service to be the main application. Its image tag is
     considered to be the Chart appVersion and to be the defaultvalue in Pod
     container image attribute.
 
@@ -36,7 +36,7 @@
       image: ghost:1.25.5
       labels:
         # The chart is now named ghost, and the appVersion is 1.25.5.
-        # In Deployment, the image attribute is set to ghost:1.25.5 if 
+        # In Deployment, the image attribute is set to ghost:1.25.5 if
         # you don't change the "tag" attribute in values.yaml
         {{ .KatenaryPrefix }}/main-app: true
   type: "bool"
@@ -45,14 +45,14 @@
   short: "Environment variables to be added to the values.yaml"
   long: |-
     By default, all environment variables in the "env" and environment
-    files are added to configmaps with the static values set. This label
+    files are added to ConfigMaps with the static values set. This label
     allows adding environment variables to the values.yaml file.
 
-    Note that the value inside the configmap is {{ "{{ tpl vaname . }}" }}, so 
-    you can set the value to a template that will be rendered with the 
+    Note that the value inside the configmap is {{ "{{ tpl vaname . }}" }}, so
+    you can set the value to a template that will be rendered with the
     values.yaml file.
 
-    The value can be set with a documentation. This may help to understand 
+    The value can be set with a documentation. This may help to understand
     the purpose of the variable.
   example: |-
     env:
@@ -66,7 +66,7 @@
         - TO_CONFIGURE
         # complex values, set as a template in values.yaml with a documentation
         - A_COMPLEX_VALUE: |-
-            This is the documentation for the variable to 
+            This is the documentation for the variable to
             configure in values.yaml.
             It can be, of course,  a multiline text.
   type: "[]string or map[string]string"
@@ -74,7 +74,7 @@
 "secrets":
   short: "Env vars to be set as secrets."
   long: |-
-    This label allows setting the environment variables as secrets. The variable 
+    This label allows setting the environment variables as secrets. The variable
     is removed from the environment and added to a secret object.
 
     The variable can be set to the {{ printf "%s/%s" .KatenaryPrefix "values"}} too,
@@ -91,7 +91,7 @@
 "ports":
   short: "Ports to be added to the service."
   long: |-
-    Only useful for services without exposed port. It is mandatory if the 
+    Only useful for services without exposed port. It is mandatory if the
     service is a dependency of another service.
   example: |-
     labels:
@@ -103,7 +103,7 @@
 "ingress":
   short: "Ingress rules to be added to the service."
   long: |-
-    Declare an ingress rule for the service. The port should be exposed or 
+    Declare an ingress rule for the service. The port should be exposed or
     declared with {{ printf "%s/%s" .KatenaryPrefix "ports" }}.
   example: |-
     labels:
@@ -116,8 +116,8 @@
   short: "Map env vars from the service to the deployment."
   long: |-
     Because you may need to change the variable for Kubernetes, this label
-    forces the value to another. It is also particullary helpful to use a template 
-    value instead. For example, you could bind the value to a service name 
+    forces the value to another. It is also particullary helpful to use a template
+    value instead. For example, you could bind the value to a service name
     with Helm attributes:
     {{ "{{ tpl .Release.Name . }}" }}.
 
@@ -148,10 +148,10 @@
 "same-pod":
   short: "Move the same-pod deployment to the target deployment."
   long: |-
-    This will make the service to be included in another service pod. Some services 
+    This will make the service to be included in another service pod. Some services
     must work together in the same pod, like a sidecar or a proxy or nginx + php-fpm.
 
-    Note that volume and VolumeMount are copied from the source to the target 
+    Note that volume and VolumeMount are copied from the source to the target
     deployment.
   example: |-
     web:
@@ -166,7 +166,7 @@
 "description":
   short: "Description of the service"
   long: |-
-    This replaces the default comment in values.yaml file to the given description. 
+    This replaces the default comment in values.yaml file to the given description.
     It is useful to document the service and configuration.
 
     The value can be set with a documentation in multiline format.
@@ -186,8 +186,8 @@
 "dependencies":
   short: "Add Helm dependencies to the service."
   long: |-
-    Set the service to be, actually, a Helm dependency. This means that the 
-    service will not be exported as template. The dependencies are added to 
+    Set the service to be, actually, a Helm dependency. This means that the
+    service will not be exported as template. The dependencies are added to
     the Chart.yaml file and the values are added to the values.yaml file.
 
     It's a list of objects with the following attributes:
@@ -199,12 +199,12 @@
 
     !!! Info
         Katenary doesn't update the helm depenedencies by default.
-        
+       
         Use `--helm-update` (or `-u`) flag to update the dependencies.
-        
+       
         example: <code>katenary convert -u</code>
 
-    By setting an alias, it is possible to change the name of the dependency 
+    By setting an alias, it is possible to change the name of the dependency
     in values.yaml.
   example: |-
     labels:
@@ -226,17 +226,17 @@
 "configmap-files":
   short: "Inject files as Configmap."
   long: |-
-    It makes a file or directory to be converted to one or more ConfigMaps 
-    and mounted in the pod. The file or directory is relative to the 
+    It makes a file or directory to be converted to one or more ConfigMaps
+    and mounted in the pod. The file or directory is relative to the
     service directory.
 
     If it is a directory, all files inside it are added to the ConfigMap.
 
-    If the directory as subdirectories, so one configmap per subpath are created.
+    If the directory as subdirectories, so one ConfigMap per sub-path are created.
 
     !!! Warning
-        It is not intended to be used to store an entire project in configmaps.
-        It is intended to be used to store configuration files that are not managed 
+        It is not intended to be used to store an entire project in ConfigMaps.
+        It is intended to be used to store configuration files that are not managed
         by the application, like nginx configuration files. Keep in mind that your
         project sources should be stored in an application image or in a storage.
   example: |-
@@ -253,16 +253,17 @@
     This adds a cronjob to the chart.
 
     The label value is a YAML object with the following attributes:
-    - command: the command to be executed 
-    - schedule: the cron schedule (cron format or @every where "every" is a 
+
+    - command: the command to be executed
+    - schedule: the cron schedule (cron format or @every where "every" is a
       duration like 1h30m, daily, hourly...)
     - rbac: false (optionnal), if true, it will create a role, a rolebinding and
       a serviceaccount to make your cronjob able to connect the Kubernetes API
   example: |-
     labels:
-        {{ .KatenaryPrefix }}/cronjob: |-
-            command: echo "hello world"
-            schedule: "* */1 * * *" # or @hourly for example
+      {{ .KatenaryPrefix }}/cronjob: |-
+        command: echo "hello world"
+        schedule: "* */1 * * *" # or @hourly for example
   type: "object"
 
 "env-from":
@@ -274,21 +275,21 @@
     service1:
       image: nginx:1.19
       environment:
-          FOO: bar
+        FOO: bar
 
     service2:
       image: php:7.4-fpm
       labels:
-        # get the congigMap from service1 where FOO is 
+        # get the congigMap from service1 where FOO is
         # defined inside this service too
         {{ .KatenaryPrefix }}/env-from: |-
-            - myservice1
+          - myservice1
 
 "exchange-volumes":
   short: Add exchange volumes (empty directory on the node) to share data
   type: "[]object"
   long: |-
-    This label allows sharing data between containres. The volume is created in 
+    This label allows sharing data between containres. The volume is created in
     the node and mounted in the pod. It is useful to share data between containers
     in a "same pod" logic. For example to let PHP-FPM and Nginx share the same direcotory.
 
@@ -299,6 +300,7 @@
     - a `initContainer` for each definition
 
     Fields:
+
       - name: the name of the volume (manadatory)
       - mountPath: the path where the volume is mounted in the pod (optional, default is `/opt`)
       - init: a command to run to initialize the volume with data (optional)

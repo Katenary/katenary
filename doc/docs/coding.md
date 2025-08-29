@@ -36,14 +36,14 @@ flowchart TD
     Val[Values files]:::outputs@{shape: curv-trap}
     PVC:::outputs@{shape: curv-trap}
     S[Service]:::outputs@{shape: curv-trap}
-    
+
     A[Compose file]:::inputs --> B[Compose parser]
     B --> G[Generator]
     G --> P[Ports exposed to services] ---> S
     G ------> H
     G --> C --> D
     G ------> Val
-    G ....-> M[Merge Continainers if same-pod] 
+    G ....-> M[Merge Continainers if same-pod]
     M ..-> C
     G --> E[Environment variables] ----> Secrets & ConfigMap
     G--> V[Bind volumes] -------> PVC
@@ -51,7 +51,7 @@ flowchart TD
 
     Secrets & ConfigMap -- create envFrom --> D
     V -- bind volumes --> D
-    
+
 ```
 
 If the declaration of a container is to be integrated into another pod (via the `same-pod` label), this `Deployment` and
@@ -92,7 +92,7 @@ For each source container linked to the destination:
 - we then copy the service port to the destination service
 - we finally remove the source service and deployment
 
-> The `Configmap`, secrets, variables... are kept.
+> The `Configmap`, secrets, variables, and so on, are kept.
 
 It finally computes the `helper` file.
 

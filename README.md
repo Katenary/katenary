@@ -37,6 +37,24 @@ The main developer is [Patrice FERLET](https://repo.katenary.io/metal3d).
 
 ## Install
 
+### Package from repository and Windows installer
+
+You can find Linux packages repository and Windows installer in the [packages page](https://repo.katenary.io/Katenary/katenary/packages).
+
+> Note for Fedora >= 42, the repository instructions are not up-to-date. You should use:
+>
+> ```bash
+> dnf config-manager addrepo \
+>   --from-repofile https://repo.katenary.io/Katenary/katenary/fedora/katenary.repo
+> dnf install katenary
+> ```
+
+- Windows users, go to the "generic" packages page, and download the `setup.exe` file.
+- macOS users, please use the "`darwin`" binary. An experimental package is in preparation.
+- FreedBSD users, please use the "`freebsd`" package in "generic" packages page.
+
+### Binary installation
+
 You can download the binaries from the [Release](https://repo.katenary.io/Katenary/katenary/releases) section. Copy the binary
 and rename it to `katenary`. Place the binary inside your `PATH`. You should now be able to call the `katenary` command.
 
@@ -54,7 +72,7 @@ go install -u katenary.io/cmd@latest
 go install -u katenary.io/cmd@v3.0.0
 ```
 
-## Or, build yourself
+### Or, build yourself
 
 If you've got `podman` or `docker`, you can build `katenary` by using:
 
@@ -69,7 +87,7 @@ make install
 ```
 
 It will use the default PREFIX (`~/.local/`) to install the binary in the `bin` subdirectory. You can force the PREFIX
-value at install time, but maybe you need to use "sudo":
+value at install time, but maybe you need to use "`sudo`":
 
 ```bash
 sudo make install PREFIX=/usr/local
