@@ -10,6 +10,13 @@ set -e
 OS=$(uname)
 ARCH=$(uname -m)
 
+for c in curl grep cut tr; do
+	if ! command -v $c >/dev/null 2>&1; then
+		echo "Error: $c is not installed"
+		exit 1
+	fi
+done
+
 # Detect the home directory "bin" directory, it is commonly:
 # - $HOME/.local/bin
 # - $HOME/.bin
@@ -43,20 +50,20 @@ if ! echo "$PATH" | grep -q "$INSTALL_PATH"; then
 fi
 
 # Where to download the binary
-BASE="https://github.com/Katenary/katenary/releases/latest/download/"
-
+TAG=$(curl -sLf https://repo.katenary.io/api/v1/repos/katenary/katenary/releases/latest 2>/dev/null | grep -Po '"tag_name":\s*"[^"]*"' | cut -d ":" -f2 | tr -d '"')
+TAG=3.0.0-rc7
 # for compatibility with older ARM versions
 if [ $ARCH = "x86_64" ]; then
 	ARCH="amd64"
 fi
 
-BIN_URL="$BASE/katenary-$OS-$ARCH"
+BIN_URL="https://repo.katenary.io/api/packages/Katenary/generic/katenary/$TAG/katenary-$OS-$ARCH"
 
 echo
 echo "Downloading $BIN_URL"
 
 T=$(mktemp -u)
-curl -SL -# $BIN_URL -o $T || (echo "Failed to download katenary" && rm -f $T && exit 1)
+curl -sLf -# $BIN_URL -o $T 2>/dev/null || (echo -e "Failed to download katenary version $TAG.\n\nPlease open an issue and explain the problem, following the link:\nhttps://repo.katenary.io/Katenary/katenary/issues/new?title=[install.sh]%20Install%20$TAG%20failed" && rm -f $T && exit 1)
 
 mv "$T" "${INSTALL_PATH}/katenary"
 chmod +x "${INSTALL_PATH}/katenary"
