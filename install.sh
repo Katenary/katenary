@@ -51,8 +51,8 @@ fi
 
 # Where to download the binary
 TAG=$(curl -sLf https://repo.katenary.io/api/v1/repos/katenary/katenary/releases/latest 2>/dev/null | grep -Po '"tag_name":\s*"[^"]*"' | cut -d ":" -f2 | tr -d '"')
-TAG=3.0.0-rc7
-# for compatibility with older ARM versions
+
+# use the right names for the OS and architecture
 if [ $ARCH = "x86_64" ]; then
 	ARCH="amd64"
 fi
