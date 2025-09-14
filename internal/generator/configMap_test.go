@@ -10,6 +10,7 @@ import (
 	"katenary.io/internal/generator/labels"
 
 	"github.com/compose-spec/compose-go/types"
+	appv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
 )
@@ -117,9 +118,15 @@ services:
 	io.WriteString(fooFp, fooTxt)
 	fooFp.Close()
 
-	output := internalCompileTest(t, "-s", "templates/web/statics/configmap.yaml")
+	cmOutput := internalCompileTestForce(t, "-s", "templates/web/statics/configmap.yaml")
+	depOutput := internalCompileTestForce(t, "-s", "templates/web/deployment.yaml")
+
 	configMap := v1.ConfigMap{}
-	if err := yaml.Unmarshal([]byte(output), &configMap); err != nil {
+	if err := yaml.Unmarshal([]byte(cmOutput), &configMap); err != nil {
+		t.Errorf(unmarshalError, err)
+	}
+	deployment := appv1.Deployment{}
+	if err := yaml.Unmarshal([]byte(depOutput), &deployment); err != nil {
 		t.Errorf(unmarshalError, err)
 	}
 	if configMap.Data == nil {
@@ -129,5 +136,13 @@ services:
 	valid := regexp.MustCompile(`.*[a-zA-Z0-9]+$`)
 	if !valid.MatchString(configMap.Name) {
 		t.Errorf("ConfigMap name %s is not valid", configMap.Name)
+	}
+
+	// the volume mount should be named "configmap-<configmap name>"
+	if deployment.Spec.Template.Spec.Volumes[0].Name != deployment.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name {
+		t.Errorf("Expected volume name to be %s, got %s",
+			deployment.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name,
+			deployment.Spec.Template.Spec.Volumes[0].Name,
+		)
 	}
 }

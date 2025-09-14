@@ -278,6 +278,7 @@ func addStaticVolumes(deployments map[string]*Deployment, service types.ServiceC
 		if y, err = config.configMap.Yaml(); err != nil {
 			log.Fatal(err)
 		}
+
 		// add the configmap to the chart
 		d.chart.Templates[config.configMap.Filename()] = &ChartTemplate{
 			Content:     y,
@@ -285,6 +286,10 @@ func addStaticVolumes(deployments map[string]*Deployment, service types.ServiceC
 		}
 		// add the moint path to the container
 		for _, m := range config.mountPath {
+			// volumeName can be empty, in this case we generate a name
+			if volumeName == "" {
+				volumeName = utils.PathToName(m.subPath)
+			}
 			container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 				Name:      utils.PathToName(volumeName),
 				MountPath: m.mountPath,

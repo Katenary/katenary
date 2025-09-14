@@ -29,13 +29,22 @@ func teardown(tmpDir string) {
 	}
 }
 
+// internalCompileTestForce is like internalCompileTest but with the force option enabled to rewrite the chart.
+func internalCompileTestForce(t *testing.T, options ...string) string {
+	return compileTest(t, true, options...)
+}
+
+// internalCompileTest is like compileTest but without the force option enabled to rewrite the chart.
 func internalCompileTest(t *testing.T, options ...string) string {
+	return compileTest(t, false, options...)
+}
+
+func compileTest(t *testing.T, force bool, options ...string) string {
 	_, err := parser.Parse(nil, nil, "compose.yml")
 	if err != nil {
 		t.Fatalf("Failed to parse the project: %s", err)
 	}
 
-	force := false
 	outputDir := "./chart"
 	profiles := make([]string, 0)
 	helmdepUpdate := true
