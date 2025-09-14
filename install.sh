@@ -4,8 +4,6 @@
 # Can be launched with the following command:
 # sh <(curl -sSL https://raw.githubusercontent.com/Katenary/katenary/master/install.sh)
 
-set -e
-
 # Detect the OS and architecture
 OS=$(uname)
 ARCH=$(uname -m)
@@ -21,10 +19,10 @@ done
 # - $HOME/.local/bin
 # - $HOME/.bin
 # - $HOME/bin
-COMON_INSTALL_PATHS="$HOME/.local/bin $HOME/.bin $HOME/bin"
+COMMON_INSTALL_PATHS="$HOME/.local/bin $HOME/.bin $HOME/bin"
 
 INSTALL_PATH=""
-for p in $COMON_INSTALL_PATHS; do
+for p in $COMMON_INSTALL_PATHS; do
 	if [ -d $p ]; then
 		INSTALL_PATH=$p
 		break
