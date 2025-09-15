@@ -1,7 +1,6 @@
 package katenaryfile
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 	"testing"
@@ -39,17 +38,14 @@ webapp:
 	composeFile := filepath.Join(tmpDir, "compose.yaml")
 	katenaryFile := filepath.Join(tmpDir, "katenary.yaml")
 
-	os.MkdirAll(tmpDir, 0755)
-	if err := os.WriteFile(composeFile, []byte(composeContent), 0644); err != nil {
+	os.MkdirAll(tmpDir, 0o755)
+	if err := os.WriteFile(composeFile, []byte(composeContent), 0o644); err != nil {
 		t.Log(err)
 	}
-	if err := os.WriteFile(katenaryFile, []byte(katenaryfileContent), 0644); err != nil {
+	if err := os.WriteFile(katenaryFile, []byte(katenaryfileContent), 0o644); err != nil {
 		t.Log(err)
 	}
 	defer os.RemoveAll(tmpDir)
-
-	c, _ := os.ReadFile(composeFile)
-	log.Println(string(c))
 
 	// chand dir to this directory
 	os.Chdir(tmpDir)
@@ -92,17 +88,14 @@ webapp:
 	composeFile := filepath.Join(tmpDir, "compose.yaml")
 	katenaryFile := filepath.Join(tmpDir, "katenary.yaml")
 
-	os.MkdirAll(tmpDir, 0755)
-	if err := os.WriteFile(composeFile, []byte(composeContent), 0644); err != nil {
+	os.MkdirAll(tmpDir, 0o755)
+	if err := os.WriteFile(composeFile, []byte(composeContent), 0o644); err != nil {
 		t.Log(err)
 	}
-	if err := os.WriteFile(katenaryFile, []byte(katenaryfileContent), 0644); err != nil {
+	if err := os.WriteFile(katenaryFile, []byte(katenaryfileContent), 0o644); err != nil {
 		t.Log(err)
 	}
 	defer os.RemoveAll(tmpDir)
-
-	c, _ := os.ReadFile(composeFile)
-	log.Println(string(c))
 
 	// chand dir to this directory
 	os.Chdir(tmpDir)
@@ -150,17 +143,14 @@ webapp:
 	composeFile := filepath.Join(tmpDir, "compose.yaml")
 	katenaryFile := filepath.Join(tmpDir, "katenary.yaml")
 
-	os.MkdirAll(tmpDir, 0755)
-	if err := os.WriteFile(composeFile, []byte(composeContent), 0644); err != nil {
+	os.MkdirAll(tmpDir, 0o755)
+	if err := os.WriteFile(composeFile, []byte(composeContent), 0o644); err != nil {
 		t.Log(err)
 	}
-	if err := os.WriteFile(katenaryFile, []byte(katenaryfileContent), 0644); err != nil {
+	if err := os.WriteFile(katenaryFile, []byte(katenaryfileContent), 0o644); err != nil {
 		t.Log(err)
 	}
 	defer os.RemoveAll(tmpDir)
-
-	c, _ := os.ReadFile(composeFile)
-	log.Println(string(c))
 
 	// chand dir to this directory
 	os.Chdir(tmpDir)

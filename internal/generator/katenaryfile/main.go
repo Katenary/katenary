@@ -3,7 +3,6 @@ package katenaryfile
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"reflect"
@@ -11,7 +10,7 @@ import (
 
 	"katenary.io/internal/generator/labels"
 	"katenary.io/internal/generator/labels/labelstructs"
-	"katenary.io/internal/utils"
+	"katenary.io/internal/logger"
 
 	"github.com/compose-spec/compose-go/types"
 	"github.com/invopop/jsonschema"
@@ -60,7 +59,7 @@ func OverrideWithConfig(project *types.Project) {
 		// no katenary file found
 		return
 	}
-	fmt.Println(utils.IconInfo, "Using katenary file", yamlFile)
+	logger.Info("Using katenary file", yamlFile)
 
 	services := make(map[string]Service)
 	fp, err := os.Open(yamlFile)
@@ -102,7 +101,7 @@ func OverrideWithConfig(project *types.Project) {
 			mustGetLabelContent(s.ValuesFrom, &project.Services[i], labels.LabelValuesFrom)
 		}
 	}
-	fmt.Println(utils.IconInfo, "Katenary file loaded successfully, the services are now configured.")
+	logger.Info("Katenary file loaded successfully, the services are now configured.")
 }
 
 func getLabelContent(o any, service *types.ServiceConfig, labelName string) error {

@@ -12,6 +12,7 @@ import (
 	"github.com/thediveo/netdb"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
+	"katenary.io/internal/logger"
 )
 
 // DirectoryPermission is the default values for permissions apply to created directories.
@@ -64,7 +65,7 @@ func GetKind(path string) (kind string) {
 	} else {
 		kind = strings.Split(path, ".")[1]
 	}
-	return
+	return kind
 }
 
 // Wrap wraps a string with a string above and below. It will respect the indentation of the src string.
@@ -161,7 +162,7 @@ func WordWrap(text string, lineWidth int) string {
 }
 
 // Confirm asks a question and returns true if the answer is y.
-func Confirm(question string, icon ...Icon) bool {
+func Confirm(question string, icon ...logger.Icon) bool {
 	if len(icon) > 0 {
 		fmt.Printf("%s %s [y/N] ", icon[0], question)
 	} else {

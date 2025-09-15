@@ -16,6 +16,7 @@ import (
 	"katenary.io/internal/generator/katenaryfile"
 	"katenary.io/internal/generator/labels"
 	"katenary.io/internal/generator/labels/labelstructs"
+	"katenary.io/internal/logger"
 	"katenary.io/internal/parser"
 	"katenary.io/internal/utils"
 
@@ -111,12 +112,13 @@ func Convert(config ConvertOptions, dockerComposeFile ...string) error {
 	currentDir, _ := os.Getwd()
 	// go to the root of the project
 	if err := os.Chdir(filepath.Dir(dockerComposeFile[0])); err != nil {
-		fmt.Println(utils.IconFailure, err)
+		logger.Failure(err.Error())
 		return err
 	}
 	defer func() {
 		if err := os.Chdir(currentDir); err != nil { // after the generation, go back to the original directory
-			log.Fatal(err)
+			logger.Failure(err.Error())
+			os.Exit(1)
 		}
 	}()
 
@@ -134,7 +136,7 @@ func Convert(config ConvertOptions, dockerComposeFile ...string) error {
 
 	// check older version of labels
 	if err := checkOldLabels(project); err != nil {
-		fmt.Println(utils.IconFailure, err)
+		logger.Failure(err.Error())
 		return err
 	}
 
@@ -147,7 +149,7 @@ func Convert(config ConvertOptions, dockerComposeFile ...string) error {
 		if _, err := os.Stat(config.OutputDir); err == nil {
 			overwrite := utils.Confirm(
 				"The chart directory "+config.OutputDir+" already exists, do you want to overwrite it?",
-				utils.IconWarning,
+				logger.IconWarning,
 			)
 			if !overwrite {
 				fmt.Println("Aborting")
@@ -399,7 +401,7 @@ func addMainTagAppDoc(values []byte, project *types.Project) []byte {
 		} else if v == "false" || v == "no" || v == "0" {
 			continue
 		} else {
-			fmt.Printf("%s Adding main tag app doc %s\n", utils.IconConfig, service.Name)
+			logger.Log(logger.IconConfig, "Adding main tag app doc for service", service.Name)
 		}
 
 		lines = addMainAppDoc(lines, service)
@@ -579,15 +581,15 @@ func buildValues(chart *HelmChart, project *types.Project, valuesPath string) {
 func callHelmUpdate(config ConvertOptions) {
 	executeAndHandleError := func(fn func(ConvertOptions) error, config ConvertOptions, message string) {
 		if err := fn(config); err != nil {
-			fmt.Println(utils.IconFailure, err)
+			logger.Failure("Helm command failed, please check the output above", err.Error())
 			os.Exit(1)
 		}
-		fmt.Println(utils.IconSuccess, message)
+		logger.Success(message)
 	}
 	if config.HelmUpdate {
 		executeAndHandleError(helmUpdate, config, "Helm dependencies updated")
 		executeAndHandleError(helmLint, config, "Helm chart linted")
-		fmt.Println(utils.IconSuccess, "Helm chart created successfully")
+		logger.Success("Helm chart created successfully")
 	}
 }
 
@@ -627,7 +629,7 @@ func removeUnwantedLines(values []byte) []byte {
 func writeContent(path string, content []byte) {
 	f, err := os.Create(path)
 	if err != nil {
-		fmt.Println(utils.IconFailure, err)
+		logger.Failure("Cannot create file "+path, err.Error())
 		os.Exit(1)
 	}
 	defer f.Close()
@@ -640,10 +642,10 @@ func writeContent(path string, content []byte) {
 
 // helmLint runs "helm lint" on the output directory.
 func helmLint(config ConvertOptions) error {
-	fmt.Println(utils.IconInfo, "Linting...")
+	logger.Info("Linting...")
 	helm, err := exec.LookPath("helm")
 	if err != nil {
-		fmt.Println(utils.IconFailure, err)
+		logger.Failure("Helm is not installed or not in your PATH", err.Error())
 		os.Exit(1)
 	}
 	cmd := exec.Command(helm, "lint", config.OutputDir)
@@ -655,10 +657,10 @@ func helmLint(config ConvertOptions) error {
 // helmUpdate runs "helm dependency update" on the output directory.
 func helmUpdate(config ConvertOptions) error {
 	// lookup for "helm" binary
-	fmt.Println(utils.IconInfo, "Updating helm dependencies...")
+	logger.Info("Updating helm dependencies...")
 	helm, err := exec.LookPath("helm")
 	if err != nil {
-		fmt.Println(utils.IconFailure, err)
+		fmt.Println(logger.IconFailure, err)
 		os.Exit(1)
 	}
 	// run "helm dependency update"

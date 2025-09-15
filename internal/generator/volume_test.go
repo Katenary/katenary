@@ -5,7 +5,6 @@ import (
 	"image"
 	"image/color"
 	"image/png"
-	"log"
 	"os"
 	"path/filepath"
 	"testing"
@@ -173,7 +172,6 @@ services:
 `
 	composeFile = fmt.Sprintf(composeFile, labels.KatenaryLabelPrefix)
 	tmpDir := setup(composeFile)
-	log.Println(tmpDir)
 	defer teardown(tmpDir)
 
 	os.Mkdir(filepath.Join(tmpDir, "images"), utils.DirectoryPermission)
@@ -243,7 +241,6 @@ services:
 `
 	composeFile = fmt.Sprintf(composeFile, labels.KatenaryLabelPrefix)
 	tmpDir := setup(composeFile)
-	log.Println(tmpDir)
 	defer teardown(tmpDir)
 
 	os.Mkdir(filepath.Join(tmpDir, "images"), utils.DirectoryPermission)

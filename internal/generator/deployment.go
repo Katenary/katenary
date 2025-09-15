@@ -11,6 +11,7 @@ import (
 
 	"katenary.io/internal/generator/labels"
 	"katenary.io/internal/generator/labels/labelstructs"
+	"katenary.io/internal/logger"
 	"katenary.io/internal/utils"
 
 	"github.com/compose-spec/compose-go/types"
@@ -119,7 +120,7 @@ func (d *Deployment) AddContainer(service types.ServiceConfig) {
 	for _, port := range service.Ports {
 		name := utils.GetServiceNameByPort(int(port.Target))
 		if name == "" {
-			utils.Warn("Port name not found for port ", port.Target, " in service ", service.Name, ". Using port number instead")
+			logger.Warn("Port name not found for port ", port.Target, " in service ", service.Name, ". Using port number instead")
 			name = fmt.Sprintf("port-%d", port.Target)
 		}
 		ports = append(ports, corev1.ContainerPort{
@@ -274,7 +275,7 @@ func (d *Deployment) DependsOn(to *Deployment, servicename string) error {
 	for _, container := range to.Spec.Template.Spec.Containers {
 		commands := []string{}
 		if len(container.Ports) == 0 {
-			utils.Warn("No ports found for service ",
+			logger.Warn("No ports found for service ",
 				servicename,
 				". You should declare a port in the service or use "+
 					labels.LabelPorts+
@@ -340,7 +341,7 @@ func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string, sam
 		_, ok := service.Environment[secret]
 		if !ok {
 			drop = append(drop, secret)
-			utils.Warn("Secret " + secret + " not found in service " + service.Name + " - skpped")
+			logger.Warn("Secret " + secret + " not found in service " + service.Name + " - skpped")
 			continue
 		}
 		secrets = append(secrets, secret)
@@ -357,7 +358,7 @@ func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string, sam
 		val, ok := service.Environment[value]
 		if !ok {
 			drop = append(drop, value)
-			utils.Warn("Environment variable " + value + " not found in service " + service.Name + " - skpped")
+			logger.Warn("Environment variable " + value + " not found in service " + service.Name + " - skpped")
 			continue
 		}
 		if d.chart.Values[service.Name].(*Value).Environment == nil {
@@ -413,7 +414,7 @@ func (d *Deployment) BindMapFilesToContainer(service types.ServiceConfig, secret
 
 	container, index := utils.GetContainerByName(service.ContainerName, d.Spec.Template.Spec.Containers)
 	if container == nil {
-		utils.Warn("Container not found for service " + service.Name)
+		logger.Warn("Container not found for service " + service.Name)
 		return nil, -1
 	}
 
@@ -677,7 +678,7 @@ func (d *Deployment) bindVolumes(volume types.ServiceVolumeConfig, isSamePod boo
 	}(d, container, index)
 
 	if _, found := tobind[volume.Source]; !isSamePod && volume.Type == "bind" && !found {
-		utils.Warn(
+		logger.Warn(
 			"Bind volumes are not supported yet, " +
 				"excepting for those declared as " +
 				labels.LabelConfigMapFiles +
@@ -688,7 +689,7 @@ func (d *Deployment) bindVolumes(volume types.ServiceVolumeConfig, isSamePod boo
 	}
 
 	if container == nil {
-		utils.Warn("Container not found for volume", volume.Source)
+		logger.Warn("Container not found for volume", volume.Source)
 		return
 	}
 

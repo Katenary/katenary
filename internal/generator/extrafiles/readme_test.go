@@ -15,7 +15,6 @@ func TestReadMeFile_Basic(t *testing.T) {
 	}
 
 	result := ReadMeFile("testchart", "A test chart", values)
-	t.Logf("Generated README content:\n%s", result)
 	paramerRegExp := regexp.MustCompile(`\|\s+` + "`" + `(.*?)` + "`" + `\s+\|\s+` + "`" + `(.*?)` + "`" + `\s+\|`)
 	matches := paramerRegExp.FindAllStringSubmatch(result, -1)
 	if len(matches) != 3 {

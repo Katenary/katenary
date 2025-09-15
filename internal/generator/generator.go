@@ -233,7 +233,6 @@ func fixResourceNames(project *types.Project) error {
 						return err
 					}
 					for varname, bind := range *vf {
-						log.Printf("service %s, varname %s, bind %s", service.Name, varname, bind)
 						bind := strings.ReplaceAll(bind, service.Name, fixed)
 						(*vf)[varname] = bind
 					}
