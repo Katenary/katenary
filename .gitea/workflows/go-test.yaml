@@ -5,10 +5,18 @@ on:
     types:
       - opened
       - edited
+    paths-ignore:
+      - "doc/**"
+      - "README.md"
+      - "*.sh"
   push:
     branches:
       - "master"
       - "main"
+    paths-ignore:
+      - "doc/**"
+      - "README.md"
+      - "*.sh"
 env:
   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
