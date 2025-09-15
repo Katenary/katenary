@@ -35,7 +35,7 @@ var Version = "master" // changed at compile time
 ```
 
 <a name="Convert"></a>
-## func [Convert](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/converter.go#L100>)
+## func [Convert](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/converter.go#L101>)
 
 ```go
 func Convert(config ConvertOptions, dockerComposeFile ...string) error
@@ -107,7 +107,7 @@ func UnWrapTPL(in []byte) []byte
 UnWrapTPL removes the line wrapping from a template.
 
 <a name="ChartTemplate"></a>
-## type [ChartTemplate](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/chart.go#L22-L25>)
+## type [ChartTemplate](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/chart.go#L23-L26>)
 
 ChartTemplate is a template of a chart. It contains the content of the template and the name of the service. This is used internally to generate the templates.
 
@@ -119,7 +119,7 @@ type ChartTemplate struct {
 ```
 
 <a name="ConfigMap"></a>
-## type [ConfigMap](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/configMap.go#L38-L43>)
+## type [ConfigMap](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/configMap.go#L39-L44>)
 
 ConfigMap is a kubernetes ConfigMap. Implements the DataMap interface.
 
@@ -131,7 +131,7 @@ type ConfigMap struct {
 ```
 
 <a name="NewConfigMap"></a>
-### func [NewConfigMap](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/configMap.go#L47>)
+### func [NewConfigMap](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/configMap.go#L48>)
 
 ```go
 func NewConfigMap(service types.ServiceConfig, appName string, forFile bool) *ConfigMap
@@ -140,7 +140,7 @@ func NewConfigMap(service types.ServiceConfig, appName string, forFile bool) *Co
 NewConfigMap creates a new ConfigMap from a compose service. The appName is the name of the application taken from the project name. The ConfigMap is filled by environment variables and labels "map\-env".
 
 <a name="NewConfigMapFromDirectory"></a>
-### func [NewConfigMapFromDirectory](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/configMap.go#L120>)
+### func [NewConfigMapFromDirectory](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/configMap.go#L121>)
 
 ```go
 func NewConfigMapFromDirectory(service types.ServiceConfig, appName, path string) *ConfigMap
@@ -149,7 +149,7 @@ func NewConfigMapFromDirectory(service types.ServiceConfig, appName, path string
 NewConfigMapFromDirectory creates a new ConfigMap from a compose service. This path is the path to the file or directory. If the path is a directory, all files in the directory are added to the ConfigMap. Each subdirectory are ignored. Note that the Generate\(\) function will create the subdirectories ConfigMaps.
 
 <a name="ConfigMap.AddBinaryData"></a>
-### func \(\*ConfigMap\) [AddBinaryData](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/configMap.go#L158>)
+### func \(\*ConfigMap\) [AddBinaryData](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/configMap.go#L159>)
 
 ```go
 func (c *ConfigMap) AddBinaryData(key string, value []byte)
@@ -158,7 +158,7 @@ func (c *ConfigMap) AddBinaryData(key string, value []byte)
 AddBinaryData adds binary data to the configmap. Append or overwrite the value if the key already exists.
 
 <a name="ConfigMap.AddData"></a>
-### func \(\*ConfigMap\) [AddData](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/configMap.go#L153>)
+### func \(\*ConfigMap\) [AddData](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/configMap.go#L154>)
 
 ```go
 func (c *ConfigMap) AddData(key, value string)
@@ -167,7 +167,7 @@ func (c *ConfigMap) AddData(key, value string)
 AddData adds a key value pair to the configmap. Append or overwrite the value if the key already exists.
 
 <a name="ConfigMap.AppendDir"></a>
-### func \(\*ConfigMap\) [AppendDir](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/configMap.go#L167>)
+### func \(\*ConfigMap\) [AppendDir](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/configMap.go#L168>)
 
 ```go
 func (c *ConfigMap) AppendDir(path string) error
@@ -176,7 +176,7 @@ func (c *ConfigMap) AppendDir(path string) error
 AppendDir adds files from given path to the configmap. It is not recursive, to add all files in a directory, you need to call this function for each subdirectory.
 
 <a name="ConfigMap.AppendFile"></a>
-### func \(\*ConfigMap\) [AppendFile](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/configMap.go#L214>)
+### func \(\*ConfigMap\) [AppendFile](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/configMap.go#L215>)
 
 ```go
 func (c *ConfigMap) AppendFile(path string) error
@@ -185,7 +185,7 @@ func (c *ConfigMap) AppendFile(path string) error
 
 
 <a name="ConfigMap.Filename"></a>
-### func \(\*ConfigMap\) [Filename](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/configMap.go#L238>)
+### func \(\*ConfigMap\) [Filename](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/configMap.go#L239>)
 
 ```go
 func (c *ConfigMap) Filename() string
@@ -194,7 +194,7 @@ func (c *ConfigMap) Filename() string
 Filename returns the filename of the configmap. If the configmap is used for files, the filename contains the path.
 
 <a name="ConfigMap.SetData"></a>
-### func \(\*ConfigMap\) [SetData](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/configMap.go#L248>)
+### func \(\*ConfigMap\) [SetData](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/configMap.go#L249>)
 
 ```go
 func (c *ConfigMap) SetData(data map[string]string)
@@ -203,7 +203,7 @@ func (c *ConfigMap) SetData(data map[string]string)
 SetData sets the data of the configmap. It replaces the entire data.
 
 <a name="ConfigMap.Yaml"></a>
-### func \(\*ConfigMap\) [Yaml](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/configMap.go#L253>)
+### func \(\*ConfigMap\) [Yaml](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/configMap.go#L254>)
 
 ```go
 func (c *ConfigMap) Yaml() ([]byte, error)
@@ -212,7 +212,7 @@ func (c *ConfigMap) Yaml() ([]byte, error)
 Yaml returns the yaml representation of the configmap
 
 <a name="ConfigMapMount"></a>
-## type [ConfigMapMount](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L29-L32>)
+## type [ConfigMapMount](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L30-L33>)
 
 
 
@@ -223,7 +223,7 @@ type ConfigMapMount struct {
 ```
 
 <a name="ConvertOptions"></a>
-## type [ConvertOptions](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/chart.go#L28-L37>)
+## type [ConvertOptions](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/chart.go#L29-L38>)
 
 ConvertOptions are the options to convert a compose project to a helm chart.
 
@@ -301,7 +301,7 @@ type DataMap interface {
 ```
 
 <a name="Deployment"></a>
-## type [Deployment](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L35-L45>)
+## type [Deployment](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L36-L46>)
 
 Deployment is a kubernetes Deployment.
 
@@ -313,7 +313,7 @@ type Deployment struct {
 ```
 
 <a name="NewDeployment"></a>
-### func [NewDeployment](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L49>)
+### func [NewDeployment](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L50>)
 
 ```go
 func NewDeployment(service types.ServiceConfig, chart *HelmChart) *Deployment
@@ -322,7 +322,7 @@ func NewDeployment(service types.ServiceConfig, chart *HelmChart) *Deployment
 NewDeployment creates a new Deployment from a compose service. The appName is the name of the application taken from the project name. It also creates the Values map that will be used to create the values.yaml file.
 
 <a name="Deployment.AddContainer"></a>
-### func \(\*Deployment\) [AddContainer](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L116>)
+### func \(\*Deployment\) [AddContainer](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L117>)
 
 ```go
 func (d *Deployment) AddContainer(service types.ServiceConfig)
@@ -331,7 +331,7 @@ func (d *Deployment) AddContainer(service types.ServiceConfig)
 AddContainer adds a container to the deployment.
 
 <a name="Deployment.AddHealthCheck"></a>
-### func \(\*Deployment\) [AddHealthCheck](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L163>)
+### func \(\*Deployment\) [AddHealthCheck](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L164>)
 
 ```go
 func (d *Deployment) AddHealthCheck(service types.ServiceConfig, container *corev1.Container)
@@ -340,7 +340,7 @@ func (d *Deployment) AddHealthCheck(service types.ServiceConfig, container *core
 
 
 <a name="Deployment.AddIngress"></a>
-### func \(\*Deployment\) [AddIngress](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L192>)
+### func \(\*Deployment\) [AddIngress](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L193>)
 
 ```go
 func (d *Deployment) AddIngress(service types.ServiceConfig, appName string) *Ingress
@@ -349,7 +349,7 @@ func (d *Deployment) AddIngress(service types.ServiceConfig, appName string) *In
 AddIngress adds an ingress to the deployment. It creates the ingress object.
 
 <a name="Deployment.AddLegacyVolume"></a>
-### func \(\*Deployment\) [AddLegacyVolume](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L222>)
+### func \(\*Deployment\) [AddLegacyVolume](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L223>)
 
 ```go
 func (d *Deployment) AddLegacyVolume(name, kind string)
@@ -358,7 +358,7 @@ func (d *Deployment) AddLegacyVolume(name, kind string)
 
 
 <a name="Deployment.AddVolumes"></a>
-### func \(\*Deployment\) [AddVolumes](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L198>)
+### func \(\*Deployment\) [AddVolumes](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L199>)
 
 ```go
 func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string)
@@ -367,7 +367,7 @@ func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string)
 AddVolumes adds a volume to the deployment. It does not create the PVC, it only adds the volumes to the deployment. If the volume is a bind volume it will warn the user that it is not supported yet.
 
 <a name="Deployment.BindFrom"></a>
-### func \(\*Deployment\) [BindFrom](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L243>)
+### func \(\*Deployment\) [BindFrom](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L244>)
 
 ```go
 func (d *Deployment) BindFrom(service types.ServiceConfig, binded *Deployment)
@@ -376,7 +376,7 @@ func (d *Deployment) BindFrom(service types.ServiceConfig, binded *Deployment)
 
 
 <a name="Deployment.BindMapFilesToContainer"></a>
-### func \(\*Deployment\) [BindMapFilesToContainer](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L377>)
+### func \(\*Deployment\) [BindMapFilesToContainer](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L378>)
 
 ```go
 func (d *Deployment) BindMapFilesToContainer(service types.ServiceConfig, secrets []string, appName string) (*corev1.Container, int)
@@ -385,7 +385,7 @@ func (d *Deployment) BindMapFilesToContainer(service types.ServiceConfig, secret
 
 
 <a name="Deployment.DependsOn"></a>
-### func \(\*Deployment\) [DependsOn](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L271>)
+### func \(\*Deployment\) [DependsOn](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L272>)
 
 ```go
 func (d *Deployment) DependsOn(to *Deployment, servicename string) error
@@ -394,7 +394,7 @@ func (d *Deployment) DependsOn(to *Deployment, servicename string) error
 DependsOn adds a initContainer to the deployment that will wait for the service to be up.
 
 <a name="Deployment.Filename"></a>
-### func \(\*Deployment\) [Filename](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L302>)
+### func \(\*Deployment\) [Filename](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L303>)
 
 ```go
 func (d *Deployment) Filename() string
@@ -403,7 +403,7 @@ func (d *Deployment) Filename() string
 Filename returns the filename of the deployment.
 
 <a name="Deployment.MountExchangeVolumes"></a>
-### func \(\*Deployment\) [MountExchangeVolumes](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L428>)
+### func \(\*Deployment\) [MountExchangeVolumes](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L429>)
 
 ```go
 func (d *Deployment) MountExchangeVolumes()
@@ -412,7 +412,7 @@ func (d *Deployment) MountExchangeVolumes()
 
 
 <a name="Deployment.SetEnvFrom"></a>
-### func \(\*Deployment\) [SetEnvFrom](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L307>)
+### func \(\*Deployment\) [SetEnvFrom](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L308>)
 
 ```go
 func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string, samePod ...bool)
@@ -421,7 +421,7 @@ func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string, sam
 SetEnvFrom sets the environment variables to a configmap. The configmap is created.
 
 <a name="Deployment.Yaml"></a>
-### func \(\*Deployment\) [Yaml](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L452>)
+### func \(\*Deployment\) [Yaml](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L453>)
 
 ```go
 func (d *Deployment) Yaml() ([]byte, error)
@@ -430,7 +430,7 @@ func (d *Deployment) Yaml() ([]byte, error)
 Yaml returns the yaml representation of the deployment.
 
 <a name="FileMapUsage"></a>
-## type [FileMapUsage](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/configMap.go#L22>)
+## type [FileMapUsage](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/configMap.go#L23>)
 
 FileMapUsage is the usage of the filemap.
 
@@ -448,7 +448,7 @@ const (
 ```
 
 <a name="HelmChart"></a>
-## type [HelmChart](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/chart.go#L41-L54>)
+## type [HelmChart](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/chart.go#L42-L55>)
 
 HelmChart is a Helm Chart representation. It contains all the templates, values, versions, helpers...
 
@@ -491,7 +491,7 @@ The Generate function will create the HelmChart object this way:
 - Merge the same\-pod services.
 
 <a name="NewChart"></a>
-### func [NewChart](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/chart.go#L57>)
+### func [NewChart](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/chart.go#L58>)
 
 ```go
 func NewChart(name string) *HelmChart
@@ -500,7 +500,7 @@ func NewChart(name string) *HelmChart
 NewChart creates a new empty chart with the given name.
 
 <a name="HelmChart.SaveTemplates"></a>
-### func \(\*HelmChart\) [SaveTemplates](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/chart.go#L72>)
+### func \(\*HelmChart\) [SaveTemplates](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/chart.go#L73>)
 
 ```go
 func (chart *HelmChart) SaveTemplates(templateDir string)
