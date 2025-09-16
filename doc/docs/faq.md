@@ -78,7 +78,7 @@ tested some concepts.
 You can help us in many ways.
 
 - The first things we really need, more than money, more than anything else, is to have feedback. If you use Katenary,
-  if you have some issues, if you have some ideas, please open an issue on the [GitHub repository](https://github.com/Katenary/katenary).
+  if you have some issues, if you have some ideas, please open an issue on [our repository](https://repo.katenary.io/Katenary/katenary).
 - The second thing is to help us to fix issues. If you're a Go developer, or if you want to fix the documentation,
   your help is greatly appreciated.
 - And then, of course, we need money, or sponsors.
@@ -87,6 +87,8 @@ You can help us in many ways.
 
 We will be happy to communicate your help by putting your logo on the website and in the documentation. You can sponsor
 us by giving us some money, or by giving us some time of your developers, or leaving us some time to work on the project.
+
+Please, contact us by email at [contact at katenary dot io](mailto:contact@katenary.io).
 
 ### If you're an individual
 

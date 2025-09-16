@@ -17,7 +17,7 @@ const DirectoryPermission = 0o755
 ```
 
 <a name="AsResourceName"></a>
-## func [AsResourceName](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/utils/utils.go#L197>)
+## func [AsResourceName](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/utils/utils.go#L198>)
 
 ```go
 func AsResourceName(name string) string
@@ -26,7 +26,7 @@ func AsResourceName(name string) string
 AsResourceName returns a resource name with underscores to respect the kubernetes naming convention. It's the opposite of FixedResourceName.
 
 <a name="Confirm"></a>
-## func [Confirm](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/utils/utils.go#L165>)
+## func [Confirm](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/utils/utils.go#L166>)
 
 ```go
 func Confirm(question string, icon ...logger.Icon) bool
@@ -44,7 +44,7 @@ func CountStartingSpaces(line string) int
 CountStartingSpaces counts the number of spaces at the beginning of a string.
 
 <a name="EncodeBasicYaml"></a>
-## func [EncodeBasicYaml](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/utils/utils.go#L179>)
+## func [EncodeBasicYaml](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/utils/utils.go#L180>)
 
 ```go
 func EncodeBasicYaml(data any) ([]byte, error)
@@ -53,7 +53,7 @@ func EncodeBasicYaml(data any) ([]byte, error)
 EncodeBasicYaml encodes a basic yaml from an interface.
 
 <a name="FixedResourceName"></a>
-## func [FixedResourceName](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/utils/utils.go#L191>)
+## func [FixedResourceName](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/utils/utils.go#L192>)
 
 ```go
 func FixedResourceName(name string) string
@@ -152,7 +152,7 @@ func TplValue(serviceName, variable string, pipes ...string) string
 TplValue returns a string that can be used in a template to access a value from the values file.
 
 <a name="WordWrap"></a>
-## func [WordWrap](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/utils/utils.go#L160>)
+## func [WordWrap](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/utils/utils.go#L161>)
 
 ```go
 func WordWrap(text string, lineWidth int) string
