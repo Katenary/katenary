@@ -136,16 +136,17 @@ func GetValuesFromLabel(service types.ServiceConfig, LabelValues string) map[str
 			log.Printf("Error parsing label %s: %s", v, err)
 			log.Fatal(err)
 		}
+
 		for _, value := range labelContent {
-			switch val := value.(type) {
+			switch value := value.(type) {
 			case string:
-				descriptions[val] = nil
+				descriptions[value] = nil
 			case map[string]any:
-				for k, v := range value.(map[string]any) {
+				for k, v := range value {
 					descriptions[k] = &EnvConfig{Service: service, Description: v.(string)}
 				}
 			case map[any]any:
-				for k, v := range value.(map[any]any) {
+				for k, v := range value {
 					descriptions[k.(string)] = &EnvConfig{Service: service, Description: v.(string)}
 				}
 			default:
