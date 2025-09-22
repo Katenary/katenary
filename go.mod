@@ -1,6 +1,8 @@
 module katenary.io
 
-go 1.25
+go 1.24.0
+
+toolchain go1.24.7
 
 require (
 	github.com/compose-spec/compose-go v1.20.2
