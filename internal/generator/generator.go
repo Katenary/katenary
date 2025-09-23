@@ -9,6 +9,7 @@ import (
 
 	"katenary.io/internal/generator/labels"
 	"katenary.io/internal/generator/labels/labelstructs"
+	"katenary.io/internal/logger"
 	"katenary.io/internal/utils"
 
 	"github.com/compose-spec/compose-go/types"
@@ -99,6 +100,7 @@ func Generate(project *types.Project) (*HelmChart, error) {
 
 	// drop all "same-pod" deployments because the containers and volumes are already
 	// in the target deployment
+	drops := []string{}
 	for _, service := range podToMerge {
 		if samepod, ok := service.Labels[labels.LabelSamePod]; ok && samepod != "" {
 			// move this deployment volumes to the target deployment
@@ -109,9 +111,11 @@ func Generate(project *types.Project) (*HelmChart, error) {
 				// copy all init containers
 				initContainers := deployments[service.Name].Spec.Template.Spec.InitContainers
 				target.Spec.Template.Spec.InitContainers = append(target.Spec.Template.Spec.InitContainers, initContainers...)
-				delete(deployments, service.Name)
+				drops = append(drops, service.Name)
 			} else {
-				log.Printf("service %[1]s is declared as %[2]s, but %[2]s is not defined", service.Name, labels.LabelSamePod)
+				err := fmt.Errorf("service %s is declared as %s, but %s is not defined", service.Name, labels.LabelSamePod, samepod)
+				logger.Failure(err.Error())
+				return nil, err
 			}
 		}
 	}
@@ -122,12 +126,17 @@ func Generate(project *types.Project) (*HelmChart, error) {
 			if dep, ok := deployments[d]; ok {
 				err := deployments[s.Name].DependsOn(dep, d)
 				if err != nil {
-					log.Printf("error creating init container for service %[1]s: %[2]s", s.Name, err)
+					logger.Info(fmt.Sprintf("error creating init container for service %[1]s: %[2]s", s.Name, err))
 				}
 			} else {
-				log.Printf("service %[1]s depends on %[2]s, but %[2]s is not defined", s.Name, d)
+				err := fmt.Errorf("service %[1]s depends on %[2]s, but %[2]s is not defined", s.Name, d)
+				logger.Failure(err.Error())
+				return nil, err
 			}
 		}
+	}
+	for _, name := range drops {
+		delete(deployments, name)
 	}
 	// it's now time to get "value-from", before makeing the secrets and configmaps!
 	for _, s := range project.Services {
@@ -226,6 +235,7 @@ func fixResourceNames(project *types.Project) error {
 					s.Labels[labels.LabelSamePod] = fixed
 					project.Services[j] = s
 				}
+
 				// also, the value-from label should be updated
 				if valuefrom, ok := s.Labels[labels.LabelValuesFrom]; ok {
 					vf, err := labelstructs.GetValueFrom(valuefrom)
@@ -244,8 +254,15 @@ func fixResourceNames(project *types.Project) error {
 				}
 			}
 			service.Name = fixed
-			project.Services[i] = service
 		}
+		// rename depends_on
+		for _, d := range service.GetDependencies() {
+			depname := utils.AsResourceName(d)
+			dep := service.DependsOn[d]
+			delete(service.DependsOn, d)
+			service.DependsOn[depname] = dep
+		}
+		project.Services[i] = service
 	}
 	return nil
 }

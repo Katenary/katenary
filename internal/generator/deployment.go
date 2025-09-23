@@ -208,15 +208,8 @@ func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string) {
 		}
 	}
 
-	isSamePod := false
-	if v, ok := service.Labels[labels.LabelSamePod]; !ok {
-		isSamePod = false
-	} else {
-		isSamePod = v != ""
-	}
-
 	for _, volume := range service.Volumes {
-		d.bindVolumes(volume, isSamePod, tobind, service, appName)
+		d.bindVolumes(volume, tobind, service, appName)
 	}
 }
 
@@ -272,6 +265,7 @@ func (d *Deployment) BindFrom(service types.ServiceConfig, binded *Deployment) {
 func (d *Deployment) DependsOn(to *Deployment, servicename string) error {
 	// Add a initContainer with busybox:latest using netcat to check if the service is up
 	// it will wait until the service responds to all ports
+	logger.Info("Adding dependency from ", d.service.Name, " to ", to.service.Name)
 	for _, container := range to.Spec.Template.Spec.Containers {
 		commands := []string{}
 		if len(container.Ports) == 0 {
@@ -670,14 +664,14 @@ func (d *Deployment) appendFileToConfigMap(service types.ServiceConfig, appName 
 	}
 }
 
-func (d *Deployment) bindVolumes(volume types.ServiceVolumeConfig, isSamePod bool, tobind map[string]bool, service types.ServiceConfig, appName string) {
+func (d *Deployment) bindVolumes(volume types.ServiceVolumeConfig, tobind map[string]bool, service types.ServiceConfig, appName string) {
 	container, index := utils.GetContainerByName(service.ContainerName, d.Spec.Template.Spec.Containers)
 
 	defer func(d *Deployment, container *corev1.Container, index int) {
 		d.Spec.Template.Spec.Containers[index] = *container
 	}(d, container, index)
 
-	if _, found := tobind[volume.Source]; !isSamePod && volume.Type == "bind" && !found {
+	if _, found := tobind[volume.Source]; volume.Type == "bind" && !found {
 		logger.Warn(
 			"Bind volumes are not supported yet, " +
 				"excepting for those declared as " +

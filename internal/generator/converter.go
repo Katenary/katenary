@@ -130,7 +130,7 @@ func Convert(config ConvertOptions, dockerComposeFile ...string) error {
 	// parse the compose files
 	project, err := parser.Parse(config.Profiles, config.EnvFiles, dockerComposeFile...)
 	if err != nil {
-		fmt.Println(err)
+		logger.Failure("Cannot parse compose files", err.Error())
 		return err
 	}
 
