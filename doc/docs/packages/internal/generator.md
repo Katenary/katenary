@@ -349,7 +349,7 @@ func (d *Deployment) AddIngress(service types.ServiceConfig, appName string) *In
 AddIngress adds an ingress to the deployment. It creates the ingress object.
 
 <a name="Deployment.AddLegacyVolume"></a>
-### func \(\*Deployment\) [AddLegacyVolume](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L223>)
+### func \(\*Deployment\) [AddLegacyVolume](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L216>)
 
 ```go
 func (d *Deployment) AddLegacyVolume(name, kind string)
@@ -367,7 +367,7 @@ func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string)
 AddVolumes adds a volume to the deployment. It does not create the PVC, it only adds the volumes to the deployment. If the volume is a bind volume it will warn the user that it is not supported yet.
 
 <a name="Deployment.BindFrom"></a>
-### func \(\*Deployment\) [BindFrom](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L244>)
+### func \(\*Deployment\) [BindFrom](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L237>)
 
 ```go
 func (d *Deployment) BindFrom(service types.ServiceConfig, binded *Deployment)
@@ -376,7 +376,7 @@ func (d *Deployment) BindFrom(service types.ServiceConfig, binded *Deployment)
 
 
 <a name="Deployment.BindMapFilesToContainer"></a>
-### func \(\*Deployment\) [BindMapFilesToContainer](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L378>)
+### func \(\*Deployment\) [BindMapFilesToContainer](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L372>)
 
 ```go
 func (d *Deployment) BindMapFilesToContainer(service types.ServiceConfig, secrets []string, appName string) (*corev1.Container, int)
@@ -385,7 +385,7 @@ func (d *Deployment) BindMapFilesToContainer(service types.ServiceConfig, secret
 
 
 <a name="Deployment.DependsOn"></a>
-### func \(\*Deployment\) [DependsOn](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L272>)
+### func \(\*Deployment\) [DependsOn](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L265>)
 
 ```go
 func (d *Deployment) DependsOn(to *Deployment, servicename string) error
@@ -394,7 +394,7 @@ func (d *Deployment) DependsOn(to *Deployment, servicename string) error
 DependsOn adds a initContainer to the deployment that will wait for the service to be up.
 
 <a name="Deployment.Filename"></a>
-### func \(\*Deployment\) [Filename](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L303>)
+### func \(\*Deployment\) [Filename](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L297>)
 
 ```go
 func (d *Deployment) Filename() string
@@ -403,7 +403,7 @@ func (d *Deployment) Filename() string
 Filename returns the filename of the deployment.
 
 <a name="Deployment.MountExchangeVolumes"></a>
-### func \(\*Deployment\) [MountExchangeVolumes](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L429>)
+### func \(\*Deployment\) [MountExchangeVolumes](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L423>)
 
 ```go
 func (d *Deployment) MountExchangeVolumes()
@@ -412,7 +412,7 @@ func (d *Deployment) MountExchangeVolumes()
 
 
 <a name="Deployment.SetEnvFrom"></a>
-### func \(\*Deployment\) [SetEnvFrom](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L308>)
+### func \(\*Deployment\) [SetEnvFrom](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L302>)
 
 ```go
 func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string, samePod ...bool)
@@ -421,7 +421,7 @@ func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string, sam
 SetEnvFrom sets the environment variables to a configmap. The configmap is created.
 
 <a name="Deployment.Yaml"></a>
-### func \(\*Deployment\) [Yaml](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L453>)
+### func \(\*Deployment\) [Yaml](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/deployment.go#L447>)
 
 ```go
 func (d *Deployment) Yaml() ([]byte, error)
@@ -471,7 +471,7 @@ type HelmChart struct {
 ```
 
 <a name="Generate"></a>
-### func [Generate](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/generator.go#L32>)
+### func [Generate](<https://repo.katenary.io/Katenary/katenary/blob/master/internal/generator/generator.go#L33>)
 
 ```go
 func Generate(project *types.Project) (*HelmChart, error)
