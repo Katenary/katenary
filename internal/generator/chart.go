@@ -14,7 +14,7 @@ import (
 	"katenary.io/internal/logger"
 	"katenary.io/internal/utils"
 
-	"github.com/compose-spec/compose-go/types"
+	"github.com/compose-spec/compose-go/v2/types"
 	corev1 "k8s.io/api/core/v1"
 )
 

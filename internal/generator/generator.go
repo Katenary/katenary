@@ -12,7 +12,7 @@ import (
 	"katenary.io/internal/logger"
 	"katenary.io/internal/utils"
 
-	"github.com/compose-spec/compose-go/types"
+	"github.com/compose-spec/compose-go/v2/types"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
 )
@@ -216,9 +216,9 @@ func Generate(project *types.Project) (*HelmChart, error) {
 
 // dropIngoredServices removes all services with the "ignore" label set to true (or yes).
 func dropIngoredServices(project *types.Project) {
-	for i, service := range project.Services {
+	for name, service := range project.Services {
 		if isIgnored(service) {
-			project.Services = append(project.Services[:i], project.Services[i+1:]...)
+			delete(project.Services, name)
 		}
 	}
 }

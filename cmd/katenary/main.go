@@ -15,7 +15,7 @@ import (
 	"katenary.io/internal/generator/labels"
 	"katenary.io/internal/utils"
 
-	"github.com/compose-spec/compose-go/cli"
+	"github.com/compose-spec/compose-go/v2/cli"
 	"github.com/spf13/cobra"
 )
 

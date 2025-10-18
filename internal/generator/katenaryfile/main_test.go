@@ -1,13 +1,14 @@
 package katenaryfile
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"katenary.io/internal/generator/labels"
 
-	"github.com/compose-spec/compose-go/cli"
+	"github.com/compose-spec/compose-go/v2/cli"
 )
 
 func TestBuildSchema(t *testing.T) {
@@ -53,13 +54,13 @@ webapp:
 		cli.WithWorkingDirectory(tmpDir),
 		cli.WithDefaultConfigPath,
 	)
-	project, err := cli.ProjectFromOptions(options)
+	project, err := cli.ProjectFromOptions(context.TODO(), options)
 	if err != nil {
 		t.Fatalf("Failed to create project from options: %s", err.Error())
 	}
 
 	OverrideWithConfig(project)
-	w := project.Services[0].Labels
+	w := project.Services["webapp"].Labels
 	if v, ok := w[labels.LabelPorts]; !ok {
 		t.Fatal("Expected ports to be defined", v)
 	}
@@ -103,13 +104,13 @@ webapp:
 		cli.WithWorkingDirectory(tmpDir),
 		cli.WithDefaultConfigPath,
 	)
-	project, err := cli.ProjectFromOptions(options)
+	project, err := cli.ProjectFromOptions(context.TODO(), options)
 	if err != nil {
 		t.Fatalf("Failed to create project from options: %s", err.Error())
 	}
 
 	OverrideWithConfig(project)
-	w := project.Services[0].Labels
+	w := project.Services["webapp"].Labels
 	if v, ok := w[labels.LabelPorts]; !ok {
 		t.Fatal("Expected ports to be defined", v)
 	}
@@ -158,13 +159,13 @@ webapp:
 		cli.WithWorkingDirectory(tmpDir),
 		cli.WithDefaultConfigPath,
 	)
-	project, err := cli.ProjectFromOptions(options)
+	project, err := cli.ProjectFromOptions(context.TODO(), options)
 	if err != nil {
 		t.Fatalf("Failed to create project from options: %s", err.Error())
 	}
 
 	OverrideWithConfig(project)
-	w := project.Services[0].Labels
+	w := project.Services["webapp"].Labels
 	if v, ok := w[labels.LabelConfigMapFiles]; !ok {
 		t.Fatal("Expected configmap-files to be defined", v)
 	}
