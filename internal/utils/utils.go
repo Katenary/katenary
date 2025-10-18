@@ -7,11 +7,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/compose-spec/compose-go/types"
+	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/mitchellh/go-wordwrap"
 	"github.com/thediveo/netdb"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
+	"katenary.io/internal/logger"
 )
 
 // DirectoryPermission is the default values for permissions apply to created directories.
@@ -64,7 +65,7 @@ func GetKind(path string) (kind string) {
 	} else {
 		kind = strings.Split(path, ".")[1]
 	}
-	return
+	return kind
 }
 
 // Wrap wraps a string with a string above and below. It will respect the indentation of the src string.
@@ -135,16 +136,17 @@ func GetValuesFromLabel(service types.ServiceConfig, LabelValues string) map[str
 			log.Printf("Error parsing label %s: %s", v, err)
 			log.Fatal(err)
 		}
+
 		for _, value := range labelContent {
-			switch val := value.(type) {
+			switch value := value.(type) {
 			case string:
-				descriptions[val] = nil
+				descriptions[value] = nil
 			case map[string]any:
-				for k, v := range value.(map[string]any) {
+				for k, v := range value {
 					descriptions[k] = &EnvConfig{Service: service, Description: v.(string)}
 				}
 			case map[any]any:
-				for k, v := range value.(map[any]any) {
+				for k, v := range value {
 					descriptions[k.(string)] = &EnvConfig{Service: service, Description: v.(string)}
 				}
 			default:
@@ -161,7 +163,7 @@ func WordWrap(text string, lineWidth int) string {
 }
 
 // Confirm asks a question and returns true if the answer is y.
-func Confirm(question string, icon ...Icon) bool {
+func Confirm(question string, icon ...logger.Icon) bool {
 	if len(icon) > 0 {
 		fmt.Printf("%s %s [y/N] ", icon[0], question)
 	} else {

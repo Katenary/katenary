@@ -18,12 +18,21 @@ jobs:
       contents: read
       packages: write
     steps:
-      - name: Extract version
+      - name: Extract version and image name
         run: |
+          # remove "releases/"
           VERSION="${VERSION#releases/}"
+          # set image name to lower case
+          IMAGE_NAME="${IMAGE_NAME,,}"
+
           echo "Exporting variable VERSION=$VERSION"
+          echo "Exporting variable IMAGE_NAME=$IMAGE_NAME"
+
           echo "VERSION=$VERSION" >> $GITEA_OUTPUT
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITEA_OUTPUT
+
           echo "VERSION=$VERSION" >> $GITEA_ENV
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITEA_ENV
 
       - name: Install Buildah
         run: |-
@@ -44,12 +53,12 @@ jobs:
 
       - name: Build and tag
         run: |-
-          echo "Building image $REGISTRY/${IMAGE_NAME,,}:$VERSION / latest"
-          buildah build --isolation=chroot --build-arg VERSION=$VERSION -t katenary -f ./oci/katenary/Containerfile .
-          buildah tag katenary $REGISTRY/${IMAGE_NAME,,}:$VERSION
-          buildah tag katenary $REGISTRY/${IMAGE_NAME,,}:latest
+          echo "Building image ${REGISTRY}/${IMAGE_NAME}:${VERSION} / latest"
+          buildah build --isolation=chroot --build-arg VERSION=${VERSION} -t katenary -f ./oci/katenary/Containerfile .
+          buildah tag katenary ${REGISTRY}/${IMAGE_NAME}:${VERSION}
+          buildah tag katenary ${REGISTRY}/${IMAGE_NAME}:latest
 
       - name: Push image
         run: |-
-          buildah push $REGISTRY/${IMAGE_NAME,,}:$VERSION
-          buildah push $REGISTRY/${IMAGE_NAME,,}:latest
+          buildah push ${REGISTRY}/${IMAGE_NAME}:${VERSION}
+          buildah push ${REGISTRY}/${IMAGE_NAME}:latest

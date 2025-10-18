@@ -11,9 +11,10 @@ import (
 
 	"katenary.io/internal/generator/labels"
 	"katenary.io/internal/generator/labels/labelstructs"
+	"katenary.io/internal/logger"
 	"katenary.io/internal/utils"
 
-	"github.com/compose-spec/compose-go/types"
+	"github.com/compose-spec/compose-go/v2/types"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -119,7 +120,7 @@ func (d *Deployment) AddContainer(service types.ServiceConfig) {
 	for _, port := range service.Ports {
 		name := utils.GetServiceNameByPort(int(port.Target))
 		if name == "" {
-			utils.Warn("Port name not found for port ", port.Target, " in service ", service.Name, ". Using port number instead")
+			logger.Warn("Port name not found for port ", port.Target, " in service ", service.Name, ". Using port number instead")
 			name = fmt.Sprintf("port-%d", port.Target)
 		}
 		ports = append(ports, corev1.ContainerPort{
@@ -207,15 +208,8 @@ func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string) {
 		}
 	}
 
-	isSamePod := false
-	if v, ok := service.Labels[labels.LabelSamePod]; !ok {
-		isSamePod = false
-	} else {
-		isSamePod = v != ""
-	}
-
 	for _, volume := range service.Volumes {
-		d.bindVolumes(volume, isSamePod, tobind, service, appName)
+		d.bindVolumes(volume, tobind, service, appName)
 	}
 }
 
@@ -271,10 +265,11 @@ func (d *Deployment) BindFrom(service types.ServiceConfig, binded *Deployment) {
 func (d *Deployment) DependsOn(to *Deployment, servicename string) error {
 	// Add a initContainer with busybox:latest using netcat to check if the service is up
 	// it will wait until the service responds to all ports
+	logger.Info("Adding dependency from ", d.service.Name, " to ", to.service.Name)
 	for _, container := range to.Spec.Template.Spec.Containers {
 		commands := []string{}
 		if len(container.Ports) == 0 {
-			utils.Warn("No ports found for service ",
+			logger.Warn("No ports found for service ",
 				servicename,
 				". You should declare a port in the service or use "+
 					labels.LabelPorts+
@@ -340,7 +335,7 @@ func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string, sam
 		_, ok := service.Environment[secret]
 		if !ok {
 			drop = append(drop, secret)
-			utils.Warn("Secret " + secret + " not found in service " + service.Name + " - skpped")
+			logger.Warn("Secret " + secret + " not found in service " + service.Name + " - skpped")
 			continue
 		}
 		secrets = append(secrets, secret)
@@ -357,7 +352,7 @@ func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string, sam
 		val, ok := service.Environment[value]
 		if !ok {
 			drop = append(drop, value)
-			utils.Warn("Environment variable " + value + " not found in service " + service.Name + " - skpped")
+			logger.Warn("Environment variable " + value + " not found in service " + service.Name + " - skpped")
 			continue
 		}
 		if d.chart.Values[service.Name].(*Value).Environment == nil {
@@ -413,7 +408,7 @@ func (d *Deployment) BindMapFilesToContainer(service types.ServiceConfig, secret
 
 	container, index := utils.GetContainerByName(service.ContainerName, d.Spec.Template.Spec.Containers)
 	if container == nil {
-		utils.Warn("Container not found for service " + service.Name)
+		logger.Warn("Container not found for service " + service.Name)
 		return nil, -1
 	}
 
@@ -669,15 +664,15 @@ func (d *Deployment) appendFileToConfigMap(service types.ServiceConfig, appName 
 	}
 }
 
-func (d *Deployment) bindVolumes(volume types.ServiceVolumeConfig, isSamePod bool, tobind map[string]bool, service types.ServiceConfig, appName string) {
+func (d *Deployment) bindVolumes(volume types.ServiceVolumeConfig, tobind map[string]bool, service types.ServiceConfig, appName string) {
 	container, index := utils.GetContainerByName(service.ContainerName, d.Spec.Template.Spec.Containers)
 
 	defer func(d *Deployment, container *corev1.Container, index int) {
 		d.Spec.Template.Spec.Containers[index] = *container
 	}(d, container, index)
 
-	if _, found := tobind[volume.Source]; !isSamePod && volume.Type == "bind" && !found {
-		utils.Warn(
+	if _, found := tobind[volume.Source]; volume.Type == "bind" && !found {
+		logger.Warn(
 			"Bind volumes are not supported yet, " +
 				"excepting for those declared as " +
 				labels.LabelConfigMapFiles +
@@ -688,7 +683,7 @@ func (d *Deployment) bindVolumes(volume types.ServiceVolumeConfig, isSamePod boo
 	}
 
 	if container == nil {
-		utils.Warn("Container not found for volume", volume.Source)
+		logger.Warn("Container not found for volume", volume.Source)
 		return
 	}
 

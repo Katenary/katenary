@@ -11,9 +11,10 @@ import (
 
 	"katenary.io/internal/generator/labels"
 	"katenary.io/internal/generator/labels/labelstructs"
+	"katenary.io/internal/logger"
 	"katenary.io/internal/utils"
 
-	"github.com/compose-spec/compose-go/types"
+	"github.com/compose-spec/compose-go/v2/types"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -77,36 +78,36 @@ func (chart *HelmChart) SaveTemplates(templateDir string) {
 		// t = addModeline(t)
 
 		kind := utils.GetKind(name)
-		var icon utils.Icon
+		var icon logger.Icon
 		switch kind {
 		case "deployment":
-			icon = utils.IconPackage
+			icon = logger.IconPackage
 		case "service":
-			icon = utils.IconPlug
+			icon = logger.IconPlug
 		case "ingress":
-			icon = utils.IconWorld
+			icon = logger.IconWorld
 		case "volumeclaim":
-			icon = utils.IconCabinet
+			icon = logger.IconCabinet
 		case "configmap":
-			icon = utils.IconConfig
+			icon = logger.IconConfig
 		case "secret":
-			icon = utils.IconSecret
+			icon = logger.IconSecret
 		default:
-			icon = utils.IconInfo
+			icon = logger.IconInfo
 		}
 
 		servicename := template.Servicename
 		if err := os.MkdirAll(filepath.Join(templateDir, servicename), utils.DirectoryPermission); err != nil {
-			fmt.Println(utils.IconFailure, err)
+			logger.Failure(err.Error())
 			os.Exit(1)
 		}
-		fmt.Println(icon, "Creating", kind, servicename)
+		logger.Log(icon, "Creating ", kind, " ", name)
 		// if the name is a path, create the directory
 		if strings.Contains(name, string(filepath.Separator)) {
 			name = filepath.Join(templateDir, name)
 			err := os.MkdirAll(filepath.Dir(name), utils.DirectoryPermission)
 			if err != nil {
-				fmt.Println(utils.IconFailure, err)
+				logger.Failure(err.Error())
 				os.Exit(1)
 			}
 		} else {
@@ -116,14 +117,14 @@ func (chart *HelmChart) SaveTemplates(templateDir string) {
 		}
 		f, err := os.Create(name)
 		if err != nil {
-			fmt.Println(utils.IconFailure, err)
+			fmt.Println(logger.IconFailure, err)
 			os.Exit(1)
 		}
 		defer f.Close()
 		if _, err := f.Write(t); err != nil {
-			log.Fatal("error writing template file:", err)
+			logger.Failure("error wrting template file: ", err.Error())
+			os.Exit(1)
 		}
-
 	}
 }
 
@@ -144,14 +145,15 @@ func (chart *HelmChart) generateConfigMapsAndSecrets(project *types.Project) err
 		if v, ok := s.Labels[labels.LabelSecrets]; ok {
 			list, err := labelstructs.SecretsFrom(v)
 			if err != nil {
-				log.Fatal("error unmarshaling secrets label:", err)
+				logger.Failure("error unmarshaling secrets label:", err)
+				os.Exit(1)
 			}
 			for _, secret := range list {
 				if secret == "" {
 					continue
 				}
 				if _, ok := s.Environment[secret]; !ok {
-					fmt.Printf("%s secret %s not found in environment", utils.IconWarning, secret)
+					fmt.Printf("%s secret %s not found in environment", logger.IconWarning, secret)
 					continue
 				}
 				secretsVar[secret] = s.Environment[secret]
@@ -195,7 +197,7 @@ func (chart *HelmChart) generateDeployment(service types.ServiceConfig, deployme
 
 	// isgnored service
 	if isIgnored(service) {
-		fmt.Printf("%s Ignoring service %s\n", utils.IconInfo, service.Name)
+		logger.Info("Ignoring service ", service.Name)
 		return nil
 	}
 
@@ -305,7 +307,7 @@ func (chart *HelmChart) setDependencies(service types.ServiceConfig) (bool, erro
 		}
 
 		for _, dep := range d {
-			fmt.Printf("%s Adding dependency to %s\n", utils.IconDependency, dep.Name)
+			logger.Log(logger.IconDependency, "Adding dependency to ", dep.Name)
 			chart.Dependencies = append(chart.Dependencies, dep)
 			name := dep.Name
 			if dep.Alias != "" {

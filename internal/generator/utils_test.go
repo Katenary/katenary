@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,7 +10,7 @@ import (
 	"katenary.io/internal/generator/labels"
 	"katenary.io/internal/utils"
 
-	"github.com/compose-spec/compose-go/cli"
+	"github.com/compose-spec/compose-go/v2/cli"
 )
 
 func TestSplitPorts(t *testing.T) {
@@ -28,7 +29,7 @@ services:
 	composeFile := filepath.Join(tmpDir, "compose.yaml")
 
 	os.MkdirAll(tmpDir, utils.DirectoryPermission)
-	if err := os.WriteFile(composeFile, []byte(composeFileContent), 0644); err != nil {
+	if err := os.WriteFile(composeFile, []byte(composeFileContent), 0o644); err != nil {
 		t.Log(err)
 	}
 	defer os.RemoveAll(tmpDir)
@@ -39,15 +40,17 @@ services:
 		cli.WithWorkingDirectory(tmpDir),
 		cli.WithDefaultConfigPath,
 	)
-	project, err := cli.ProjectFromOptions(options)
+	project, err := cli.ProjectFromOptions(context.TODO(), options)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := fixPorts(&project.Services[0]); err != nil {
+	s := project.Services["foo"]
+	if err := fixPorts(&s); err != nil {
 		t.Errorf("Expected no error, got %s", err)
 	}
+	project.Services["foo"] = s
 	found := 0
-	for _, p := range project.Services[0].Ports {
+	for _, p := range project.Services["foo"].Ports {
 		switch p.Target {
 		case 80, 443:
 			found++
@@ -76,7 +79,7 @@ services:
 	composeFile := filepath.Join(tmpDir, "compose.yaml")
 
 	os.MkdirAll(tmpDir, utils.DirectoryPermission)
-	if err := os.WriteFile(composeFile, []byte(composeFileContent), 0644); err != nil {
+	if err := os.WriteFile(composeFile, []byte(composeFileContent), 0o644); err != nil {
 		t.Log(err)
 	}
 	defer os.RemoveAll(tmpDir)
@@ -87,15 +90,17 @@ services:
 		cli.WithWorkingDirectory(tmpDir),
 		cli.WithDefaultConfigPath,
 	)
-	project, err := cli.ProjectFromOptions(options)
+	project, err := cli.ProjectFromOptions(context.TODO(), options)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := fixPorts(&project.Services[0]); err != nil {
+	s := project.Services["foo"]
+	if err := fixPorts(&s); err != nil {
 		t.Errorf("Expected no error, got %s", err)
 	}
+	project.Services["foo"] = s
 	found := 0
-	for _, p := range project.Services[0].Ports {
+	for _, p := range project.Services["foo"].Ports {
 		switch p.Target {
 		case 80, 443, 8080:
 			found++

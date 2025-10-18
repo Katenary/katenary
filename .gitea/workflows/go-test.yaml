@@ -5,10 +5,18 @@ on:
     types:
       - opened
       - edited
+    paths-ignore:
+      - "doc/**"
+      - "README.md"
+      - "*.sh"
   push:
     branches:
       - "master"
       - "main"
+    paths-ignore:
+      - "doc/**"
+      - "README.md"
+      - "*.sh"
 env:
   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
@@ -33,7 +41,9 @@ jobs:
       - name: Launch Test
         run: |
           go vet ./...
-          go test -coverprofile=coverprofile.out -json -v ./... > gotest.json
+          go test -tags ci -coverprofile=coverprofile.out -v ./...
+          go test -tags ci -coverprofile=coverprofile.out -json -v ./... > gotest.json
+          go tool cover -func=coverprofile.out
       # - uses: actions/upload-artifact@v4
       - name: Upload artifact
         uses: christopherhx/gitea-upload-artifact@v4

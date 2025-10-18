@@ -11,9 +11,10 @@ import (
 
 	"katenary.io/internal/generator/labels"
 	"katenary.io/internal/generator/labels/labelstructs"
+	"katenary.io/internal/logger"
 	"katenary.io/internal/utils"
 
-	"github.com/compose-spec/compose-go/types"
+	"github.com/compose-spec/compose-go/v2/types"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -178,7 +179,7 @@ func (c *ConfigMap) AppendDir(path string) error {
 		}
 		for _, file := range files {
 			if file.IsDir() {
-				utils.Warn("Subdirectories are ignored for the moment, skipping", filepath.Join(path, file.Name()))
+				logger.Warn("Subdirectories are ignored for the moment, skipping", filepath.Join(path, file.Name()))
 				continue
 			}
 			path := filepath.Join(path, file.Name())

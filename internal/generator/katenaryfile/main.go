@@ -3,7 +3,6 @@ package katenaryfile
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"reflect"
@@ -11,9 +10,9 @@ import (
 
 	"katenary.io/internal/generator/labels"
 	"katenary.io/internal/generator/labels/labelstructs"
-	"katenary.io/internal/utils"
+	"katenary.io/internal/logger"
 
-	"github.com/compose-spec/compose-go/types"
+	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/invopop/jsonschema"
 	"gopkg.in/yaml.v3"
 )
@@ -60,7 +59,7 @@ func OverrideWithConfig(project *types.Project) {
 		// no katenary file found
 		return
 	}
-	fmt.Println(utils.IconInfo, "Using katenary file", yamlFile)
+	logger.Info("Using katenary file", yamlFile)
 
 	services := make(map[string]Service)
 	fp, err := os.Open(yamlFile)
@@ -71,38 +70,40 @@ func OverrideWithConfig(project *types.Project) {
 		log.Fatal(err)
 		return
 	}
-	for i, p := range project.Services {
+	for _, p := range project.Services {
 		name := p.Name
-		if project.Services[i].Labels == nil {
-			project.Services[i].Labels = make(map[string]string)
-		}
-		mustGetLabelContent := func(o any, s *types.ServiceConfig, labelName string) {
-			err := getLabelContent(o, s, labelName)
+		mustGetLabelContent := func(o any, labelName string) {
+			s, ok := project.Services[name]
+			if !ok {
+				return
+			}
+			err := getLabelContent(o, &s, labelName)
 			if err != nil {
 				log.Fatal(err)
 			}
+			project.Services[name] = s
 		}
 
 		if s, ok := services[name]; ok {
-			mustGetLabelContent(s.MainApp, &project.Services[i], labels.LabelMainApp)
-			mustGetLabelContent(s.Values, &project.Services[i], labels.LabelValues)
-			mustGetLabelContent(s.Secrets, &project.Services[i], labels.LabelSecrets)
-			mustGetLabelContent(s.Ports, &project.Services[i], labels.LabelPorts)
-			mustGetLabelContent(s.Ingress, &project.Services[i], labels.LabelIngress)
-			mustGetLabelContent(s.HealthCheck, &project.Services[i], labels.LabelHealthCheck)
-			mustGetLabelContent(s.SamePod, &project.Services[i], labels.LabelSamePod)
-			mustGetLabelContent(s.Description, &project.Services[i], labels.LabelDescription)
-			mustGetLabelContent(s.Ignore, &project.Services[i], labels.LabelIgnore)
-			mustGetLabelContent(s.Dependencies, &project.Services[i], labels.LabelDependencies)
-			mustGetLabelContent(s.ConfigMapFiles, &project.Services[i], labels.LabelConfigMapFiles)
-			mustGetLabelContent(s.MapEnv, &project.Services[i], labels.LabelMapEnv)
-			mustGetLabelContent(s.CronJob, &project.Services[i], labels.LabelCronJob)
-			mustGetLabelContent(s.EnvFrom, &project.Services[i], labels.LabelEnvFrom)
-			mustGetLabelContent(s.ExchangeVolumes, &project.Services[i], labels.LabelExchangeVolume)
-			mustGetLabelContent(s.ValuesFrom, &project.Services[i], labels.LabelValuesFrom)
+			mustGetLabelContent(s.MainApp, labels.LabelMainApp)
+			mustGetLabelContent(s.Values, labels.LabelValues)
+			mustGetLabelContent(s.Secrets, labels.LabelSecrets)
+			mustGetLabelContent(s.Ports, labels.LabelPorts)
+			mustGetLabelContent(s.Ingress, labels.LabelIngress)
+			mustGetLabelContent(s.HealthCheck, labels.LabelHealthCheck)
+			mustGetLabelContent(s.SamePod, labels.LabelSamePod)
+			mustGetLabelContent(s.Description, labels.LabelDescription)
+			mustGetLabelContent(s.Ignore, labels.LabelIgnore)
+			mustGetLabelContent(s.Dependencies, labels.LabelDependencies)
+			mustGetLabelContent(s.ConfigMapFiles, labels.LabelConfigMapFiles)
+			mustGetLabelContent(s.MapEnv, labels.LabelMapEnv)
+			mustGetLabelContent(s.CronJob, labels.LabelCronJob)
+			mustGetLabelContent(s.EnvFrom, labels.LabelEnvFrom)
+			mustGetLabelContent(s.ExchangeVolumes, labels.LabelExchangeVolume)
+			mustGetLabelContent(s.ValuesFrom, labels.LabelValuesFrom)
 		}
 	}
-	fmt.Println(utils.IconInfo, "Katenary file loaded successfully, the services are now configured.")
+	logger.Info("Katenary file loaded successfully, the services are now configured.")
 }
 
 func getLabelContent(o any, service *types.ServiceConfig, labelName string) error {
@@ -130,6 +131,9 @@ func getLabelContent(o any, service *types.ServiceConfig, labelName string) erro
 		val = strings.TrimSpace(string(c))
 	}
 
+	if service.Labels == nil {
+		service.Labels = types.Labels{}
+	}
 	service.Labels[labelName] = val
 	return nil
 }

@@ -67,7 +67,7 @@ jobs:
           echo "Building binary version $VERSION"
           mkdir -p dist
           GOARCH=${{ matrix.goarch }} GOOS=${{ matrix.goos }}\
-            go build -ldflags="-X 'repo.katenary.io/katenary/katenary/internal/generator.Version=$VERSION'" \
+            go build -ldflags="-X 'repo.katenary.io/katenary/katenary/internal/generator.Version=v$VERSION'" \
             -trimpath -o dist/katenary-${{ matrix.goos }}-${{ matrix.goarch }} ./cmd/katenary
 
       - name: Package (Linux)

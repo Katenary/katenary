@@ -1,14 +1,14 @@
 package katenaryfile
 
 import (
-	"log"
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"katenary.io/internal/generator/labels"
 
-	"github.com/compose-spec/compose-go/cli"
+	"github.com/compose-spec/compose-go/v2/cli"
 )
 
 func TestBuildSchema(t *testing.T) {
@@ -39,17 +39,14 @@ webapp:
 	composeFile := filepath.Join(tmpDir, "compose.yaml")
 	katenaryFile := filepath.Join(tmpDir, "katenary.yaml")
 
-	os.MkdirAll(tmpDir, 0755)
-	if err := os.WriteFile(composeFile, []byte(composeContent), 0644); err != nil {
+	os.MkdirAll(tmpDir, 0o755)
+	if err := os.WriteFile(composeFile, []byte(composeContent), 0o644); err != nil {
 		t.Log(err)
 	}
-	if err := os.WriteFile(katenaryFile, []byte(katenaryfileContent), 0644); err != nil {
+	if err := os.WriteFile(katenaryFile, []byte(katenaryfileContent), 0o644); err != nil {
 		t.Log(err)
 	}
 	defer os.RemoveAll(tmpDir)
-
-	c, _ := os.ReadFile(composeFile)
-	log.Println(string(c))
 
 	// chand dir to this directory
 	os.Chdir(tmpDir)
@@ -57,13 +54,13 @@ webapp:
 		cli.WithWorkingDirectory(tmpDir),
 		cli.WithDefaultConfigPath,
 	)
-	project, err := cli.ProjectFromOptions(options)
+	project, err := cli.ProjectFromOptions(context.TODO(), options)
 	if err != nil {
 		t.Fatalf("Failed to create project from options: %s", err.Error())
 	}
 
 	OverrideWithConfig(project)
-	w := project.Services[0].Labels
+	w := project.Services["webapp"].Labels
 	if v, ok := w[labels.LabelPorts]; !ok {
 		t.Fatal("Expected ports to be defined", v)
 	}
@@ -92,17 +89,14 @@ webapp:
 	composeFile := filepath.Join(tmpDir, "compose.yaml")
 	katenaryFile := filepath.Join(tmpDir, "katenary.yaml")
 
-	os.MkdirAll(tmpDir, 0755)
-	if err := os.WriteFile(composeFile, []byte(composeContent), 0644); err != nil {
+	os.MkdirAll(tmpDir, 0o755)
+	if err := os.WriteFile(composeFile, []byte(composeContent), 0o644); err != nil {
 		t.Log(err)
 	}
-	if err := os.WriteFile(katenaryFile, []byte(katenaryfileContent), 0644); err != nil {
+	if err := os.WriteFile(katenaryFile, []byte(katenaryfileContent), 0o644); err != nil {
 		t.Log(err)
 	}
 	defer os.RemoveAll(tmpDir)
-
-	c, _ := os.ReadFile(composeFile)
-	log.Println(string(c))
 
 	// chand dir to this directory
 	os.Chdir(tmpDir)
@@ -110,13 +104,13 @@ webapp:
 		cli.WithWorkingDirectory(tmpDir),
 		cli.WithDefaultConfigPath,
 	)
-	project, err := cli.ProjectFromOptions(options)
+	project, err := cli.ProjectFromOptions(context.TODO(), options)
 	if err != nil {
 		t.Fatalf("Failed to create project from options: %s", err.Error())
 	}
 
 	OverrideWithConfig(project)
-	w := project.Services[0].Labels
+	w := project.Services["webapp"].Labels
 	if v, ok := w[labels.LabelPorts]; !ok {
 		t.Fatal("Expected ports to be defined", v)
 	}
@@ -150,17 +144,14 @@ webapp:
 	composeFile := filepath.Join(tmpDir, "compose.yaml")
 	katenaryFile := filepath.Join(tmpDir, "katenary.yaml")
 
-	os.MkdirAll(tmpDir, 0755)
-	if err := os.WriteFile(composeFile, []byte(composeContent), 0644); err != nil {
+	os.MkdirAll(tmpDir, 0o755)
+	if err := os.WriteFile(composeFile, []byte(composeContent), 0o644); err != nil {
 		t.Log(err)
 	}
-	if err := os.WriteFile(katenaryFile, []byte(katenaryfileContent), 0644); err != nil {
+	if err := os.WriteFile(katenaryFile, []byte(katenaryfileContent), 0o644); err != nil {
 		t.Log(err)
 	}
 	defer os.RemoveAll(tmpDir)
-
-	c, _ := os.ReadFile(composeFile)
-	log.Println(string(c))
 
 	// chand dir to this directory
 	os.Chdir(tmpDir)
@@ -168,13 +159,13 @@ webapp:
 		cli.WithWorkingDirectory(tmpDir),
 		cli.WithDefaultConfigPath,
 	)
-	project, err := cli.ProjectFromOptions(options)
+	project, err := cli.ProjectFromOptions(context.TODO(), options)
 	if err != nil {
 		t.Fatalf("Failed to create project from options: %s", err.Error())
 	}
 
 	OverrideWithConfig(project)
-	w := project.Services[0].Labels
+	w := project.Services["webapp"].Labels
 	if v, ok := w[labels.LabelConfigMapFiles]; !ok {
 		t.Fatal("Expected configmap-files to be defined", v)
 	}
