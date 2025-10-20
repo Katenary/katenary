@@ -49,6 +49,7 @@ fi
 
 # Where to download the binary
 TAG=$(curl -sLf https://repo.katenary.io/api/v1/repos/katenary/katenary/releases/latest 2>/dev/null | grep -Po '"tag_name":\s*"[^"]*"' | cut -d ":" -f2 | tr -d '"')
+TAG=${TAG#releases/}
 
 # use the right names for the OS and architecture
 if [ $ARCH = "x86_64" ]; then
@@ -56,6 +57,7 @@ if [ $ARCH = "x86_64" ]; then
 fi
 
 BIN_URL="https://repo.katenary.io/api/packages/Katenary/generic/katenary/$TAG/katenary-$OS-$ARCH"
+
 
 echo
 echo "Downloading $BIN_URL"
