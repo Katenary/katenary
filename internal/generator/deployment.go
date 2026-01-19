@@ -335,7 +335,7 @@ func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string, sam
 		_, ok := service.Environment[secret]
 		if !ok {
 			drop = append(drop, secret)
-			logger.Warn("Secret " + secret + " not found in service " + service.Name + " - skpped")
+			logger.Warn("Secret " + secret + " not found in service " + service.Name + " - skipped")
 			continue
 		}
 		secrets = append(secrets, secret)
@@ -352,7 +352,7 @@ func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string, sam
 		val, ok := service.Environment[value]
 		if !ok {
 			drop = append(drop, value)
-			logger.Warn("Environment variable " + value + " not found in service " + service.Name + " - skpped")
+			logger.Warn("Environment variable " + value + " not found in service " + service.Name + " - skipped")
 			continue
 		}
 		if d.chart.Values[service.Name].(*Value).Environment == nil {
