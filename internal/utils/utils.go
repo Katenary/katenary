@@ -3,7 +3,6 @@ package utils
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"path/filepath"
 	"strings"
 
@@ -133,7 +132,7 @@ func GetValuesFromLabel(service types.ServiceConfig, LabelValues string) map[str
 		labelContent := []any{}
 		err := yaml.Unmarshal([]byte(v), &labelContent)
 		if err != nil {
-			log.Printf("Error parsing label %s: %s", v, err)
+			logger.Warnf("Error parsing label %s: %s", v, err)
 			logger.Fatal(err)
 		}
 

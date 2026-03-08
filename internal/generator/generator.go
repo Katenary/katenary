@@ -3,7 +3,6 @@ package generator
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"regexp"
 	"strings"
 
@@ -280,7 +279,7 @@ func addStaticVolumes(deployments map[string]*Deployment, service types.ServiceC
 	var d *Deployment
 	var ok bool
 	if d, ok = deployments[service.Name]; !ok {
-		log.Printf("service %s not found in deployments", service.Name)
+		logger.Warnf("service %s not found in deployments", service.Name)
 		return
 	}
 
@@ -434,7 +433,7 @@ func samePodVolume(service types.ServiceConfig, v types.ServiceVolumeConfig, dep
 	// check if it has the same volume
 	for _, tv := range target.Spec.Template.Spec.Volumes {
 		if tv.Name == v.Source {
-			log.Printf("found same pod volume %s in deployment %s and %s", tv.Name, service.Name, targetDeployment)
+			logger.Warnf("found same pod volume %s in deployment %s and %s", tv.Name, service.Name, targetDeployment)
 			return true
 		}
 	}

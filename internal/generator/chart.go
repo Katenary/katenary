@@ -2,7 +2,6 @@ package generator
 
 import (
 	"fmt"
-	"log"
 	"maps"
 	"os"
 	"path/filepath"
@@ -336,7 +335,7 @@ func (chart *HelmChart) setSharedConf(service types.ServiceConfig, deployments m
 	// find the configmap in the chart templates
 	for _, fromservice := range fromservices {
 		if _, ok := chart.Templates[fromservice+".configmap.yaml"]; !ok {
-			log.Printf("configmap %s not found in chart templates", fromservice)
+			logger.Warnf("configmap %s not found in chart templates", fromservice)
 			continue
 		}
 		// find the corresponding target deployment

@@ -27,9 +27,24 @@ const (
 
 const reset = "\033[0m"
 
+// Print prints a message without icon.
+func Print(msg ...any) {
+	fmt.Print(msg...)
+}
+
+// Printf prints a formatted message without icon.
+func Printf(format string, msg ...any) {
+	fmt.Printf(format, msg...)
+}
+
 // Info prints an informational message.
 func Info(msg ...any) {
 	message("", IconInfo, msg...)
+}
+
+// Infof prints a formatted informational message.
+func Infof(format string, msg ...any) {
+	message("", IconInfo, fmt.Sprintf(format, msg...))
 }
 
 // Warn prints a warning message.
@@ -38,10 +53,22 @@ func Warn(msg ...any) {
 	message(orange, IconWarning, msg...)
 }
 
+// Warnf prints a formatted warning message.
+func Warnf(format string, msg ...any) {
+	orange := "\033[38;5;214m"
+	message(orange, IconWarning, fmt.Sprintf(format, msg...))
+}
+
 // Success prints a success message.
 func Success(msg ...any) {
 	green := "\033[38;5;34m"
 	message(green, IconSuccess, msg...)
+}
+
+// Successf prints a formatted success message.
+func Successf(format string, msg ...any) {
+	green := "\033[38;5;34m"
+	message(green, IconSuccess, fmt.Sprintf(format, msg...))
 }
 
 // Failure prints a failure message.
@@ -50,9 +77,20 @@ func Failure(msg ...any) {
 	message(red, IconFailure, msg...)
 }
 
+// Failuref prints a formatted failure message.
+func Failuref(format string, msg ...any) {
+	red := "\033[38;5;196m"
+	message(red, IconFailure, fmt.Sprintf(format, msg...))
+}
+
 // Log prints a message with a custom icon.
 func Log(icon Icon, msg ...any) {
 	message("", icon, msg...)
+}
+
+// Logf prints a formatted message with a custom icon.
+func Logf(icon Icon, format string, msg ...any) {
+	message("", icon, fmt.Sprintf(format, msg...))
 }
 
 func fatal(red string, icon Icon, msg ...any) {

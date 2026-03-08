@@ -4,12 +4,12 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
-	"log"
 	"sort"
 	"strings"
 	"text/template"
 
 	"gopkg.in/yaml.v3"
+	"katenary.io/internal/logger"
 )
 
 //go:embed readme.tpl
@@ -50,7 +50,7 @@ func ReadMeFile(charname, description string, values map[string]any) string {
 	vv := map[string]any{}
 	out, _ := yaml.Marshal(values)
 	if err := yaml.Unmarshal(out, &vv); err != nil {
-		log.Printf("Error parsing values: %s", err)
+		logger.Warnf("Error parsing values: %s", err)
 	}
 
 	result := make(map[string]string)

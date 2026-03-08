@@ -1,11 +1,11 @@
 package generator
 
 import (
-	"log"
 	"os"
 	"os/exec"
 	"testing"
 
+	"katenary.io/internal/logger"
 	"katenary.io/internal/parser"
 )
 
@@ -23,7 +23,7 @@ func setup(content string) string {
 
 func teardown(tmpDir string) {
 	// remove the temporary directory
-	log.Println("Removing temporary directory: ", tmpDir)
+	logger.Info("Removing temporary directory: ", tmpDir)
 	if err := os.RemoveAll(tmpDir); err != nil {
 		panic(err)
 	}
@@ -59,7 +59,7 @@ func compileTest(t *testing.T, force bool, options ...string) string {
 		ChartVersion: chartVersion,
 	}
 	if err := Convert(convertOptions, "compose.yml"); err != nil {
-		log.Printf("Failed to convert: %s", err)
+		logger.Warnf("Failed to convert: %s", err)
 		return err.Error()
 	}
 

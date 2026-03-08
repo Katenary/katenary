@@ -2,7 +2,6 @@ package generator
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -311,7 +310,7 @@ func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string, sam
 	defer func() {
 		c, index := d.BindMapFilesToContainer(service, secrets, appName)
 		if c == nil || index == -1 {
-			log.Println("Container not found for service ", service.Name)
+			logger.Warn("Container not found for service ", service.Name)
 			return
 		}
 		d.Spec.Template.Spec.Containers[index] = *c
@@ -384,8 +383,8 @@ func (d *Deployment) BindMapFilesToContainer(service types.ServiceConfig, secret
 
 	if envSize > 0 {
 		if service.Name == "db" {
-			log.Println("Service ", service.Name, " has environment variables")
-			log.Println(service.Environment)
+			logger.Info("Service ", service.Name, " has environment variables")
+			logger.Info(service.Environment)
 		}
 		fromSources = append(fromSources, corev1.EnvFromSource{
 			ConfigMapRef: &corev1.ConfigMapEnvSource{

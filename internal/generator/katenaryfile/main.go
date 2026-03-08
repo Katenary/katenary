@@ -3,7 +3,6 @@ package katenaryfile
 import (
 	"bytes"
 	"encoding/json"
-	"log"
 	"os"
 	"reflect"
 	"strings"
@@ -113,7 +112,7 @@ func getLabelContent(o any, service *types.ServiceConfig, labelName string) erro
 
 	c, err := yaml.Marshal(o)
 	if err != nil {
-		log.Println(err)
+		logger.Failure(err.Error())
 		return err
 	}
 	val := strings.TrimSpace(string(c))
