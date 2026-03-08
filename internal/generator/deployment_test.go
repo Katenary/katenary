@@ -152,6 +152,31 @@ services:
 	if !strings.Contains(fullCommand, "wget") {
 		t.Errorf("Expected wget command (K8s API method), got %s", fullCommand)
 	}
+
+	if !strings.Contains(fullCommand, "/api/v1/namespaces/") {
+		t.Errorf("Expected Kubernetes API call to /api/v1/namespaces/, got %s", fullCommand)
+	}
+
+	if !strings.Contains(fullCommand, "/endpoints/") {
+		t.Errorf("Expected Kubernetes API call to /endpoints/, got %s", fullCommand)
+	}
+
+	if len(initContainer.Env) == 0 {
+		t.Errorf("Expected environment variables to be set for namespace")
+	}
+
+	hasNamespace := false
+	for _, env := range initContainer.Env {
+		if env.Name == "NAMESPACE" && env.ValueFrom != nil && env.ValueFrom.FieldRef != nil {
+			if env.ValueFrom.FieldRef.FieldPath == "metadata.namespace" {
+				hasNamespace = true
+				break
+			}
+		}
+	}
+	if !hasNamespace {
+		t.Errorf("Expected NAMESPACE env var with metadata.namespace fieldRef")
+	}
 }
 
 func TestDependsOnLegacy(t *testing.T) {
