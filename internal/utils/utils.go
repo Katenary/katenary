@@ -134,7 +134,7 @@ func GetValuesFromLabel(service types.ServiceConfig, LabelValues string) map[str
 		err := yaml.Unmarshal([]byte(v), &labelContent)
 		if err != nil {
 			log.Printf("Error parsing label %s: %s", v, err)
-			log.Fatal(err)
+			logger.Fatal(err)
 		}
 
 		for _, value := range labelContent {
@@ -150,7 +150,7 @@ func GetValuesFromLabel(service types.ServiceConfig, LabelValues string) map[str
 					descriptions[k.(string)] = &EnvConfig{Service: service, Description: v.(string)}
 				}
 			default:
-				log.Fatalf("Unknown type in label: %s %T", LabelValues, value)
+				logger.Fatalf("Unknown type in label: %s %T", LabelValues, value)
 			}
 		}
 	}
@@ -171,7 +171,7 @@ func Confirm(question string, icon ...logger.Icon) bool {
 	}
 	var response string
 	if _, err := fmt.Scanln(&response); err != nil {
-		log.Fatalf("Error parsing response: %s", err.Error())
+		logger.Fatalf("Error parsing response: %s", err.Error())
 	}
 	return strings.ToLower(response) == "y"
 }

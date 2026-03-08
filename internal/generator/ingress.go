@@ -1,11 +1,11 @@
 package generator
 
 import (
-	"log"
 	"strings"
 
 	"katenary.io/internal/generator/labels"
 	"katenary.io/internal/generator/labels/labelstructs"
+	"katenary.io/internal/logger"
 	"katenary.io/internal/utils"
 
 	"github.com/compose-spec/compose-go/v2/types"
@@ -36,7 +36,7 @@ func NewIngress(service types.ServiceConfig, Chart *HelmChart) *Ingress {
 
 	mapping, err := labelstructs.IngressFrom(label)
 	if err != nil {
-		log.Fatalf("Failed to parse ingress label: %s\n", err)
+		logger.Fatalf("Failed to parse ingress label: %s\n", err)
 	}
 	if mapping.Hostname == "" {
 		mapping.Hostname = service.Name + ".tld"

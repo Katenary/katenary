@@ -145,7 +145,7 @@ func Generate(project *types.Project) (*HelmChart, error) {
 
 	// generate configmaps with environment variables
 	if err := chart.generateConfigMapsAndSecrets(project); err != nil {
-		log.Fatalf("error generating configmaps and secrets: %s", err)
+		logger.Fatalf("error generating configmaps and secrets: %s", err)
 	}
 
 	// if the env-from label is set, we need to add the env vars from the configmap
@@ -292,7 +292,7 @@ func addStaticVolumes(deployments map[string]*Deployment, service types.ServiceC
 		var y []byte
 		var err error
 		if y, err = config.configMap.Yaml(); err != nil {
-			log.Fatal(err)
+			logger.Fatal(err)
 		}
 
 		// add the configmap to the chart

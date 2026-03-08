@@ -1,11 +1,11 @@
 package generator
 
 import (
-	"log"
 	"strings"
 
 	"katenary.io/internal/generator/labels"
 	"katenary.io/internal/generator/labels/labelstructs"
+	"katenary.io/internal/logger"
 	"katenary.io/internal/utils"
 
 	"github.com/compose-spec/compose-go/v2/types"
@@ -33,7 +33,7 @@ func NewCronJob(service types.ServiceConfig, chart *HelmChart, appName string) (
 	}
 	mapping, err := labelstructs.CronJobFrom(labels)
 	if err != nil {
-		log.Fatalf("Error parsing cronjob labels: %s", err)
+		logger.Fatalf("Error parsing cronjob labels: %s", err)
 		return nil, nil
 	}
 

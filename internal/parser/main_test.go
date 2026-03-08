@@ -1,10 +1,11 @@
 package parser
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"katenary.io/internal/logger"
 )
 
 const composeFile = `
@@ -27,7 +28,7 @@ func setupTest() (string, error) {
 func tearDownTest(tmpDir string) {
 	if tmpDir != "" {
 		if err := os.RemoveAll(tmpDir); err != nil {
-			log.Fatalf("Failed to remove temporary directory %s: %s", tmpDir, err.Error())
+			logger.Fatalf("Failed to remove temporary directory %s: %s", tmpDir, err.Error())
 		}
 	}
 }

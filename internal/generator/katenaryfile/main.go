@@ -67,7 +67,7 @@ func OverrideWithConfig(project *types.Project) {
 		return
 	}
 	if err := yaml.NewDecoder(fp).Decode(&services); err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 		return
 	}
 	for _, p := range project.Services {
@@ -79,7 +79,7 @@ func OverrideWithConfig(project *types.Project) {
 			}
 			err := getLabelContent(o, &s, labelName)
 			if err != nil {
-				log.Fatal(err)
+				logger.Fatal(err)
 			}
 			project.Services[name] = s
 		}
@@ -121,7 +121,7 @@ func getLabelContent(o any, service *types.ServiceConfig, labelName string) erro
 		// special case, values must be set from some defaults
 		ing, err := labelstructs.IngressFrom(val)
 		if err != nil {
-			log.Fatal(err)
+			logger.Fatal(err)
 			return err
 		}
 		c, err := yaml.Marshal(ing)

@@ -3,11 +3,11 @@ package parser
 
 import (
 	"context"
-	"log"
 	"path/filepath"
 
 	"github.com/compose-spec/compose-go/v2/cli"
 	"github.com/compose-spec/compose-go/v2/types"
+	"katenary.io/internal/logger"
 )
 
 func init() {
@@ -37,7 +37,7 @@ func Parse(profiles []string, envFiles []string, dockerComposeFile ...string) (*
 		var err error
 		envFiles[i], err = filepath.Abs(envFiles[i])
 		if err != nil {
-			log.Fatal(err)
+			logger.Fatal(err)
 		}
 	}
 

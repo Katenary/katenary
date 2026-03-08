@@ -166,7 +166,7 @@ func (d *Deployment) AddHealthCheck(service types.ServiceConfig, container *core
 	if v, ok := service.Labels[labels.LabelHealthCheck]; ok {
 		probes, err := labelstructs.ProbeFrom(v)
 		if err != nil {
-			log.Fatal(err)
+			logger.Fatal(err)
 		}
 		container.LivenessProbe = probes.LivenessProbe
 		container.ReadinessProbe = probes.ReadinessProbe
@@ -201,7 +201,7 @@ func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string) {
 	if v, ok := service.Labels[labels.LabelConfigMapFiles]; ok {
 		binds, err := labelstructs.ConfigMapFileFrom(v)
 		if err != nil {
-			log.Fatal(err)
+			logger.Fatal(err)
 		}
 		for _, bind := range binds {
 			tobind[bind] = true
@@ -320,7 +320,7 @@ func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string, sam
 	// secrets from label
 	labelSecrets, err := labelstructs.SecretsFrom(service.Labels[labels.LabelSecrets])
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	// values from label
@@ -615,7 +615,7 @@ func (d *Deployment) appendDirectoryToConfigMap(service types.ServiceConfig, app
 	// TODO: make it recursive to add all files in the directory and subdirectories
 	_, err := os.ReadDir(volume.Source)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 	cm := NewConfigMapFromDirectory(service, appName, volume.Source)
 	d.configMaps[pathnme] = &ConfigMapMount{
@@ -660,7 +660,7 @@ func (d *Deployment) appendFileToConfigMap(service types.ServiceConfig, appName 
 
 	}
 	if err := cm.AppendFile(volume.Source); err != nil {
-		log.Fatal("Error adding file to configmap:", err)
+		logger.Fatal("Error adding file to configmap:", err)
 	}
 }
 
@@ -721,7 +721,7 @@ func (d *Deployment) bindVolumes(volume types.ServiceVolumeConfig, tobind map[st
 		// Add volume to container
 		stat, err := os.Stat(volume.Source)
 		if err != nil {
-			log.Fatal(err)
+			logger.Fatal(err)
 		}
 
 		if stat.IsDir() {

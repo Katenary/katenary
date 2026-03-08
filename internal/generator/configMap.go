@@ -2,7 +2,6 @@ package generator
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -69,7 +68,7 @@ func NewConfigMap(service types.ServiceConfig, appName string, forFile bool) *Co
 	// get the secrets from the labels
 	secrets, err := labelstructs.SecretsFrom(service.Labels[labels.LabelSecrets])
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 	// drop the secrets from the environment
 	for _, secret := range secrets {
@@ -95,7 +94,7 @@ func NewConfigMap(service types.ServiceConfig, appName string, forFile bool) *Co
 		if l, ok := service.Labels[labels.LabelMapEnv]; ok {
 			envmap, err := labelstructs.MapEnvFrom(l)
 			if err != nil {
-				log.Fatal("Error parsing map-env", err)
+				logger.Fatal("Error parsing map-env", err)
 			}
 			for key, value := range envmap {
 				cm.AddData(key, strings.ReplaceAll(value, "__APP__", appName))
@@ -145,7 +144,7 @@ func NewConfigMapFromDirectory(service types.ServiceConfig, appName, path string
 	path = filepath.Join(service.WorkingDir, path)
 	path = filepath.Clean(path)
 	if err := cm.AppendDir(path); err != nil {
-		log.Fatal("Error adding files to configmap:", err)
+		logger.Fatal("Error adding files to configmap:", err)
 	}
 	return cm
 }

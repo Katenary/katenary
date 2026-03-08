@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -596,7 +595,7 @@ func callHelmUpdate(config ConvertOptions) {
 func removeNewlinesInsideBrackets(values []byte) []byte {
 	re, err := regexp.Compile(`(?s)\{\{(.*?)\}\}`)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 	return re.ReplaceAllFunc(values, func(b []byte) []byte {
 		// get the first match
@@ -635,7 +634,7 @@ func writeContent(path string, content []byte) {
 	defer f.Close()
 	defer func() {
 		if _, err := f.Write(content); err != nil {
-			log.Fatal(err)
+			logger.Fatal(err)
 		}
 	}()
 }

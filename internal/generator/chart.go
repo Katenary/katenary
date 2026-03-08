@@ -331,7 +331,7 @@ func (chart *HelmChart) setSharedConf(service types.ServiceConfig, deployments m
 	}
 	fromservices, err := labelstructs.EnvFromFrom(service.Labels[labels.LabelEnvFrom])
 	if err != nil {
-		log.Fatal("error unmarshaling env-from label:", err)
+		logger.Fatal("error unmarshaling env-from label:", err)
 	}
 	// find the configmap in the chart templates
 	for _, fromservice := range fromservices {
@@ -356,7 +356,7 @@ func (chart *HelmChart) setEnvironmentValuesFrom(service types.ServiceConfig, de
 	}
 	mapping, err := labelstructs.GetValueFrom(service.Labels[labels.LabelValuesFrom])
 	if err != nil {
-		log.Fatal("error unmarshaling values-from label:", err)
+		logger.Fatal("error unmarshaling values-from label:", err)
 	}
 
 	findDeployment := func(name string) *Deployment {
@@ -375,11 +375,11 @@ func (chart *HelmChart) setEnvironmentValuesFrom(service types.ServiceConfig, de
 		dep := findDeployment(depName[0])
 		target := findDeployment(service.Name)
 		if dep == nil || target == nil {
-			log.Fatalf("deployment %s or %s not found", depName[0], service.Name)
+			logger.Fatalf("deployment %s or %s not found", depName[0], service.Name)
 		}
 		container, index := utils.GetContainerByName(target.service.ContainerName, target.Spec.Template.Spec.Containers)
 		if container == nil {
-			log.Fatalf("Container %s not found", target.GetName())
+			logger.Fatalf("Container %s not found", target.GetName())
 		}
 		reourceName := fmt.Sprintf(`{{ include "%s.fullname" . }}-%s`, chart.Name, depName[0])
 		// add environment with from

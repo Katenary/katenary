@@ -6,13 +6,13 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
 	"katenary.io/internal/generator"
 	"katenary.io/internal/generator/katenaryfile"
 	"katenary.io/internal/generator/labels"
+	"katenary.io/internal/logger"
 	"katenary.io/internal/utils"
 
 	"github.com/compose-spec/compose-go/v2/cli"
@@ -28,7 +28,7 @@ func main() {
 	rootCmd := buildRootCmd()
 
 	if err := rootCmd.Execute(); err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 }
 

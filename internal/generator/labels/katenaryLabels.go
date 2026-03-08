@@ -4,13 +4,13 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
-	"log"
 	"regexp"
 	"sort"
 	"strings"
 	"text/tabwriter"
 	"text/template"
 
+	"katenary.io/internal/logger"
 	"katenary.io/internal/utils"
 
 	"sigs.k8s.io/yaml"
@@ -134,7 +134,7 @@ func GetLabelHelpFor(labelname string, asMarkdown bool) string {
 		KatenaryPrefix: KatenaryLabelPrefix,
 	})
 	if err != nil {
-		log.Fatalf("Error executing template: %v", err)
+		logger.Fatalf("Error executing template: %v", err)
 	}
 	help.Long = buf.String()
 	buf.Reset()
@@ -145,7 +145,7 @@ func GetLabelHelpFor(labelname string, asMarkdown bool) string {
 		KatenaryPrefix: KatenaryLabelPrefix,
 	})
 	if err != nil {
-		log.Fatalf("Error executing template: %v", err)
+		logger.Fatalf("Error executing template: %v", err)
 	}
 	help.Example = buf.String()
 	buf.Reset()
@@ -160,7 +160,7 @@ func GetLabelHelpFor(labelname string, asMarkdown bool) string {
 		KatenaryPrefix: KatenaryLabelPrefix,
 	})
 	if err != nil {
-		log.Fatalf("Error executing template: %v", err)
+		logger.Fatalf("Error executing template: %v", err)
 	}
 
 	return buf.String()

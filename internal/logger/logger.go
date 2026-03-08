@@ -1,6 +1,11 @@
 // Package logger provides simple logging functions with icons and colors.
 package logger
 
+import (
+	"fmt"
+	"os"
+)
+
 // Icon is a unicode icon
 type Icon string
 
@@ -48,4 +53,27 @@ func Failure(msg ...any) {
 // Log prints a message with a custom icon.
 func Log(icon Icon, msg ...any) {
 	message("", icon, msg...)
+}
+
+func fatal(red string, icon Icon, msg ...any) {
+	fmt.Print(icon, " ", red)
+	fmt.Print(msg...)
+	fmt.Println(reset)
+	os.Exit(1)
+}
+
+func fatalf(red string, icon Icon, format string, msg ...any) {
+	fatal(red, icon, fmt.Sprintf(format, msg...))
+}
+
+// Fatal prints a fatal error message and exits with code 1.
+func Fatal(msg ...any) {
+	red := "\033[38;5;196m"
+	fatal(red, IconFailure, msg...)
+}
+
+// Fatalf prints a fatal error message with formatting and exits with code 1.
+func Fatalf(format string, msg ...any) {
+	red := "\033[38;5;196m"
+	fatalf(red, IconFailure, format, msg...)
 }
