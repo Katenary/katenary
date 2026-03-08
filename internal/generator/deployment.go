@@ -268,13 +268,12 @@ func (d *Deployment) DependsOn(to *Deployment, servicename string) error {
 	for _, container := range to.Spec.Template.Spec.Containers {
 		commands := []string{}
 		if len(container.Ports) == 0 {
-			logger.Warn("No ports found for service ",
+			logger.Fatal("No ports found for service ",
 				servicename,
 				". You should declare a port in the service or use "+
 					labels.LabelPorts+
 					" label.",
 			)
-			os.Exit(1)
 		}
 		for _, port := range container.Ports {
 			command := fmt.Sprintf("until nc -z %s %d; do\n  sleep 1;\ndone", to.Name, port.ContainerPort)
