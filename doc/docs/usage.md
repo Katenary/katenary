@@ -97,7 +97,8 @@ Katenary transforms compose services this way:
 - environment variables will be stored inside a `ConfigMap`
 - image, tags, and ingresses configuration are also stored in `values.yaml` file
 - if named volumes are declared, Katenary create `PersistentVolumeClaims` - not enabled in values file
-- `depends_on` needs that the pointed service declared a port. If not, you can use labels to inform Katenary
+- `depends_on` uses Kubernetes API by default to check if the service endpoint is ready. No port required.
+  Use label `katenary.v3/depends-on: legacy` to use the old netcat method (requires port).
 
 For any other specific configuration, like binding local files as `ConfigMap`, bind variables, add values with
 documentation, etc. You'll need to use labels.
@@ -147,10 +148,8 @@ Katenary proposes a lot of labels to configure the helm chart generation, but so
 
 ### Work with Depends On?
 
-Kubernetes does not provide service or pod starting detection from others pods. But Katenary will create `initContainer`
-to make you able to wait for a service to respond. But you'll probably need to adapt a bit the compose file.
-
-See this compose file:
+Katenary creates `initContainer` to wait for dependent services to be ready. By default, it uses the Kubernetes API
+to check if the service endpoint has ready addresses - no port required.
 
 ```yaml
 version: "3"
@@ -167,9 +166,7 @@ services:
       MYSQL_ROOT_PASSWORD: foobar
 ```
 
-In this case, `webapp` needs to know the `database` port because the `depends_on` points on it and Kubernetes has not
-(yet) solution to check the database startup. Katenary wants to create a `initContainer` to hit on the related service.
-So, instead of exposing the port in the compose definition, let's declare this to Katenary with labels:
+If you need the old netcat-based method (requires port), add the `katenary.v3/depends-on: legacy` label to the dependent service:
 
 ```yaml
 version: "3"
@@ -179,14 +176,15 @@ services:
     image: php:8-apache
     depends_on:
       - database
+    labels:
+      katenary.v3/depends-on: legacy
 
   database:
     image: mariadb
     environment:
       MYSQL_ROOT_PASSWORD: foobar
-    labels:
-      katenary.v3/ports: |-
-        - 3306
+    ports:
+      - 3306:3306
 ```
 
 ### Declare ingresses

@@ -355,4 +355,25 @@
           DB_USER: database.MARIADB_USER
           DB_PASSWORD: database.MARIADB_PASSWORD
 
+"depends-on":
+  short: "Method to check if a service is ready (for depends_on)."
+  long: |-
+    When a service uses `depends_on`, Katenary creates an initContainer to wait
+    for the dependent service to be ready.
+
+    By default, Katenary uses the Kubernetes API to check if the service endpoint
+    has ready addresses. This method does not require the service to expose a port.
+
+    Set this label to `legacy` to use the old netcat method that requires a port
+    to be defined for the dependent service.
+  example: |-
+    web:
+      image: nginx
+      depends_on:
+        - database
+      labels:
+        # Use legacy netcat method (requires port)
+        {{ .KatenaryPrefix }}/depends-on: legacy
+  type: "string"
+
 # vim: ft=gotmpl.yaml

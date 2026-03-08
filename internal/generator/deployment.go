@@ -262,9 +262,21 @@ func (d *Deployment) BindFrom(service types.ServiceConfig, binded *Deployment) {
 
 // DependsOn adds a initContainer to the deployment that will wait for the service to be up.
 func (d *Deployment) DependsOn(to *Deployment, servicename string) error {
-	// Add a initContainer with busybox:latest using netcat to check if the service is up
-	// it will wait until the service responds to all ports
 	logger.Info("Adding dependency from ", d.service.Name, " to ", to.service.Name)
+
+	useLegacy := false
+	if label, ok := d.service.Labels[labels.LabelDependsOn]; ok {
+		useLegacy = strings.ToLower(label) == "legacy"
+	}
+
+	if useLegacy {
+		return d.dependsOnLegacy(to, servicename)
+	}
+
+	return d.dependsOnK8sAPI(to)
+}
+
+func (d *Deployment) dependsOnLegacy(to *Deployment, servicename string) error {
 	for _, container := range to.Spec.Template.Spec.Containers {
 		commands := []string{}
 		if len(container.Ports) == 0 {
@@ -287,6 +299,39 @@ func (d *Deployment) DependsOn(to *Deployment, servicename string) error {
 			Command: command,
 		})
 	}
+
+	return nil
+}
+
+func (d *Deployment) dependsOnK8sAPI(to *Deployment) error {
+	script := `NAMESPACE=${NAMESPACE:-default}
+SERVICE=%s
+KUBERNETES_SERVICE_HOST=${KUBERNETES_SERVICE_HOST:-kubernetes.default.svc}
+KUBERNETES_SERVICE_PORT=${KUBERNETES_SERVICE_PORT:-443}
+
+until wget -q -O- --header="Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+  --cacert=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+  "https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}/api/v1/namespaces/${NAMESPACE}/endpoints/${SERVICE}" \
+  | grep -q '"ready":.*true'; do
+  sleep 2
+done`
+
+	command := []string{"/bin/sh", "-c", fmt.Sprintf(script, to.Name)}
+	d.Spec.Template.Spec.InitContainers = append(d.Spec.Template.Spec.InitContainers, corev1.Container{
+		Name:    "wait-for-" + to.service.Name,
+		Image:   "busybox:latest",
+		Command: command,
+		Env: []corev1.EnvVar{
+			{
+				Name: "NAMESPACE",
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: &corev1.ObjectFieldSelector{
+						FieldPath: "metadata.namespace",
+					},
+				},
+			},
+		},
+	})
 
 	return nil
 }

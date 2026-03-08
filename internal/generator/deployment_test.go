@@ -142,6 +142,61 @@ services:
 	if len(dt.Spec.Template.Spec.InitContainers) != 1 {
 		t.Errorf("Expected 1 init container, got %d", len(dt.Spec.Template.Spec.InitContainers))
 	}
+
+	initContainer := dt.Spec.Template.Spec.InitContainers[0]
+	if !strings.Contains(initContainer.Image, "busybox") {
+		t.Errorf("Expected busybox image, got %s", initContainer.Image)
+	}
+
+	fullCommand := strings.Join(initContainer.Command, " ")
+	if !strings.Contains(fullCommand, "wget") {
+		t.Errorf("Expected wget command (K8s API method), got %s", fullCommand)
+	}
+}
+
+func TestDependsOnLegacy(t *testing.T) {
+	composeFile := `
+services:
+    web:
+        image: nginx:1.29
+        ports:
+        - 80:80
+        depends_on:
+        - database
+        labels:
+            katenary.v3/depends-on: legacy
+
+    database:
+        image: mariadb:10.5
+        ports:
+        - 3306:3306
+`
+	tmpDir := setup(composeFile)
+	defer teardown(tmpDir)
+
+	currentDir, _ := os.Getwd()
+	os.Chdir(tmpDir)
+	defer os.Chdir(currentDir)
+
+	output := internalCompileTest(t, "-s", webTemplateOutput)
+	dt := v1.Deployment{}
+	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
+		t.Errorf(unmarshalError, err)
+	}
+
+	if len(dt.Spec.Template.Spec.InitContainers) != 1 {
+		t.Errorf("Expected 1 init container, got %d", len(dt.Spec.Template.Spec.InitContainers))
+	}
+
+	initContainer := dt.Spec.Template.Spec.InitContainers[0]
+	if !strings.Contains(initContainer.Image, "busybox") {
+		t.Errorf("Expected busybox image, got %s", initContainer.Image)
+	}
+
+	fullCommand := strings.Join(initContainer.Command, " ")
+	if !strings.Contains(fullCommand, "nc") {
+		t.Errorf("Expected nc (netcat) command for legacy method, got %s", fullCommand)
+	}
 }
 
 func TestHelmDependencies(t *testing.T) {
