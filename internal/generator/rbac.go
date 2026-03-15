@@ -32,7 +32,7 @@ func NewRBAC(service types.ServiceConfig, appName string) *RBAC {
 				APIVersion: "rbac.authorization.k8s.io/v1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        utils.TplName(service.Name, appName),
+				Name:        utils.TplName(service.Name, appName, "dependency"),
 				Labels:      GetLabels(service.Name, appName),
 				Annotations: Annotations,
 			},
@@ -155,7 +155,7 @@ func NewRestrictedRole(service types.ServiceConfig, appName string) *Role {
 				APIVersion: "rbac.authorization.k8s.io/v1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        utils.TplName(service.Name, appName),
+				Name:        utils.TplName(service.Name, appName, "dependency"),
 				Labels:      GetLabels(service.Name, appName),
 				Annotations: Annotations,
 			},
@@ -180,20 +180,20 @@ func NewRestrictedRoleBinding(service types.ServiceConfig, appName string) *Role
 				APIVersion: "rbac.authorization.k8s.io/v1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        utils.TplName(service.Name, appName),
+				Name:        utils.TplName(service.Name, appName, "dependency"),
 				Labels:      GetLabels(service.Name, appName),
 				Annotations: Annotations,
 			},
 			Subjects: []rbacv1.Subject{
 				{
 					Kind:      "ServiceAccount",
-					Name:      utils.TplName(service.Name, appName),
+					Name:      utils.TplName(service.Name, appName, "dependency"),
 					Namespace: "{{ .Release.Namespace }}",
 				},
 			},
 			RoleRef: rbacv1.RoleRef{
 				Kind:     "Role",
-				Name:     utils.TplName(service.Name, appName),
+				Name:     utils.TplName(service.Name, appName, "dependency"),
 				APIGroup: "rbac.authorization.k8s.io",
 			},
 		},

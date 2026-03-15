@@ -651,7 +651,7 @@ func (d *Deployment) Yaml() ([]byte, error) {
 
 func (d *Deployment) SetServiceAccountName() {
 	if d.needsServiceAccount {
-		d.Spec.Template.Spec.ServiceAccountName = utils.TplName(d.service.Name, d.chart.Name)
+		d.Spec.Template.Spec.ServiceAccountName = utils.TplName(d.service.Name, d.chart.Name, "dependency")
 	} else {
 	}
 }
