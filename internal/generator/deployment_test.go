@@ -3,13 +3,13 @@ package generator
 import (
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 
 	"katenary.io/internal/generator/labels"
 
 	yaml3 "gopkg.in/yaml.v3"
-		appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -671,7 +671,7 @@ services:
 	rbacOutput := internalCompileTest(t, "-s", "templates/web/depends-on.rbac.yaml")
 
 	docs := strings.Split(rbacOutput, "---\n")
-	
+
 	// Filter out empty documents and strip helm template comments
 	var filteredDocs []string
 	for _, doc := range docs {
@@ -687,7 +687,7 @@ services:
 			filteredDocs = append(filteredDocs, strings.Join(contentLines, "\n"))
 		}
 	}
-	
+
 	if len(filteredDocs) != 3 {
 		t.Fatalf("Expected 3 YAML documents in RBAC file, got %d (filtered from %d)", len(filteredDocs), len(docs))
 	}
@@ -780,7 +780,7 @@ services:
 
 	output := internalCompileTest(t, "-s", "templates/web/deployment.yaml")
 
-	var dt appsv1.Deployment
+	var dt v1.Deployment
 	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
 		t.Errorf("Failed to unmarshal Deployment: %v", err)
 	}
@@ -832,10 +832,5 @@ services:
 }
 
 func contains(slice []string, item string) bool {
-	for _, s := range slice {
-		if s == item {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(slice, item)
 }
