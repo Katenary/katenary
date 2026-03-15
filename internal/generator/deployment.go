@@ -33,15 +33,16 @@ type ConfigMapMount struct {
 
 // Deployment is a kubernetes Deployment.
 type Deployment struct {
-	*appsv1.Deployment `yaml:",inline"`
-	chart              *HelmChart                              `yaml:"-"`
-	configMaps         map[string]*ConfigMapMount              `yaml:"-"`
-	volumeMap          map[string]string                       `yaml:"-"` // keep map of fixed named to original volume name
-	service            *types.ServiceConfig                    `yaml:"-"`
-	defaultTag         string                                  `yaml:"-"`
-	isMainApp          bool                                    `yaml:"-"`
-	exchangesVolumes   map[string]*labelstructs.ExchangeVolume `yaml:"-"`
-	boundEnvVar        []string                                `yaml:"-"` // environement to remove
+	*appsv1.Deployment  `yaml:",inline"`
+	chart               *HelmChart                              `yaml:"-"`
+	configMaps          map[string]*ConfigMapMount              `yaml:"-"`
+	volumeMap           map[string]string                       `yaml:"-"` // keep map of fixed named to original volume name
+	service             *types.ServiceConfig                    `yaml:"-"`
+	defaultTag          string                                  `yaml:"-"`
+	isMainApp           bool                                    `yaml:"-"`
+	exchangesVolumes    map[string]*labelstructs.ExchangeVolume `yaml:"-"`
+	boundEnvVar         []string                                `yaml:"-"` // environement to remove
+	needsServiceAccount bool                                    `yaml:"-"`
 }
 
 // NewDeployment creates a new Deployment from a compose service. The appName is the name of the application taken from the project name.
@@ -273,6 +274,7 @@ func (d *Deployment) DependsOn(to *Deployment, servicename string) error {
 		return d.dependsOnLegacy(to, servicename)
 	}
 
+	d.needsServiceAccount = true
 	return d.dependsOnK8sAPI(to)
 }
 
@@ -611,7 +613,7 @@ func (d *Deployment) Yaml() ([]byte, error) {
 		}
 
 		// manage serviceAccount, add condition to use the serviceAccount from values.yaml
-		if strings.Contains(line, "serviceAccountName:") {
+		if strings.Contains(line, "serviceAccountName:") && !d.needsServiceAccount {
 			spaces = strings.Repeat(" ", utils.CountStartingSpaces(line))
 			pre := spaces + `{{- if ne .Values.` + serviceName + `.serviceAccount "" }}`
 			post := spaces + "{{- end }}"
@@ -645,6 +647,13 @@ func (d *Deployment) Yaml() ([]byte, error) {
 	}
 
 	return []byte(strings.Join(content, "\n")), nil
+}
+
+func (d *Deployment) SetServiceAccountName() {
+	if d.needsServiceAccount {
+		d.Spec.Template.Spec.ServiceAccountName = utils.TplName(d.service.Name, d.chart.Name)
+	} else {
+	}
 }
 
 func (d *Deployment) appendDirectoryToConfigMap(service types.ServiceConfig, appName string, volume types.ServiceVolumeConfig) {

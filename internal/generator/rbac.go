@@ -128,6 +128,79 @@ func (r *Role) Yaml() ([]byte, error) {
 	}
 }
 
+// NewServiceAccount creates a new ServiceAccount from a compose service.
+func NewServiceAccount(service types.ServiceConfig, appName string) *ServiceAccount {
+	return &ServiceAccount{
+		ServiceAccount: &corev1.ServiceAccount{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "ServiceAccount",
+				APIVersion: "v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        utils.TplName(service.Name, appName),
+				Labels:      GetLabels(service.Name, appName),
+				Annotations: Annotations,
+			},
+		},
+		service: &service,
+	}
+}
+
+// NewRestrictedRole creates a Role with minimal permissions for init containers.
+func NewRestrictedRole(service types.ServiceConfig, appName string) *Role {
+	return &Role{
+		Role: &rbacv1.Role{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Role",
+				APIVersion: "rbac.authorization.k8s.io/v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        utils.TplName(service.Name, appName),
+				Labels:      GetLabels(service.Name, appName),
+				Annotations: Annotations,
+			},
+			Rules: []rbacv1.PolicyRule{
+				{
+					APIGroups: []string{""},
+					Resources: []string{"endpoints"},
+					Verbs:     []string{"get", "list", "watch"},
+				},
+			},
+		},
+		service: &service,
+	}
+}
+
+// NewRestrictedRoleBinding creates a RoleBinding that binds the restricted role to the ServiceAccount.
+func NewRestrictedRoleBinding(service types.ServiceConfig, appName string) *RoleBinding {
+	return &RoleBinding{
+		RoleBinding: &rbacv1.RoleBinding{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "RoleBinding",
+				APIVersion: "rbac.authorization.k8s.io/v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        utils.TplName(service.Name, appName),
+				Labels:      GetLabels(service.Name, appName),
+				Annotations: Annotations,
+			},
+			Subjects: []rbacv1.Subject{
+				{
+					Kind:      "ServiceAccount",
+					Name:      utils.TplName(service.Name, appName),
+					Namespace: "{{ .Release.Namespace }}",
+				},
+			},
+			RoleRef: rbacv1.RoleRef{
+				Kind:     "Role",
+				Name:     utils.TplName(service.Name, appName),
+				APIGroup: "rbac.authorization.k8s.io",
+			},
+		},
+		service: &service,
+	}
+}
+
 // ServiceAccount is a kubernetes ServiceAccount.
 type ServiceAccount struct {
 	*corev1.ServiceAccount

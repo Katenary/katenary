@@ -22,7 +22,7 @@ import (
 // The Generate function will create the HelmChart object this way:
 //
 //   - Detect the service port name or leave the port number if not found.
-//   - Create a deployment for each service that are not ingnore.
+//   - Create a deployment for each service that are not ingore.
 //   - Create a service and ingresses for each service that has ports and/or declared ingresses.
 //   - Create a PVC or Configmap volumes for each volume.
 //   - Create init containers for each service which has dependencies to other services.
@@ -134,12 +134,23 @@ func Generate(project *types.Project) (*HelmChart, error) {
 			}
 		}
 	}
+
+	// set ServiceAccountName for deployments that need it
+	for _, d := range deployments {
+		d.SetServiceAccountName()
+	}
+
 	for _, name := range drops {
 		delete(deployments, name)
 	}
 	// it's now time to get "value-from", before makeing the secrets and configmaps!
 	for _, s := range project.Services {
 		chart.setEnvironmentValuesFrom(s, deployments)
+	}
+
+	// generate RBAC resources for services that need K8s API access (non-legacy depends_on)
+	if err := chart.generateRBAC(deployments); err != nil {
+		logger.Fatalf("error generating RBAC: %s", err)
 	}
 
 	// generate configmaps with environment variables
@@ -438,6 +449,58 @@ func samePodVolume(service types.ServiceConfig, v types.ServiceVolumeConfig, dep
 		}
 	}
 	return false
+}
+
+// generateRBAC creates RBAC resources (ServiceAccount, Role, RoleBinding) for services that need K8s API access.
+// A service needs RBAC if it has non-legacy depends_on relationships.
+func (chart *HelmChart) generateRBAC(deployments map[string]*Deployment) error {
+	serviceMap := make(map[string]bool)
+
+	for _, d := range deployments {
+		if !d.needsServiceAccount {
+			continue
+		}
+
+		sa := NewServiceAccount(*d.service, chart.Name)
+		role := NewRestrictedRole(*d.service, chart.Name)
+		rb := NewRestrictedRoleBinding(*d.service, chart.Name)
+
+		var buf bytes.Buffer
+
+		saYaml, err := yaml.Marshal(sa.ServiceAccount)
+		if err != nil {
+			return fmt.Errorf("error marshaling ServiceAccount for %s: %w", d.service.Name, err)
+		}
+		buf.Write(saYaml)
+		buf.WriteString("---\n")
+
+		roleYaml, err := yaml.Marshal(role.Role)
+		if err != nil {
+			return fmt.Errorf("error marshaling Role for %s: %w", d.service.Name, err)
+		}
+		buf.Write(roleYaml)
+		buf.WriteString("---\n")
+
+		rbYaml, err := yaml.Marshal(rb.RoleBinding)
+		if err != nil {
+			return fmt.Errorf("error marshaling RoleBinding for %s: %w", d.service.Name, err)
+		}
+		buf.Write(rbYaml)
+
+		filename := d.service.Name + "/depends-on.rbac.yaml"
+		chart.Templates[filename] = &ChartTemplate{
+			Content:     buf.Bytes(),
+			Servicename: d.service.Name,
+		}
+
+		serviceMap[d.service.Name] = true
+	}
+
+	for svcName := range serviceMap {
+		logger.Log(logger.IconPackage, "Creating RBAC", svcName)
+	}
+
+	return nil
 }
 
 func fixContainerNames(project *types.Project) {
