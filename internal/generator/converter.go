@@ -109,8 +109,19 @@ func Convert(config ConvertOptions, dockerComposeFile ...string) error {
 
 	// the current working directory is the directory
 	currentDir, _ := os.Getwd()
+	// Filter to only existing files before chdir
+	var existingFiles []string
+	for _, f := range dockerComposeFile {
+		if _, err := os.Stat(f); err == nil {
+			existingFiles = append(existingFiles, f)
+		}
+	}
+	if len(existingFiles) == 0 && len(dockerComposeFile) > 0 {
+		return fmt.Errorf("no compose file found: %v", dockerComposeFile)
+	}
+
 	// go to the root of the project
-	if err := os.Chdir(filepath.Dir(dockerComposeFile[0])); err != nil {
+	if err := os.Chdir(filepath.Dir(existingFiles[0])); err != nil {
 		logger.Failure(err.Error())
 		return err
 	}
@@ -122,12 +133,12 @@ func Convert(config ConvertOptions, dockerComposeFile ...string) error {
 	}()
 
 	// repove the directory part of the docker-compose files
-	for i, f := range dockerComposeFile {
-		dockerComposeFile[i] = filepath.Base(f)
+	for i, f := range existingFiles {
+		existingFiles[i] = filepath.Base(f)
 	}
 
 	// parse the compose files
-	project, err := parser.Parse(config.Profiles, config.EnvFiles, dockerComposeFile...)
+	project, err := parser.Parse(config.Profiles, config.EnvFiles, existingFiles...)
 	if err != nil {
 		logger.Failure("Cannot parse compose files", err.Error())
 		return err

@@ -41,16 +41,21 @@ func Parse(profiles []string, envFiles []string, dockerComposeFile ...string) (*
 		}
 	}
 
-	options, err := cli.NewProjectOptions(dockerComposeFile,
+	opts := []cli.ProjectOptionsFn{
 		cli.WithProfiles(profiles),
 		cli.WithInterpolation(true),
-		cli.WithDefaultConfigPath,
 		cli.WithEnvFiles(envFiles...),
 		cli.WithOsEnv,
 		cli.WithDotEnv,
 		cli.WithNormalization(true),
 		cli.WithResolvedPaths(false),
-	)
+	}
+
+	if len(dockerComposeFile) == 0 {
+		opts = append(opts, cli.WithDefaultConfigPath)
+	}
+
+	options, err := cli.NewProjectOptions(dockerComposeFile, opts...)
 	if err != nil {
 		return nil, err
 	}
