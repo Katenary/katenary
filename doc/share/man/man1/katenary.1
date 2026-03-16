@@ -107,8 +107,8 @@ image, tags, and ingresses configuration are also stored in \f[CR]values.yaml\f[
 .IP \[bu] 2
 if named volumes are declared, Katenary create \f[CR]PersistentVolumeClaims\f[R] \- not enabled in values file
 .IP \[bu] 2
-\f[CR]depends_on\f[R] needs that the pointed service declared a port.
-If not, you can use labels to inform Katenary
+\f[CR]depends_on\f[R] uses Kubernetes API to check if the service endpoint is ready. No port declaration is required.
+If you need to create a Kubernetes Service for external access, use the \f[CR]katenary.v3/ports\f[R] label.
 .PP
 For any other specific configuration, like binding local files as \f[CR]ConfigMap\f[R], bind variables, add values with documentation, etc.
 You\[aq]ll need to use labels.

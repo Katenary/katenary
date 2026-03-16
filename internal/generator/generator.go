@@ -135,6 +135,17 @@ func Generate(project *types.Project) (*HelmChart, error) {
 		}
 	}
 
+	// warn users if dependent service has no ports
+	for _, s := range project.Services {
+		for _, d := range s.GetDependencies() {
+			if dep, ok := deployments[d]; ok {
+				if len(dep.service.Ports) == 0 {
+					logger.Warnf("Service %s is used in depends_on but has no ports declared. No Kubernetes Service will be created for it. Add katenary.v3/ports label if you need to create a Service.", d)
+				}
+			}
+		}
+	}
+
 	// set ServiceAccountName for deployments that need it
 	for _, d := range deployments {
 		d.SetServiceAccountName()

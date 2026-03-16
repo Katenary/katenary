@@ -98,6 +98,7 @@ Katenary transforms compose services this way:
 - image, tags, and ingresses configuration are also stored in `values.yaml` file
 - if named volumes are declared, Katenary create `PersistentVolumeClaims` - not enabled in values file
 - `depends_on` uses Kubernetes API by default to check if the service endpoint is ready. No port required.
+- If you need to create a Kubernetes Service for external access, add the `katenary.v3/ports` label.
   Use label `katenary.v3/depends-on: legacy` to use the old netcat method (requires port).
 
 For any other specific configuration, like binding local files as `ConfigMap`, bind variables, add values with
@@ -185,6 +186,26 @@ services:
       MYSQL_ROOT_PASSWORD: foobar
     ports:
       - 3306:3306
+```
+
+If you want to create a Kubernetes Service for external access, add the `katenary.v3/ports` label to the service:
+
+```yaml
+version: "3"
+
+services:
+  webapp:
+    image: php:8-apache
+    depends_on:
+      - database
+
+  database:
+    image: mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: foobar
+    labels:
+      katenary.v3/ports:
+        - 3306
 ```
 
 ### Declare ingresses

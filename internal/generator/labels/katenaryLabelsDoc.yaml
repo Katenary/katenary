@@ -92,7 +92,12 @@
   short: "Ports to be added to the service."
   long: |-
     Only useful for services without exposed port. It is mandatory if the
-    service is a dependency of another service.
+    service is a dependency of another service AND you want to create a
+    Kubernetes Service for external access.
+
+    If you only need to check if the service is ready (using depends_on),
+    you don't need to declare ports. The service will not be created automatically
+    unless you add this label.
   example: |-
     labels:
       {{ .KatenaryPrefix }}/ports: |-
@@ -362,7 +367,11 @@
     for the dependent service to be ready.
 
     By default, Katenary uses the Kubernetes API to check if the service endpoint
-    has ready addresses. This method does not require the service to expose a port.
+    has ready addresses. This method does not require the service to expose a port
+    and does not create a Kubernetes Service automatically.
+
+    If you need to create a Kubernetes Service for external access, use the
+    `katenary.v3/ports` label instead.
 
     Set this label to `legacy` to use the old netcat method that requires a port
     to be defined for the dependent service.
@@ -374,6 +383,13 @@
       labels:
         # Use legacy netcat method (requires port)
         {{ .KatenaryPrefix }}/depends-on: legacy
+
+    database:
+      image: mysql
+      labels:
+        # Create a Kubernetes Service for external access
+        {{ .KatenaryPrefix }}/ports:
+          - 3306
   type: "string"
 
 # vim: ft=gotmpl.yaml

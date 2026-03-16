@@ -21,6 +21,7 @@ Katenary will try to _Unmarshal_ these labels.
 | `katenary.v3/configmap-files`  | Inject files as Configmap.                                       | `[]string`                       |
 | `katenary.v3/cronjob`          | Create a cronjob from the service.                               | `object`                         |
 | `katenary.v3/dependencies`     | Add Helm dependencies to the service.                            | `[]object`                       |
+| `katenary.v3/depends-on`       | Method to check if a service is ready (for depends_on).          | `string`                         |
 | `katenary.v3/description`      | Description of the service                                       | `string`                         |
 | `katenary.v3/env-from`         | Add environment variables from another service.                  | `[]string`                       |
 | `katenary.v3/exchange-volumes` | Add exchange volumes (empty directory on the node) to share data | `[]object`                       |
@@ -141,6 +142,45 @@ labels:
           database: mydatabasename
           username: myuser
           password: the secret password
+```
+
+
+### katenary.v3/depends-on
+
+Method to check if a service is ready (for depends_on).
+
+**Type**:  `string`
+
+When a service uses `depends_on`, Katenary creates an initContainer to wait
+for the dependent service to be ready.
+
+By default, Katenary uses the Kubernetes API to check if the service endpoint
+has ready addresses. This method does not require the service to expose a port
+and does not create a Kubernetes Service automatically.
+
+If you need to create a Kubernetes Service for external access, use the
+`katenary.v3/ports` label instead.
+
+Set this label to `legacy` to use the old netcat method that requires a port
+to be defined for the dependent service.
+
+**Example:**
+
+```yaml
+web:
+  image: nginx
+  depends_on:
+    - database
+  labels:
+    # Use legacy netcat method (requires port)
+    katenary.v3/depends-on: legacy
+
+database:
+  image: mysql
+  labels:
+    # Create a Kubernetes Service for external access
+    katenary.v3/ports:
+      - 3306
 ```
 
 
@@ -352,7 +392,12 @@ Ports to be added to the service.
 **Type**:  `[]uint32`
 
 Only useful for services without exposed port. It is mandatory if the
-service is a dependency of another service.
+service is a dependency of another service AND you want to create a
+Kubernetes Service for external access.
+
+If you only need to check if the service is ready (using depends_on),
+you don't need to declare ports. The service will not be created automatically
+unless you add this label.
 
 **Example:**
 
