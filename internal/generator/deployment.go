@@ -19,6 +19,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const shCommand = "/bin/sh"
+
 var _ Yaml = (*Deployment)(nil)
 
 type mountPathConfig struct {
@@ -294,7 +296,7 @@ func (d *Deployment) dependsOnLegacy(to *Deployment, servicename string) error {
 			commands = append(commands, command)
 		}
 
-		command := []string{"/bin/sh", "-c", strings.Join(commands, "\n")}
+		command := []string{shCommand, "-c", strings.Join(commands, "\n")}
 		d.Spec.Template.Spec.InitContainers = append(d.Spec.Template.Spec.InitContainers, corev1.Container{
 			Name:    "wait-for-" + to.service.Name,
 			Image:   "busybox:latest",
@@ -318,7 +320,7 @@ until wget -q -O- --header="Authorization: Bearer $(cat /var/run/secrets/kuberne
   sleep 2
 done`
 
-	command := []string{"/bin/sh", "-c", fmt.Sprintf(script, to.Name)}
+	command := []string{shCommand, "-c", fmt.Sprintf(script, to.Name)}
 	d.Spec.Template.Spec.InitContainers = append(d.Spec.Template.Spec.InitContainers, corev1.Container{
 		Name:    "wait-for-" + to.service.Name,
 		Image:   "busybox:latest",
@@ -652,7 +654,6 @@ func (d *Deployment) Yaml() ([]byte, error) {
 func (d *Deployment) SetServiceAccountName() {
 	if d.needsServiceAccount {
 		d.Spec.Template.Spec.ServiceAccountName = utils.TplName(d.service.Name, d.chart.Name, "dependency")
-	} else {
 	}
 }
 
