@@ -216,6 +216,10 @@ func Convert(config ConvertOptions, dockerComposeFile ...string) error {
 
 	// call helm update if needed
 	callHelmUpdate(config)
+
+	// flush warnings after all conversion is complete
+	logger.FlushWarnings()
+
 	return nil
 }
 
