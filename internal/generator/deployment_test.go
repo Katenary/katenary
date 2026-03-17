@@ -155,8 +155,8 @@ services:
 		t.Errorf("Expected curl command (K8s API method), got %s", fullCommand)
 	}
 
-	if !strings.Contains(fullCommand, "/api/v1/namespaces/") {
-		t.Errorf("Expected Kubernetes API call to /api/v1/namespaces/, got %s", fullCommand)
+	if !strings.Contains(fullCommand, "/apis/apps/v1/namespaces/") {
+		t.Errorf("Expected Kubernetes API call to /apis/apps/v1/namespaces/, got %s", fullCommand)
 	}
 
 	if !strings.Contains(fullCommand, "/deployments/") {
@@ -719,8 +719,8 @@ services:
 	}
 
 	rule := role.Rules[0]
-	if !contains(rule.APIGroups, "") {
-		t.Error("Expected APIGroup to include core API ('')")
+	if !contains(rule.APIGroups, "apps") {
+		t.Error("Expected APIGroup to include 'apps'")
 	}
 	if !contains(rule.Resources, "deployments") {
 		t.Errorf("Expected Resource to include 'deployments', got %v", rule.Resources)
@@ -807,8 +807,8 @@ services:
 	if !strings.Contains(fullCommand, "curl") {
 		t.Error("Expected init container to use curl for K8s API calls")
 	}
-	if !strings.Contains(fullCommand, "/api/v1/namespaces/") {
-		t.Error("Expected init container to call /api/v1/namespaces/ endpoint")
+	if !strings.Contains(fullCommand, "/apis/apps/v1/namespaces/") {
+		t.Error("Expected init container to call /apis/apps/v1/namespaces/ endpoint")
 	}
 	if !strings.Contains(fullCommand, "/deployments/") {
 		t.Error("Expected init container to access /deployments/ resource")
