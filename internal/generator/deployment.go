@@ -309,21 +309,21 @@ func (d *Deployment) dependsOnLegacy(to *Deployment, servicename string) error {
 
 func (d *Deployment) dependsOnK8sAPI(to *Deployment) error {
 	script := `NAMESPACE=${NAMESPACE:-default}
-SERVICE=%s
+DEPLOYMENT_NAME=%s
 KUBERNETES_SERVICE_HOST=${KUBERNETES_SERVICE_HOST:-kubernetes.default.svc}
 KUBERNETES_SERVICE_PORT=${KUBERNETES_SERVICE_PORT:-443}
 
-until wget -q -O- --header="Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+until curl -s -o- --header="Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
   --cacert=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
-  "https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}/api/v1/namespaces/${NAMESPACE}/endpoints/${SERVICE}" \
-  | grep -q '"ready":.*true'; do
+  "https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}/apis/apps/v1/namespaces/${NAMESPACE}/deployments/${DEPLOYMENT_NAME}" \
+  | grep -q '"readyReplicas":\s*[1-9][0-9]*'; do
   sleep 2
 done`
 
 	command := []string{shCommand, "-c", fmt.Sprintf(script, to.Name)}
 	d.Spec.Template.Spec.InitContainers = append(d.Spec.Template.Spec.InitContainers, corev1.Container{
 		Name:    "wait-for-" + to.service.Name,
-		Image:   "busybox:latest",
+		Image:   "quay.io/curl/curl:latest",
 		Command: command,
 		Env: []corev1.EnvVar{
 			{

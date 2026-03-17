@@ -146,21 +146,25 @@ services:
 	}
 
 	initContainer := dt.Spec.Template.Spec.InitContainers[0]
-	if !strings.Contains(initContainer.Image, "busybox") {
-		t.Errorf("Expected busybox image, got %s", initContainer.Image)
+	if !strings.Contains(initContainer.Image, "quay.io/curl/curl") {
+		t.Errorf("Expected quay.io/curl/curl image, got %s", initContainer.Image)
 	}
 
 	fullCommand := strings.Join(initContainer.Command, " ")
-	if !strings.Contains(fullCommand, "wget") {
-		t.Errorf("Expected wget command (K8s API method), got %s", fullCommand)
+	if !strings.Contains(fullCommand, "curl") {
+		t.Errorf("Expected curl command (K8s API method), got %s", fullCommand)
 	}
 
 	if !strings.Contains(fullCommand, "/api/v1/namespaces/") {
 		t.Errorf("Expected Kubernetes API call to /api/v1/namespaces/, got %s", fullCommand)
 	}
 
-	if !strings.Contains(fullCommand, "/endpoints/") {
-		t.Errorf("Expected Kubernetes API call to /endpoints/, got %s", fullCommand)
+	if !strings.Contains(fullCommand, "/deployments/") {
+		t.Errorf("Expected Kubernetes API call to /deployments/, got %s", fullCommand)
+	}
+
+	if !strings.Contains(fullCommand, "readyReplicas") {
+		t.Errorf("Expected readyReplicas check, got %s", fullCommand)
 	}
 
 	if len(initContainer.Env) == 0 {
@@ -718,8 +722,8 @@ services:
 	if !contains(rule.APIGroups, "") {
 		t.Error("Expected APIGroup to include core API ('')")
 	}
-	if !contains(rule.Resources, "endpoints") {
-		t.Errorf("Expected Resource to include 'endpoints', got %v", rule.Resources)
+	if !contains(rule.Resources, "deployments") {
+		t.Errorf("Expected Resource to include 'deployments', got %v", rule.Resources)
 	}
 
 	for _, res := range rule.Resources {
@@ -800,14 +804,17 @@ services:
 	}
 
 	fullCommand := strings.Join(initContainer.Command, " ")
-	if !strings.Contains(fullCommand, "wget") {
-		t.Error("Expected init container to use wget for K8s API calls")
+	if !strings.Contains(fullCommand, "curl") {
+		t.Error("Expected init container to use curl for K8s API calls")
 	}
 	if !strings.Contains(fullCommand, "/api/v1/namespaces/") {
 		t.Error("Expected init container to call /api/v1/namespaces/ endpoint")
 	}
-	if !strings.Contains(fullCommand, "/endpoints/") {
-		t.Error("Expected init container to access /endpoints/ resource")
+	if !strings.Contains(fullCommand, "/deployments/") {
+		t.Error("Expected init container to access /deployments/ resource")
+	}
+	if !strings.Contains(fullCommand, "readyReplicas") {
+		t.Error("Expected init container to check readyReplicas")
 	}
 
 	hasNamespace := false

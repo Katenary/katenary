@@ -137,7 +137,7 @@ func NewServiceAccount(service types.ServiceConfig, appName string) *ServiceAcco
 				APIVersion: "v1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        utils.TplName(service.Name, appName),
+				Name:        utils.TplName(service.Name, appName, "dependency"),
 				Labels:      GetLabels(service.Name, appName),
 				Annotations: Annotations,
 			},
@@ -161,9 +161,9 @@ func NewRestrictedRole(service types.ServiceConfig, appName string) *Role {
 			},
 			Rules: []rbacv1.PolicyRule{
 				{
-					APIGroups: []string{""},
-					Resources: []string{"endpoints"},
-					Verbs:     []string{"get", "list", "watch"},
+					APIGroups: []string{"apps"},
+					Resources: []string{"deployments"},
+					Verbs:     []string{"get"},
 				},
 			},
 		},
