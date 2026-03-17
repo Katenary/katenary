@@ -507,10 +507,6 @@ func (chart *HelmChart) generateRBAC(deployments map[string]*Deployment) error {
 		serviceMap[d.service.Name] = true
 	}
 
-	for svcName := range serviceMap {
-		logger.Log(logger.IconPackage, "Creating RBAC", svcName)
-	}
-
 	return nil
 }
 
