@@ -3,6 +3,7 @@ package generator
 import (
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 
@@ -11,6 +12,7 @@ import (
 	yaml3 "gopkg.in/yaml.v3"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"sigs.k8s.io/yaml"
 )
 
@@ -141,6 +143,90 @@ services:
 	// find an init container
 	if len(dt.Spec.Template.Spec.InitContainers) != 1 {
 		t.Errorf("Expected 1 init container, got %d", len(dt.Spec.Template.Spec.InitContainers))
+	}
+
+	initContainer := dt.Spec.Template.Spec.InitContainers[0]
+	if !strings.Contains(initContainer.Image, "quay.io/curl/curl") {
+		t.Errorf("Expected quay.io/curl/curl image, got %s", initContainer.Image)
+	}
+
+	fullCommand := strings.Join(initContainer.Command, " ")
+	if !strings.Contains(fullCommand, "curl") {
+		t.Errorf("Expected curl command (K8s API method), got %s", fullCommand)
+	}
+
+	if !strings.Contains(fullCommand, "/apis/apps/v1/namespaces/") {
+		t.Errorf("Expected Kubernetes API call to /apis/apps/v1/namespaces/, got %s", fullCommand)
+	}
+
+	if !strings.Contains(fullCommand, "/deployments/") {
+		t.Errorf("Expected Kubernetes API call to /deployments/, got %s", fullCommand)
+	}
+
+	if !strings.Contains(fullCommand, "readyReplicas") {
+		t.Errorf("Expected readyReplicas check, got %s", fullCommand)
+	}
+
+	if len(initContainer.Env) == 0 {
+		t.Errorf("Expected environment variables to be set for namespace")
+	}
+
+	hasNamespace := false
+	for _, env := range initContainer.Env {
+		if env.Name == "NAMESPACE" && env.ValueFrom != nil && env.ValueFrom.FieldRef != nil {
+			if env.ValueFrom.FieldRef.FieldPath == "metadata.namespace" {
+				hasNamespace = true
+				break
+			}
+		}
+	}
+	if !hasNamespace {
+		t.Errorf("Expected NAMESPACE env var with metadata.namespace fieldRef")
+	}
+}
+
+func TestDependsOnLegacy(t *testing.T) {
+	composeFile := `
+services:
+    web:
+        image: nginx:1.29
+        ports:
+        - 80:80
+        depends_on:
+        - database
+        labels:
+            katenary.v3/depends-on: legacy
+
+    database:
+        image: mariadb:10.5
+        ports:
+        - 3306:3306
+`
+	tmpDir := setup(composeFile)
+	defer teardown(tmpDir)
+
+	currentDir, _ := os.Getwd()
+	os.Chdir(tmpDir)
+	defer os.Chdir(currentDir)
+
+	output := internalCompileTest(t, "-s", webTemplateOutput)
+	dt := v1.Deployment{}
+	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
+		t.Errorf(unmarshalError, err)
+	}
+
+	if len(dt.Spec.Template.Spec.InitContainers) != 1 {
+		t.Errorf("Expected 1 init container, got %d", len(dt.Spec.Template.Spec.InitContainers))
+	}
+
+	initContainer := dt.Spec.Template.Spec.InitContainers[0]
+	if !strings.Contains(initContainer.Image, "busybox") {
+		t.Errorf("Expected busybox image, got %s", initContainer.Image)
+	}
+
+	fullCommand := strings.Join(initContainer.Command, " ")
+	if !strings.Contains(fullCommand, "nc") {
+		t.Errorf("Expected nc (netcat) command for legacy method, got %s", fullCommand)
 	}
 }
 
@@ -562,4 +648,196 @@ services:
 	if len(command) != 2 || command[0] != "bar" || command[1] != "baz" {
 		t.Errorf("Expected command to be 'bar baz', got %s", strings.Join(command, " "))
 	}
+}
+
+func TestRestrictedRBACGeneration(t *testing.T) {
+	composeFile := `
+services:
+    web:
+        image: nginx:1.29
+        ports:
+        - 80:80
+        depends_on:
+        - database
+
+    database:
+        image: mariadb:10.5
+        ports:
+        - 3306:3306
+`
+	tmpDir := setup(composeFile)
+	defer teardown(tmpDir)
+
+	currentDir, _ := os.Getwd()
+	os.Chdir(tmpDir)
+	defer os.Chdir(currentDir)
+
+	rbacOutput := internalCompileTest(t, "-s", "templates/web/depends-on.rbac.yaml")
+
+	docs := strings.Split(rbacOutput, "---\n")
+
+	// Filter out empty documents and strip helm template comments
+	var filteredDocs []string
+	for _, doc := range docs {
+		if strings.TrimSpace(doc) != "" {
+			// Remove '# Source:' comment lines that helm template adds
+			lines := strings.Split(doc, "\n")
+			var contentLines []string
+			for _, line := range lines {
+				if !strings.HasPrefix(strings.TrimSpace(line), "# Source:") {
+					contentLines = append(contentLines, line)
+				}
+			}
+			filteredDocs = append(filteredDocs, strings.Join(contentLines, "\n"))
+		}
+	}
+
+	if len(filteredDocs) != 3 {
+		t.Fatalf("Expected 3 YAML documents in RBAC file, got %d (filtered from %d)", len(filteredDocs), len(docs))
+	}
+
+	var sa corev1.ServiceAccount
+	if err := yaml.Unmarshal([]byte(strings.TrimSpace(filteredDocs[0])), &sa); err != nil {
+		t.Errorf("Failed to unmarshal ServiceAccount: %v", err)
+	}
+	if sa.Kind != "ServiceAccount" {
+		t.Errorf("Expected Kind=ServiceAccount, got %s", sa.Kind)
+	}
+	if !strings.Contains(sa.Name, "web") {
+		t.Errorf("Expected ServiceAccount name to contain 'web', got %s", sa.Name)
+	}
+
+	var role rbacv1.Role
+	if err := yaml.Unmarshal([]byte(strings.TrimSpace(filteredDocs[1])), &role); err != nil {
+		t.Errorf("Failed to unmarshal Role: %v", err)
+	}
+	if role.Kind != "Role" {
+		t.Errorf("Expected Kind=Role, got %s", role.Kind)
+	}
+	if len(role.Rules) != 1 {
+		t.Errorf("Expected 1 rule in Role, got %d", len(role.Rules))
+	}
+
+	rule := role.Rules[0]
+	if !contains(rule.APIGroups, "apps") {
+		t.Error("Expected APIGroup to include 'apps'")
+	}
+	if !contains(rule.Resources, "deployments") {
+		t.Errorf("Expected Resource to include 'deployments', got %v", rule.Resources)
+	}
+
+	for _, res := range rule.Resources {
+		if res == "*" {
+			t.Error("Role should not have wildcard (*) resource permissions")
+		}
+	}
+	for _, verb := range rule.Verbs {
+		if verb == "*" {
+			t.Error("Role should not have wildcard (*) verb permissions")
+		}
+	}
+
+	var rb rbacv1.RoleBinding
+	if err := yaml.Unmarshal([]byte(strings.TrimSpace(filteredDocs[2])), &rb); err != nil {
+		t.Errorf("Failed to unmarshal RoleBinding: %v", err)
+	}
+	if rb.Kind != "RoleBinding" {
+		t.Errorf("Expected Kind=RoleBinding, got %s", rb.Kind)
+	}
+	if len(rb.Subjects) != 1 {
+		t.Errorf("Expected 1 subject in RoleBinding, got %d", len(rb.Subjects))
+	}
+	if rb.Subjects[0].Kind != "ServiceAccount" {
+		t.Errorf("Expected Subject Kind=ServiceAccount, got %s", rb.Subjects[0].Kind)
+	}
+
+	// Helm template renders the name, so check if it contains "web"
+	if !strings.Contains(rb.RoleRef.Name, "web") {
+		t.Errorf("Expected RoleRef Name to contain 'web', got %s", rb.RoleRef.Name)
+	}
+	if rb.RoleRef.Kind != "Role" {
+		t.Errorf("Expected RoleRef Kind=Role, got %s", rb.RoleRef.Kind)
+	}
+}
+
+func TestDeploymentReferencesServiceAccount(t *testing.T) {
+	composeFile := `
+services:
+    web:
+        image: nginx:1.29
+        ports:
+        - 80:80
+        depends_on:
+        - database
+
+    database:
+        image: mariadb:10.5
+        ports:
+        - 3306:3306
+`
+	tmpDir := setup(composeFile)
+	defer teardown(tmpDir)
+
+	currentDir, _ := os.Getwd()
+	os.Chdir(tmpDir)
+	defer os.Chdir(currentDir)
+
+	output := internalCompileTest(t, "-s", "templates/web/deployment.yaml")
+
+	var dt v1.Deployment
+	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
+		t.Errorf("Failed to unmarshal Deployment: %v", err)
+	}
+
+	serviceAccountName := dt.Spec.Template.Spec.ServiceAccountName
+	if !strings.Contains(serviceAccountName, "web") {
+		t.Errorf("Expected ServiceAccountName to contain 'web', got %s", serviceAccountName)
+	}
+
+	if len(dt.Spec.Template.Spec.InitContainers) == 0 {
+		t.Fatal("Expected at least one init container for depends_on")
+	}
+
+	initContainer := dt.Spec.Template.Spec.InitContainers[0]
+	if initContainer.Name != "wait-for-database" {
+		t.Errorf("Expected init container name 'wait-for-database', got %s", initContainer.Name)
+	}
+
+	fullCommand := strings.Join(initContainer.Command, " ")
+	if !strings.Contains(fullCommand, "curl") {
+		t.Error("Expected init container to use curl for K8s API calls")
+	}
+	if !strings.Contains(fullCommand, "/apis/apps/v1/namespaces/") {
+		t.Error("Expected init container to call /apis/apps/v1/namespaces/ endpoint")
+	}
+	if !strings.Contains(fullCommand, "/deployments/") {
+		t.Error("Expected init container to access /deployments/ resource")
+	}
+	if !strings.Contains(fullCommand, "readyReplicas") {
+		t.Error("Expected init container to check readyReplicas")
+	}
+
+	hasNamespace := false
+	for _, env := range initContainer.Env {
+		if env.Name == "NAMESPACE" && env.ValueFrom != nil && env.ValueFrom.FieldRef != nil {
+			if env.ValueFrom.FieldRef.FieldPath == "metadata.namespace" {
+				hasNamespace = true
+				break
+			}
+		}
+	}
+	if !hasNamespace {
+		t.Error("Expected NAMESPACE env var with metadata.namespace fieldRef")
+	}
+
+	_, err := os.Stat("./chart/templates/web/depends-on.rbac.yaml")
+	if os.IsNotExist(err) {
+		t.Error("RBAC file depends-on.rbac.yaml should exist for service using depends_on with K8s API")
+	} else if err != nil {
+		t.Errorf("Unexpected error checking RBAC file: %v", err)
+	}
+}
+
+func contains(slice []string, item string) bool {
+	return slices.Contains(slice, item)
 }

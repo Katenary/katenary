@@ -77,3 +77,25 @@ func TestLog(t *testing.T) {
 	}()
 	Log(IconInfo, "test log")
 }
+
+func TestWarningsCollection(t *testing.T) {
+	// Clear any existing warnings
+	warnings = nil
+
+	// Add some warnings
+	Warn("test warning 1")
+	Warnf("test warning 2: %s", "value")
+
+	// Check that warnings were collected
+	if len(warnings) != 2 {
+		t.Errorf("expected 2 warnings, got %d", len(warnings))
+	}
+
+	// Check the content of warnings
+	if warnings[0] != "test warning 1" {
+		t.Errorf("expected 'test warning 1', got '%s'", warnings[0])
+	}
+	if warnings[1] != "test warning 2: value" {
+		t.Errorf("expected 'test warning 2: value', got '%s'", warnings[1])
+	}
+}

@@ -19,6 +19,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const shCommand = "/bin/sh"
+
 var _ Yaml = (*Deployment)(nil)
 
 type mountPathConfig struct {
@@ -33,15 +35,16 @@ type ConfigMapMount struct {
 
 // Deployment is a kubernetes Deployment.
 type Deployment struct {
-	*appsv1.Deployment `yaml:",inline"`
-	chart              *HelmChart                              `yaml:"-"`
-	configMaps         map[string]*ConfigMapMount              `yaml:"-"`
-	volumeMap          map[string]string                       `yaml:"-"` // keep map of fixed named to original volume name
-	service            *types.ServiceConfig                    `yaml:"-"`
-	defaultTag         string                                  `yaml:"-"`
-	isMainApp          bool                                    `yaml:"-"`
-	exchangesVolumes   map[string]*labelstructs.ExchangeVolume `yaml:"-"`
-	boundEnvVar        []string                                `yaml:"-"` // environement to remove
+	*appsv1.Deployment  `yaml:",inline"`
+	chart               *HelmChart                              `yaml:"-"`
+	configMaps          map[string]*ConfigMapMount              `yaml:"-"`
+	volumeMap           map[string]string                       `yaml:"-"` // keep map of fixed named to original volume name
+	service             *types.ServiceConfig                    `yaml:"-"`
+	defaultTag          string                                  `yaml:"-"`
+	isMainApp           bool                                    `yaml:"-"`
+	exchangesVolumes    map[string]*labelstructs.ExchangeVolume `yaml:"-"`
+	boundEnvVar         []string                                `yaml:"-"` // environement to remove
+	needsServiceAccount bool                                    `yaml:"-"`
 }
 
 // NewDeployment creates a new Deployment from a compose service. The appName is the name of the application taken from the project name.
@@ -262,9 +265,22 @@ func (d *Deployment) BindFrom(service types.ServiceConfig, binded *Deployment) {
 
 // DependsOn adds a initContainer to the deployment that will wait for the service to be up.
 func (d *Deployment) DependsOn(to *Deployment, servicename string) error {
-	// Add a initContainer with busybox:latest using netcat to check if the service is up
-	// it will wait until the service responds to all ports
 	logger.Info("Adding dependency from ", d.service.Name, " to ", to.service.Name)
+
+	useLegacy := false
+	if label, ok := d.service.Labels[labels.LabelDependsOn]; ok {
+		useLegacy = strings.ToLower(label) == "legacy"
+	}
+
+	if useLegacy {
+		return d.dependsOnLegacy(to, servicename)
+	}
+
+	d.needsServiceAccount = true
+	return d.dependsOnK8sAPI(to)
+}
+
+func (d *Deployment) dependsOnLegacy(to *Deployment, servicename string) error {
 	for _, container := range to.Spec.Template.Spec.Containers {
 		commands := []string{}
 		if len(container.Ports) == 0 {
@@ -280,13 +296,46 @@ func (d *Deployment) DependsOn(to *Deployment, servicename string) error {
 			commands = append(commands, command)
 		}
 
-		command := []string{"/bin/sh", "-c", strings.Join(commands, "\n")}
+		command := []string{shCommand, "-c", strings.Join(commands, "\n")}
 		d.Spec.Template.Spec.InitContainers = append(d.Spec.Template.Spec.InitContainers, corev1.Container{
 			Name:    "wait-for-" + to.service.Name,
 			Image:   "busybox:latest",
 			Command: command,
 		})
 	}
+
+	return nil
+}
+
+func (d *Deployment) dependsOnK8sAPI(to *Deployment) error {
+	script := `NAMESPACE=${NAMESPACE:-default}
+DEPLOYMENT_NAME=%s
+KUBERNETES_SERVICE_HOST=${KUBERNETES_SERVICE_HOST:-kubernetes.default.svc}
+KUBERNETES_SERVICE_PORT=${KUBERNETES_SERVICE_PORT:-443}
+
+until curl -s -o- --header="Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+  --cacert=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+  "https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}/apis/apps/v1/namespaces/${NAMESPACE}/deployments/${DEPLOYMENT_NAME}" \
+  | grep -q '"readyReplicas":\s*[1-9][0-9]*'; do
+  sleep 2
+done`
+
+	command := []string{shCommand, "-c", fmt.Sprintf(script, to.Name)}
+	d.Spec.Template.Spec.InitContainers = append(d.Spec.Template.Spec.InitContainers, corev1.Container{
+		Name:    "wait-for-" + to.service.Name,
+		Image:   "quay.io/curl/curl:latest",
+		Command: command,
+		Env: []corev1.EnvVar{
+			{
+				Name: "NAMESPACE",
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: &corev1.ObjectFieldSelector{
+						FieldPath: "metadata.namespace",
+					},
+				},
+			},
+		},
+	})
 
 	return nil
 }
@@ -566,7 +615,7 @@ func (d *Deployment) Yaml() ([]byte, error) {
 		}
 
 		// manage serviceAccount, add condition to use the serviceAccount from values.yaml
-		if strings.Contains(line, "serviceAccountName:") {
+		if strings.Contains(line, "serviceAccountName:") && !d.needsServiceAccount {
 			spaces = strings.Repeat(" ", utils.CountStartingSpaces(line))
 			pre := spaces + `{{- if ne .Values.` + serviceName + `.serviceAccount "" }}`
 			post := spaces + "{{- end }}"
@@ -600,6 +649,12 @@ func (d *Deployment) Yaml() ([]byte, error) {
 	}
 
 	return []byte(strings.Join(content, "\n")), nil
+}
+
+func (d *Deployment) SetServiceAccountName() {
+	if d.needsServiceAccount {
+		d.Spec.Template.Spec.ServiceAccountName = utils.TplName(d.service.Name, d.chart.Name, "dependency")
+	}
 }
 
 func (d *Deployment) appendDirectoryToConfigMap(service types.ServiceConfig, appName string, volume types.ServiceVolumeConfig) {

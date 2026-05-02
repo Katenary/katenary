@@ -36,6 +36,7 @@ const (
 	LabelEnvFrom        Label = KatenaryLabelPrefix + "/env-from"
 	LabelExchangeVolume Label = KatenaryLabelPrefix + "/exchange-volumes"
 	LabelValuesFrom     Label = KatenaryLabelPrefix + "/values-from"
+	LabelDependsOn      Label = KatenaryLabelPrefix + "/depends-on"
 )
 
 var (
