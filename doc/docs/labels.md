@@ -320,6 +320,17 @@ Ingress rules to be added to the service.
 Declare an ingress rule for the service. The port should be exposed or
 declared with `katenary.v3/ports`.
 
+The default ingress class is "traefik". 
+
+**Files generated:** Both `ingress.yaml` (standard Kubernetes Ingress) and
+`ingressroute.yaml` (Traefik IngressRoute CRD) are generated. You can
+control which one is installed via values.yaml:
+
+- `ingress.enabled` - controls standard Ingress installation
+- `ingress.ingressRouteEnabled` - controls IngressRoute installation
+
+Setting `type: ingressroute` automatically sets `ingressRouteEnabled: true`.
+
 **Example:**
 
 ```yaml
@@ -327,6 +338,9 @@ labels:
   katenary.v3/ingress: |-
     port: 80
     hostname: mywebsite.com (optional)
+    # Use Traefik IngressRoute instead of standard Ingress
+    type: ingressroute
+    enabled: true
 ```
 
 
