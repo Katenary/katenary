@@ -8,6 +8,7 @@ import (
 	"katenary.io/internal/logger"
 	"katenary.io/internal/utils"
 
+	"github.com/mattn/go-shellwords"
 	"github.com/compose-spec/compose-go/v2/types"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -64,8 +65,16 @@ func NewCronJob(service types.ServiceConfig, chart *HelmChart, appName string) (
 	}
 
 	command := mapping.Command
+	var commandParts []string
 	if !strings.HasPrefix(command, "sh -c") && !strings.HasPrefix(command, "/bin/sh") {
-		command = "sh -c \"" + command + "\""
+		commandParts = []string{"sh", "-c", command}
+	} else {
+		parts, err := shellwords.Parse(command)
+		if err != nil {
+			commandParts = []string{"sh", "-c", command}
+		} else {
+			commandParts = parts
+		}
 	}
 
 	cronjob := &CronJob{
@@ -90,9 +99,7 @@ func NewCronJob(service types.ServiceConfig, chart *HelmChart, appName string) (
 									{
 										Name:  "cronjob",
 										Image: "{{ .Values." + service.Name + ".cronjob.repository.image }}:{{ default .Values." + service.Name + ".cronjob.repository.tag \"latest\" }}",
-										Args: []string{
-											command,
-										},
+										Args: commandParts,
 									},
 								},
 							},

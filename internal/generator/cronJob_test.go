@@ -2,7 +2,6 @@ package generator
 
 import (
 	"os"
-	"strings"
 	"testing"
 
 	v1 "k8s.io/api/apps/v1"
@@ -38,9 +37,13 @@ services:
 	if cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Image != "alpine:latest" {
 		t.Errorf("Expected image to be alpine, got %s", cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Image)
 	}
-	combinedCommand := strings.Join(cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Args, " ")
-	if combinedCommand != `sh -c "echo hello"` {
-		t.Errorf("Expected command to be sh -c \"echo hello\", got %s", combinedCommand)
+	if len(cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Args) != 3 {
+		t.Errorf("Expected 3 args, got %d", len(cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Args))
+	}
+	if cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Args[0] != "sh" ||
+		cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Args[1] != "-c" ||
+		cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Args[2] != "echo hello" {
+		t.Errorf("Expected args [sh -c echo hello], got %v", cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Args)
 	}
 	if cronJob.Spec.Schedule != "*/1 * * * *" {
 		t.Errorf("Expected schedule to be */1 * * * *, got %s", cronJob.Spec.Schedule)
