@@ -53,13 +53,19 @@ func NewCronJob(service types.ServiceConfig, chart *HelmChart, appName string) (
 	}
 
 	if strings.Contains(image, ":") {
-		image = strings.Split(service.Image, ":")[0]
-		tag = strings.Split(service.Image, ":")[1]
+		parts := strings.Split(image, ":")
+		image = parts[0]
+		tag = parts[1]
 	}
 
 	chart.Values[service.Name].(*Value).CronJob.Repository = &RepositoryValue{
 		Image: image,
 		Tag:   tag,
+	}
+
+	command := mapping.Command
+	if !strings.HasPrefix(command, "sh -c") && !strings.HasPrefix(command, "/bin/sh") {
+		command = "sh -c \"" + command + "\""
 	}
 
 	cronjob := &CronJob{
@@ -79,12 +85,13 @@ func NewCronJob(service types.ServiceConfig, chart *HelmChart, appName string) (
 					Spec: batchv1.JobSpec{
 						Template: corev1.PodTemplateSpec{
 							Spec: corev1.PodSpec{
+								RestartPolicy: corev1.RestartPolicyOnFailure,
 								Containers: []corev1.Container{
 									{
 										Name:  "cronjob",
 										Image: "{{ .Values." + service.Name + ".cronjob.repository.image }}:{{ default .Values." + service.Name + ".cronjob.repository.tag \"latest\" }}",
 										Args: []string{
-											mapping.Command,
+											command,
 										},
 									},
 								},
