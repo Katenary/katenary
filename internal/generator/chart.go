@@ -229,10 +229,11 @@ func (chart *HelmChart) generateDeployment(service types.ServiceConfig, deployme
 	// get the same-pod label if exists, add it to the list.
 	// We later will copy some parts to the target deployment and remove this one.
 	if samePod, ok := service.Labels[labels.LabelSamePod]; ok && samePod != "" {
-		podToMerge[samePod] = &service
+		podToMerge[service.Name] = &service
 	}
 
 	// create the needed service for the container port
+	// NOTE: ports from same-pod services are now added in generator.go after all services are processed
 	if len(service.Ports) > 0 {
 		s := NewService(service, appName)
 		services[service.Name] = s
