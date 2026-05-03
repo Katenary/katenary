@@ -39,8 +39,8 @@ services:
 		t.Errorf("Expected image to be alpine, got %s", cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Image)
 	}
 	combinedCommand := strings.Join(cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Args, " ")
-	if combinedCommand != "echo hello" {
-		t.Errorf("Expected command to be sh -c echo hello, got %s", combinedCommand)
+	if combinedCommand != `sh -c "echo hello"` {
+		t.Errorf("Expected command to be sh -c \"echo hello\", got %s", combinedCommand)
 	}
 	if cronJob.Spec.Schedule != "*/1 * * * *" {
 		t.Errorf("Expected schedule to be */1 * * * *, got %s", cronJob.Spec.Schedule)
