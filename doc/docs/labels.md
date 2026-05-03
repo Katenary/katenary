@@ -154,9 +154,9 @@ Method to check if a service is ready (for depends_on).
 When a service uses `depends_on`, Katenary creates an initContainer to wait
 for the dependent service to be ready.
 
-By default, Katenary uses the Kubernetes API to check if the service endpoint
-has ready addresses. This method does not require the service to expose a port
-and does not create a Kubernetes Service automatically.
+By default, Katenary uses the Kubernetes API to check if the deployment's
+`readyReplicas` status is greater than 0. This method does not require the
+service to expose a port and does not create a Kubernetes Service automatically.
 
 If you need to create a Kubernetes Service for external access, use the
 `katenary.v3/ports` label instead.
@@ -320,6 +320,17 @@ Ingress rules to be added to the service.
 Declare an ingress rule for the service. The port should be exposed or
 declared with `katenary.v3/ports`.
 
+The default ingress class is "traefik". 
+
+**Files generated:** Both `ingress.yaml` (standard Kubernetes Ingress) and
+`ingressroute.yaml` (Traefik IngressRoute CRD) are generated. You can
+control which one is installed via values.yaml:
+
+- `ingress.enabled` - controls standard Ingress installation
+- `ingress.ingressRouteEnabled` - controls IngressRoute installation
+
+Setting `type: ingressroute` automatically sets `ingressRouteEnabled: true`.
+
 **Example:**
 
 ```yaml
@@ -327,6 +338,9 @@ labels:
   katenary.v3/ingress: |-
     port: 80
     hostname: mywebsite.com (optional)
+    # Use Traefik IngressRoute instead of standard Ingress
+    type: ingressroute
+    enabled: true
 ```
 
 
