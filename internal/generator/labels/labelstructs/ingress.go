@@ -17,7 +17,8 @@ type Ingress struct {
 	Annotations map[string]string `yaml:"annotations,omitempty" jsonschema:"nullable" json:"annotations,omitempty"`
 	Hostname    string            `yaml:"hostname,omitempty" json:"hostname,omitempty"`
 	Path        *string           `yaml:"path,omitempty" json:"path,omitempty"`
-	Class       *string           `yaml:"class,omitempty" json:"class,omitempty" jsonschema:"default:-"`
+	Class       *string           `yaml:"class,omitempty" json:"class,omitempty" jsonschema:"default:traefik"`
+	Type        string            `yaml:"type,omitempty" json:"type,omitempty"`
 	Enabled     bool              `yaml:"enabled,omitempty" json:"enabled,omitempty"`
 	TLS         *TLS              `yaml:"tls,omitempty" json:"tls,omitempty"`
 }
@@ -28,7 +29,8 @@ func IngressFrom(data string) (*Ingress, error) {
 		Hostname: "",
 		Path:     utils.StrPtr("/"),
 		Enabled:  false,
-		Class:    utils.StrPtr("-"),
+		Class:    utils.StrPtr("traefik"),
+		Type:     "ingress",
 		Port:     nil,
 		TLS:      &TLS{Enabled: true},
 	}

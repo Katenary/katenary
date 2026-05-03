@@ -98,7 +98,7 @@ services:
             %s/ingress: |-
                 hostname: my.test.tld
                 port: 80
-`
+ `
 	composeFile = fmt.Sprintf(composeFile, labels.KatenaryLabelPrefix)
 	tmpDir := setup(composeFile)
 	defer teardown(tmpDir)

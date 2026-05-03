@@ -21,7 +21,7 @@ type Ingress struct {
 	appName string               `yaml:"-"`
 }
 
-// NewIngress creates a new Ingress from a compose service.
+// NewIngress creates a new standard Kubernetes Ingress from a compose service.
 func NewIngress(service types.ServiceConfig, Chart *HelmChart) *Ingress {
 	appName := Chart.Name
 
@@ -42,13 +42,7 @@ func NewIngress(service types.ServiceConfig, Chart *HelmChart) *Ingress {
 		mapping.Hostname = service.Name + ".tld"
 	}
 
-	// create the ingress
-	pathType := networkv1.PathTypeImplementationSpecific
-
-	// fix the service name, and create the full name from variable name
-	// which is injected in the YAML() method
 	serviceName := strings.ReplaceAll(service.Name, "_", "-")
-	fullName := `{{ $fullname }}-` + serviceName
 
 	// Add the ingress host to the values.yaml
 	if Chart.Values[service.Name] == nil {
@@ -56,15 +50,48 @@ func NewIngress(service types.ServiceConfig, Chart *HelmChart) *Ingress {
 	}
 
 	Chart.Values[service.Name].(*Value).Ingress = &IngressValue{
-		Enabled:     mapping.Enabled,
-		Path:        *mapping.Path,
-		Host:        mapping.Hostname,
-		Class:       *mapping.Class,
-		Annotations: mapping.Annotations,
-		TLS:         TLS{Enabled: mapping.TLS.Enabled},
+		Enabled:            mapping.Enabled,
+		Path:               *mapping.Path,
+		Host:               mapping.Hostname,
+		Class:              *mapping.Class,
+		Type:               mapping.Type,
+		IngressRouteEnabled: mapping.Type == "ingressroute" && mapping.Enabled,
+		Annotations:        mapping.Annotations,
+		TLS:                TLS{Enabled: mapping.TLS.Enabled},
 	}
 
-	// ingressClassName := `{{ .Values.` + service.Name + `.ingress.class }}`
+	return newStandardIngress(service, mapping, serviceName, appName)
+}
+
+// NewIngressRouteFromService creates a Traefik IngressRoute from the same service config.
+// This is called separately to generate the IngressRoute file in addition to Ingress.
+func NewIngressRouteFromService(service types.ServiceConfig, Chart *HelmChart) Yaml {
+	appName := Chart.Name
+
+	if service.Labels == nil {
+		return nil
+	}
+	var label string
+	var ok bool
+	if label, ok = service.Labels[labels.LabelIngress]; !ok {
+		return nil
+	}
+
+	mapping, err := labelstructs.IngressFrom(label)
+	if err != nil {
+		return nil
+	}
+
+	serviceName := strings.ReplaceAll(service.Name, "_", "-")
+	return NewIngressRoute(service, Chart, mapping, serviceName, appName)
+}
+
+// newStandardIngress creates a standard Kubernetes Ingress
+func newStandardIngress(service types.ServiceConfig, mapping *labelstructs.Ingress, serviceName, appName string) *Ingress {
+	pathType := networkv1.PathTypeImplementationSpecific
+
+	fullName := `{{ $fullname }}-` + serviceName
+
 	ingressClassName := utils.TplValue(service.Name, "ingress.class")
 
 	servicePortName := utils.GetServiceNameByPort(int(*mapping.Port))
@@ -174,16 +201,13 @@ func (ingress *Ingress) Yaml() ([]byte, error) {
 		`{{- $tlsname := printf "%s-%s-tls" $fullname "` + ingress.service.Name + `" -}}`,
 	}
 	for _, line := range lines {
-		if strings.Contains(line, "loadBalancer: ") {
-			continue
-		}
-
 		if strings.Contains(line, "labels:") {
 			// add annotations above labels from values.yaml
+			indent := strings.Repeat(" ", utils.CountStartingSpaces(line))
 			content := `` +
-				`    {{- if .Values.` + serviceName + `.ingress.annotations -}}` + "\n" +
-				`        {{- toYaml .Values.` + serviceName + `.ingress.annotations | nindent 4 }}` + "\n" +
-				`    {{- end }}` + "\n" +
+				indent + `{{- if .Values.` + serviceName + `.ingress.annotations -}}` + "\n" +
+				indent + `    {{- toYaml .Values.` + serviceName + `.ingress.annotations | nindent __indent__ }}` + "\n" +
+				indent + `    {{- end }}` + "\n" +
 				line
 
 			out = append(out, content)
