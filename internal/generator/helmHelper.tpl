@@ -31,6 +31,6 @@
 
 {{- define "__APP__.selectorLabels" -}}
 {{- $name := default .Chart.Name .Values.nameOverride -}}
-{{ printf "__PREFIX__/name: %s" $name }}
-{{ printf "__PREFIX__/instance: %s" .Release.Name }}
+{{ printf "app.kubernetes.io/name: %s" $name }}
+{{ printf "app.kubernetes.io/instance: %s" .Release.Name }}
 {{- end -}}
