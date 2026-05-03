@@ -27,12 +27,14 @@ type TLS struct {
 
 // IngressValue is a ingress configuration that will be saved in values.yaml.
 type IngressValue struct {
-	Annotations map[string]string `yaml:"annotations"`
-	Host        string            `yaml:"host"`
-	Path        string            `yaml:"path"`
-	Class       string            `yaml:"class"`
-	Enabled     bool              `yaml:"enabled"`
-	TLS         TLS               `yaml:"tls"`
+	Annotations      map[string]string `yaml:"annotations"`
+	Host             string            `yaml:"host"`
+	Path             string            `yaml:"path"`
+	Class            string            `yaml:"class"`
+	Type             string            `yaml:"type"`
+	Enabled          bool              `yaml:"enabled"`
+	IngressRouteEnabled bool          `yaml:"ingressRouteEnabled"`
+	TLS              TLS               `yaml:"tls"`
 }
 
 // Value will be saved in values.yaml. It contains configuration for all deployment and services.
@@ -92,7 +94,8 @@ func (v *Value) AddIngress(host, path string) {
 		Enabled: true,
 		Host:    host,
 		Path:    path,
-		Class:   "-",
+		Class:   "traefik",
+		Type:    "ingress",
 		TLS: TLS{
 			Enabled:    true,
 			SecretName: "",

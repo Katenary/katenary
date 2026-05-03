@@ -247,6 +247,15 @@ func (chart *HelmChart) generateDeployment(service types.ServiceConfig, deployme
 		}
 	}
 
+	// create IngressRoute (Traefik CRD) if specified
+	if ingressRoute := d.AddIngressRoute(service, appName); ingressRoute != nil {
+		y, _ := ingressRoute.Yaml()
+		chart.Templates[ingressRoute.Filename()] = &ChartTemplate{
+			Content:     y,
+			Servicename: service.Name,
+		}
+	}
+
 	return nil
 }
 

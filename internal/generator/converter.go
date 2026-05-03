@@ -22,12 +22,15 @@ import (
 	"github.com/compose-spec/compose-go/v2/types"
 )
 
-const ingressClassHelp = `# Default value for ingress.class annotation
-# class: "-"
+const ingressClassHelp = `# Default value for ingress.class
+# class: "traefik"
 # If the value is "-", controller will not set ingressClassName
 # If the value is "", Ingress will be set to an empty string, so
 # controller will use the default value for ingressClass
-# If the value is specified, controller will set the named class e.g. "nginx"
+# If the value is specified, controller will set the named class e.g. "traefik"
+#
+# Ingress type: "ingress" (default) or "ingressroute" (Traefik CRD)
+# type: "ingress"
 `
 
 const storageClassHelp = `# Storage class to use for PVCs

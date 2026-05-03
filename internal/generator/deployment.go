@@ -196,6 +196,11 @@ func (d *Deployment) AddIngress(service types.ServiceConfig, appName string) *In
 	return NewIngress(service, d.chart)
 }
 
+// AddIngressRoute adds an IngressRoute to the deployment if type is "ingressroute".
+func (d *Deployment) AddIngressRoute(service types.ServiceConfig, appName string) Yaml {
+	return NewIngressRouteFromService(service, d.chart)
+}
+
 // AddVolumes adds a volume to the deployment. It does not create the PVC, it only adds the volumes to the deployment.
 // If the volume is a bind volume it will warn the user that it is not supported yet.
 func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string) {
