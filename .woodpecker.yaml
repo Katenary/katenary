@@ -1,0 +1,200 @@
+# Woodpecker CI (replaces .gitea/workflows)
+#
+# A single .woodpecker.yaml defines one workflow: the former Gitea workflows
+# are now steps gated with `when:`. Tests run on pushes and pull requests,
+# releases are built on `releases/*` tags.
+#
+# Required secrets (repository or organization level):
+#   sonar_token        SonarCloud token
+#   registry_user      Forgejo user allowed to write packages on repo.katenary.io
+#   registry_password  Token for that user (registry + package API)
+
+when:
+  - event: [pull_request, push]
+    branch: [main, master]
+    path:
+      exclude: ["doc/**", "README.md", "**/*.sh"]
+  - event: tag
+    ref: refs/tags/releases/*
+
+steps:
+  # ---------------------------------------------------------------------------
+  # Tests (Gitea: go-test.yaml)
+  # ---------------------------------------------------------------------------
+  - name: tests
+    image: golang:1.25
+    when:
+      - event: [pull_request, push]
+    environment:
+      CGO_ENABLED: "0"
+    commands:
+      - command -v helm || curl -sSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      - go mod tidy
+      - go vet ./...
+      - go test -tags ci -coverprofile=coverprofile.out -v ./...
+      - go test -tags ci -coverprofile=coverprofile.out -json -v ./... > gotest.json
+      - go tool cover -func=coverprofile.out
+
+  - name: sonar
+    image: sonarsource/sonar-scanner-cli:11
+    when:
+      - event: [pull_request, push]
+    environment:
+      SONAR_TOKEN:
+        from_secret: sonar_token
+    commands:
+      - sonar-scanner -Dsonar.organization=katenary -Dsonar.projectKey=katenary_katenary
+
+  # ---------------------------------------------------------------------------
+  # Release binaries and packages (Gitea: build-and-package.yaml)
+  # ---------------------------------------------------------------------------
+  - name: release-binaries
+    image: golang:1.25
+    when:
+      - event: tag
+    environment:
+      CGO_ENABLED: "0"
+    commands:
+      - apt-get update && apt-get install -y --no-install-recommends rpm zstd libarchive-tools binutils ruby curl
+      - gem install fpm --no-document
+      - |
+        set -eu
+        VERSION="${CI_COMMIT_TAG##releases/}"
+        URL="https://katenary.io"
+        VENDOR="Katenary Project"
+        MAINTAINER="Patrice Ferlet <metal3d@gmail.com>"
+        LICENSE="MIT"
+        DESCRIPTION="Effortless conversion from compose files (docker, podman) to Helm Charts"
+        FPM_BASE="../LICENSE=/usr/share/doc/katenary/LICENSE ../README.md=/usr/share/doc/katenary/README.md"
+        FPM_COMMON_FILES="$FPM_BASE ../doc/share/man/man1/katenary.1=/usr/share/man/man1/katenary.1"
+        FPM_COMMON_FILES_ARCHLINUX="$FPM_BASE ../doc/share/man/man1/katenary.1=/usr/man/man1/katenary.1"
+
+        mkdir -p dist
+        for target in linux/amd64 linux/arm64 freebsd/amd64 freebsd/arm64 darwin/amd64; do
+          os="${target%/*}"
+          arch="${target#*/}"
+          echo "Building dist/katenary-$os-$arch"
+          GOOS="$os" GOARCH="$arch" \
+            go build -ldflags="-X 'katenary.io/internal/generator.Version=v$VERSION'" \
+            -trimpath -o "dist/katenary-$os-$arch" ./cmd/katenary
+        done
+
+        cd dist
+        for arch in amd64 arm64; do
+          for p in rpm deb; do
+            fpm -s dir -t "$p" \
+              --name katenary --url "$URL" --vendor "$VENDOR" --maintainer "$MAINTAINER" \
+              --license "$LICENSE" --description "$DESCRIPTION" \
+              -a "$arch" -f --version="$VERSION" \
+              $FPM_COMMON_FILES \
+              "./katenary-linux-$arch"=/usr/bin/katenary
+          done
+          fpm -s dir -t pacman \
+            --name katenary --url "$URL" --vendor "$VENDOR" --maintainer "$MAINTAINER" \
+            --license "$LICENSE" --description "$DESCRIPTION" \
+            -a "$arch" -f --version="$VERSION" \
+            $FPM_COMMON_FILES_ARCHLINUX \
+            "./katenary-linux-$arch"=/usr/bin/katenary
+          fpm -s dir -t freebsd \
+            --name katenary --url "$URL" --vendor "$VENDOR" --maintainer "$MAINTAINER" \
+            --license "$LICENSE" --description "$DESCRIPTION" \
+            -a "$arch" -f --version="$VERSION" \
+            $FPM_COMMON_FILES \
+            "./katenary-freebsd-$arch"=/usr/bin/katenary
+        done
+
+  - name: release-windows
+    image: golang:1.25
+    when:
+      - event: tag
+    environment:
+      CGO_ENABLED: "0"
+    commands:
+      - apt-get update && apt-get install -y --no-install-recommends nsis curl ca-certificates unzip
+      - |
+        set -eu
+        VERSION="${CI_COMMIT_TAG##releases/}"
+        mkdir -p dist
+        GOOS=windows GOARCH=amd64 \
+          go build -ldflags="-X 'katenary.io/internal/generator.Version=v$VERSION'" \
+          -trimpath -o dist/katenary.exe ./cmd/katenary
+        curl -fsSL https://nsis.sourceforge.io/mediawiki/images/7/7f/EnVar_plugin.zip -o nsis/EnVar_plugin.zip
+        ( cd nsis \
+          && unzip -o EnVar_plugin.zip Plugins/x86-unicode/EnVar.dll \
+          && mv Plugins/x86-unicode/EnVar.dll EnVar.dll \
+          && rm -rf Plugins EnVar_plugin.zip )
+        makensis -DAPP_VERSION="$VERSION" nsis/katenary.nsi
+        mv nsis/katenary-windows-setup.exe dist/katenary-windows-setup.exe
+
+  - name: release-upload
+    image: curlimages/curl:8
+    when:
+      - event: tag
+    environment:
+      PACKAGE_API: https://repo.katenary.io/api/packages/katenary
+      PACKAGE_USER:
+        from_secret: registry_user
+      PACKAGE_TOKEN:
+        from_secret: registry_password
+    commands:
+      - |
+        set -eu
+        VERSION="${CI_COMMIT_TAG##releases/}"
+        cd dist
+        for file in katenary-freebsd-amd64 katenary-freebsd-arm64 \
+                    katenary-linux-amd64 katenary-linux-arm64 \
+                    katenary-darwin-amd64 katenary.exe katenary-windows-setup.exe; do
+          [ -f "$file" ] || continue
+          echo "Push $file"
+          curl -sSLf --user "$PACKAGE_USER:$PACKAGE_TOKEN" --upload-file "$file" \
+            "$PACKAGE_API/generic/katenary/$VERSION/$file"
+        done
+        for file in $(find . -name '*.rpm'); do
+          echo "Push $file"
+          curl -sSLf --user "$PACKAGE_USER:$PACKAGE_TOKEN" --upload-file "$file" \
+            "$PACKAGE_API/rpm/upload"
+        done
+        for file in $(find . -name '*.deb'); do
+          echo "Push $file"
+          curl -sSLf --user "$PACKAGE_USER:$PACKAGE_TOKEN" --upload-file "$file" \
+            "$PACKAGE_API/debian/pool/any/main/upload"
+        done
+        for file in $(find . -name '*.zst'); do
+          echo "Push $file"
+          curl -sSLf --user "$PACKAGE_USER:$PACKAGE_TOKEN" --upload-file "$file" \
+            "$PACKAGE_API/arch/core"
+        done
+
+  # ---------------------------------------------------------------------------
+  # OCI image (Gitea: build-oci.yaml)
+  # ---------------------------------------------------------------------------
+  # The Kubernetes agent only allows privileged mode for
+  # ghcr.io/404systems/plugin-buildah (WOODPECKER_PLUGINS_PRIVILEGED).
+  # The plugin defaults (rootless isolation + fuse-overlayfs) are the
+  # recommended mode on Kubernetes: privileged mode grants /dev/fuse.
+  - name: release-image
+    image: ghcr.io/404systems/plugin-buildah:1.1.1
+    when:
+      - event: tag
+    privileged: true
+    backend_options:
+      kubernetes:
+        securityContext:
+          privileged: true
+        resources:
+          requests: { cpu: 500m, memory: 512Mi }
+          limits: { memory: 2Gi }
+    settings:
+      registry: repo.katenary.io
+      repo: ${CI_REPO,,}
+      containerfile: ./oci/katenary/Containerfile
+      context: .
+      tags:
+        - ${CI_COMMIT_TAG##releases/}
+        - latest
+      args:
+        VERSION: ${CI_COMMIT_TAG##releases/}
+      username:
+        from_secret: registry_user
+      password:
+        from_secret: registry_password
