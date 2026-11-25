@@ -1,16 +1,21 @@
 # Woodpecker CI (replaces .gitea/workflows)
 #
 # A single .woodpecker.yaml defines one workflow: the former Gitea workflows
-# are now steps gated with `when:`. Tests run on pushes and pull requests,
-# releases are built on `releases/*` tags.
+# are now steps gated with `when:`. Tests run on pushes to master/develop and
+# on pull requests; releases are built on `releases/*` tags.
 #
 # Required secrets (repository or organization level):
 #   registry_user      Forgejo user allowed to write packages on repo.katenary.io
 #   registry_password  Token for that user (registry + package API)
 
 when:
-  - event: [pull_request, push]
-    branch: [main, master]
+  # Pull requests may target any branch (develop, master, feature...).
+  - event: pull_request
+    path:
+      exclude: ["doc/**", "README.md", "**/*.sh"]
+  # Pushes are tested on the integration and stable branches.
+  - event: push
+    branch: [master, develop]
     path:
       exclude: ["doc/**", "README.md", "**/*.sh"]
   - event: tag
