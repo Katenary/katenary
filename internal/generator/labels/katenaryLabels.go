@@ -213,12 +213,6 @@ func generateMarkdownHelp(names []string) string {
 	var builder strings.Builder
 	var maxNameLength, maxDescriptionLength, maxTypeLength int
 
-	max := func(a, b int) int {
-		if a > b {
-			return a
-		}
-		return b
-	}
 	for _, name := range names {
 		help := labelFullHelp[name]
 		maxNameLength = max(maxNameLength, len(name)+3+len(KatenaryLabelPrefix))

@@ -1,7 +1,6 @@
 package generator
 
 import (
-	"fmt"
 	"image"
 	"image/color"
 	"image/png"
@@ -10,8 +9,8 @@ import (
 	"testing"
 
 	"katenary.io/internal/generator/labels"
-	"katenary.io/internal/utils"
 
+	"github.com/compose-spec/compose-go/v2/types"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
@@ -23,376 +22,260 @@ const (
 	indexHMLFile     = "index.html"
 )
 
+// newWorkingProject creates a project whose relative paths resolve from a
+// temporary working directory.
+func newWorkingProject(t *testing.T, services ...types.ServiceConfig) *types.Project {
+	t.Helper()
+	dir := t.TempDir()
+	t.Chdir(dir)
+	return newProject("testapp", services...)
+}
+
+func writeFile(t *testing.T, dir, name, content string) {
+	t.Helper()
+	path := filepath.Join(dir, name)
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatalf("cannot create directory: %s", err)
+	}
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatalf("cannot write %s: %s", name, err)
+	}
+}
+
+func writePNG(t *testing.T, dir, name string) {
+	t.Helper()
+	path := filepath.Join(dir, name)
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatalf("cannot create directory: %s", err)
+	}
+	img := image.NewRGBA(image.Rect(0, 0, 100, 100))
+	red := color.RGBA{255, 0, 0, 255}
+	for y := range 100 {
+		for x := range 100 {
+			img.Set(x, y, red)
+		}
+	}
+	f, err := os.Create(path)
+	if err != nil {
+		t.Fatalf("cannot create png: %s", err)
+	}
+	defer f.Close()
+	if err := png.Encode(f, img); err != nil {
+		t.Fatalf("cannot encode png: %s", err)
+	}
+}
+
 func TestGenerateWithBoundVolume(t *testing.T) {
-	composeFile := `
-services:
-    web:
-        image: nginx:1.29
-        volumes:
-        - data:/var/www
-volumes:
-    data:
-`
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
+	t.Parallel()
+	project := newProject("testapp",
+		newService("web").image("nginx:1.29").volume("data", "/var/www").build(),
+	)
+	project.Volumes = types.Volumes{"data": {Name: "data"}}
 
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
-
-	output := internalCompileTest(t, "-s", developementFile)
-
-	dt := v1.Deployment{}
-	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
-		t.Errorf(unmarshalError, err)
+	output := renderProjectTemplate(t, project, developementFile)
+	deployment := v1.Deployment{}
+	if err := yaml.Unmarshal(output, &deployment); err != nil {
+		t.Fatalf("%s\n%s", unmarshalError, err)
 	}
 
-	if dt.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name != "data" {
-		t.Errorf("Expected container volume name to be data: %v", dt)
+	if name := deployment.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name; name != "data" {
+		t.Errorf("expected volume name data, got %s", name)
 	}
 }
 
 func TestWithStaticFiles(t *testing.T) {
-	composeFile := `
-services:
-    web:
-        image: nginx:1.29
-        volumes:
-        - ./static:/var/www
-        labels:
-            %s/configmap-files: |-
-                - ./static
-`
-	composeFile = fmt.Sprintf(composeFile, labels.KatenaryLabelPrefix)
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
+	project := newWorkingProject(t,
+		newService("web").
+			image("nginx:1.29").
+			bind("./static", "/var/www").
+			label(labels.LabelConfigMapFiles, "- ./static").
+			build(),
+	)
+	writeFile(t, "static", indexHMLFile, htmlContent)
 
-	// create a static directory with an index.html file
-	staticDir := tmpDir + "/static"
-	os.Mkdir(staticDir, utils.DirectoryPermission)
-	indexFile, err := os.Create(staticDir + "/index.html")
-	if err != nil {
-		t.Errorf("Failed to create index.html: %s", err)
+	output := renderProjectTemplate(t, project, developementFile)
+	deployment := v1.Deployment{}
+	if err := yaml.Unmarshal(output, &deployment); err != nil {
+		t.Fatalf("%s\n%s", unmarshalError, err)
 	}
-	indexFile.WriteString(htmlContent)
-	indexFile.Close()
-
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
-
-	output := internalCompileTest(t, "-s", developementFile)
-	dt := v1.Deployment{}
-	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
-		t.Errorf(unmarshalError, err)
-	}
-	// get the volume mount path
-	volumeMountPath := dt.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath
-	if volumeMountPath != "/var/www" {
-		t.Errorf("Expected volume mount path to be /var/www, got %s", volumeMountPath)
+	if mountPath := deployment.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath; mountPath != "/var/www" {
+		t.Errorf("expected mount path /var/www, got %s", mountPath)
 	}
 
-	// read the configMap
-	output, err = helmTemplate(ConvertOptions{
-		OutputDir: tmpDir + "/chart",
-	}, "-s", "templates/web/statics/static/configmap.yaml")
-	if err != nil {
-		t.Errorf("Failed to run helm template: %s", err)
-	}
+	cmOutput := renderProjectTemplate(t, project, "templates/web/statics/static/configmap.yaml")
 	configMap := corev1.ConfigMap{}
-	if err := yaml.Unmarshal([]byte(output), &configMap); err != nil {
-		t.Errorf(unmarshalError, err)
+	if err := yaml.Unmarshal(cmOutput, &configMap); err != nil {
+		t.Fatalf("%s\n%s", unmarshalError, err)
 	}
-	data := configMap.Data
-	if len(data) != 1 {
-		t.Errorf("Expected 1 data, got %d", len(data))
+	if len(configMap.Data) != 1 {
+		t.Fatalf("expected 1 data entry, got %d", len(configMap.Data))
 	}
-	if data[indexHMLFile] != htmlContent {
-		t.Errorf("Expected index.html to be "+htmlContent+", got %s", data[indexHMLFile])
+	if configMap.Data[indexHMLFile] != htmlContent {
+		t.Errorf("expected %s in the configmap, got %s", htmlContent, configMap.Data[indexHMLFile])
 	}
 }
 
 func TestWithFileMapping(t *testing.T) {
-	composeFile := `
-services:
-    web:
-        image: nginx:1.29
-        volumes:
-        - ./static/index.html:/var/www/index.html
-        labels:
-            %s/configmap-files: |-
-                - ./static/index.html
-`
-	composeFile = fmt.Sprintf(composeFile, labels.KatenaryLabelPrefix)
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
+	project := newWorkingProject(t,
+		newService("web").
+			image("nginx:1.29").
+			bind("./static/index.html", "/var/www/index.html").
+			label(labels.LabelConfigMapFiles, "- ./static/index.html").
+			build(),
+	)
+	writeFile(t, filepath.Join("static", indexHMLFile), "", htmlContent)
 
-	// create a static directory with an index.html file
-	staticDir := tmpDir + "/static"
-	os.Mkdir(staticDir, utils.DirectoryPermission)
-	indexFile, err := os.Create(staticDir + "/index.html")
-	if err != nil {
-		t.Errorf("Failed to create index.html: %s", err)
-	}
-	indexFile.WriteString(htmlContent)
-	indexFile.Close()
-
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
-
-	output := internalCompileTest(t, "-s", developementFile)
-	dt := v1.Deployment{}
-	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
-		t.Errorf(unmarshalError, err)
+	output := renderProjectTemplate(t, project, developementFile)
+	deployment := v1.Deployment{}
+	if err := yaml.Unmarshal(output, &deployment); err != nil {
+		t.Fatalf("%s\n%s", unmarshalError, err)
 	}
 
-	// get the volume mount path
-	volumeMountPath := dt.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath
-	if volumeMountPath != "/var/www/index.html" {
-		t.Errorf("Expected volume mount path to be /var/www/index.html, got %s", volumeMountPath)
+	mount := deployment.Spec.Template.Spec.Containers[0].VolumeMounts[0]
+	if mount.MountPath != "/var/www/index.html" {
+		t.Errorf("expected mount path /var/www/index.html, got %s", mount.MountPath)
 	}
-	// but this time, we need a subpath
-	subPath := dt.Spec.Template.Spec.Containers[0].VolumeMounts[0].SubPath
-	if subPath != indexHMLFile {
-		t.Errorf("Expected subpath to be index.html, got %s", subPath)
+	if mount.SubPath != indexHMLFile {
+		t.Errorf("expected subPath index.html, got %s", mount.SubPath)
 	}
 }
 
 func TestBinaryMount(t *testing.T) {
-	composeFile := `
-services:
-  web:
-    image: nginx
-    volumes:
-      - ./images/foo.png:/var/www/foo
-    labels:
-      %[1]s/configmap-files: |-
-        - ./images/foo.png
-`
-	composeFile = fmt.Sprintf(composeFile, labels.KatenaryLabelPrefix)
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
+	project := newWorkingProject(t,
+		newService("web").
+			image("nginx").
+			bind("./images/foo.png", "/var/www/foo").
+			label(labels.LabelConfigMapFiles, "- ./images/foo.png").
+			build(),
+	)
+	writePNG(t, "images", "foo.png")
 
-	os.Mkdir(filepath.Join(tmpDir, "images"), utils.DirectoryPermission)
-
-	// create a png image
-	pngFile := tmpDir + "/images/foo.png"
-	w, h := 100, 100
-	img := image.NewRGBA(image.Rect(0, 0, w, h))
-	red := color.RGBA{255, 0, 0, 255}
-	for y := range h {
-		for x := range w {
-			img.Set(x, y, red)
-		}
+	output := renderProjectTemplate(t, project, developementFile)
+	deployment := v1.Deployment{}
+	if err := yaml.Unmarshal(output, &deployment); err != nil {
+		t.Fatalf("%s\n%s", unmarshalError, err)
+	}
+	if len(deployment.Spec.Template.Spec.Volumes) != 1 {
+		t.Errorf("expected 1 volume, got %d", len(deployment.Spec.Template.Spec.Volumes))
 	}
 
-	blue := color.RGBA{0, 0, 255, 255}
-	for y := 30; y < 70; y++ {
-		for x := 30; x < 70; x++ {
-			img.Set(x, y, blue)
-		}
+	cmOutput := renderProjectTemplate(t, project, "templates/web/statics/images/configmap.yaml")
+	configMap := corev1.ConfigMap{}
+	if err := yaml.Unmarshal(cmOutput, &configMap); err != nil {
+		t.Fatalf("%s\n%s", unmarshalError, err)
 	}
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
-
-	f, err := os.Create(pngFile)
-	if err != nil {
-		t.Fatal(err)
+	image, ok := configMap.BinaryData["foo.png"]
+	if !ok {
+		t.Fatal("expected foo.png in the configmap BinaryData")
 	}
-	png.Encode(f, img)
-	f.Close()
-	output := internalCompileTest(t, "-s", developementFile)
-	d := v1.Deployment{}
-	yaml.Unmarshal([]byte(output), &d)
-	volumes := d.Spec.Template.Spec.Volumes
-	if len(volumes) != 1 {
-		t.Errorf("Expected 1 volume, got %d", len(volumes))
-	}
-
-	cm := corev1.ConfigMap{}
-	cmContent, err := helmTemplate(ConvertOptions{
-		OutputDir: "chart",
-	}, "-s", "templates/web/statics/images/configmap.yaml")
-	if err != nil {
-		t.Fatal(err)
-	}
-	yaml.Unmarshal([]byte(cmContent), &cm)
-	if im, ok := cm.BinaryData["foo.png"]; !ok {
-		t.Errorf("Expected foo.png to be in the configmap")
-	} else {
-		if len(im) == 0 {
-			t.Errorf("Expected image to be non-empty")
-		}
+	if len(image) == 0 {
+		t.Error("expected the image to be non-empty")
 	}
 }
 
 func TestGloballyBinaryMount(t *testing.T) {
-	composeFile := `
-services:
-  web:
-    image: nginx
-    volumes:
-      - ./images:/var/www/foo
-    labels:
-      %[1]s/configmap-files: |-
-        - ./images
-`
-	composeFile = fmt.Sprintf(composeFile, labels.KatenaryLabelPrefix)
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
+	project := newWorkingProject(t,
+		newService("web").
+			image("nginx").
+			bind("./images", "/var/www/foo").
+			label(labels.LabelConfigMapFiles, "- ./images").
+			build(),
+	)
+	writePNG(t, "images", "foo.png")
 
-	os.Mkdir(filepath.Join(tmpDir, "images"), utils.DirectoryPermission)
-
-	// create a png image
-	pngFile := tmpDir + "/images/foo.png"
-	w, h := 100, 100
-	img := image.NewRGBA(image.Rect(0, 0, w, h))
-	red := color.RGBA{255, 0, 0, 255}
-	for y := range h {
-		for x := range w {
-			img.Set(x, y, red)
-		}
+	output := renderProjectTemplate(t, project, developementFile)
+	deployment := v1.Deployment{}
+	if err := yaml.Unmarshal(output, &deployment); err != nil {
+		t.Fatalf("%s\n%s", unmarshalError, err)
+	}
+	if len(deployment.Spec.Template.Spec.Volumes) != 1 {
+		t.Errorf("expected 1 volume, got %d", len(deployment.Spec.Template.Spec.Volumes))
 	}
 
-	blue := color.RGBA{0, 0, 255, 255}
-	for y := 30; y < 70; y++ {
-		for x := 30; x < 70; x++ {
-			img.Set(x, y, blue)
-		}
+	cmOutput := renderProjectTemplate(t, project, "templates/web/statics/images/configmap.yaml")
+	configMap := corev1.ConfigMap{}
+	if err := yaml.Unmarshal(cmOutput, &configMap); err != nil {
+		t.Fatalf("%s\n%s", unmarshalError, err)
 	}
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
-
-	f, err := os.Create(pngFile)
-	if err != nil {
-		t.Fatal(err)
+	image, ok := configMap.BinaryData["foo.png"]
+	if !ok {
+		t.Fatal("expected foo.png in the configmap BinaryData")
 	}
-	png.Encode(f, img)
-	f.Close()
-	output := internalCompileTest(t, "-s", developementFile)
-	d := v1.Deployment{}
-	yaml.Unmarshal([]byte(output), &d)
-	volumes := d.Spec.Template.Spec.Volumes
-	if len(volumes) != 1 {
-		t.Errorf("Expected 1 volume, got %d", len(volumes))
-	}
-
-	cm := corev1.ConfigMap{}
-	cmContent, err := helmTemplate(ConvertOptions{
-		OutputDir: "chart",
-	}, "-s", "templates/web/statics/images/configmap.yaml")
-	if err != nil {
-		t.Fatal(err)
-	}
-	yaml.Unmarshal([]byte(cmContent), &cm)
-	if im, ok := cm.BinaryData["foo.png"]; !ok {
-		t.Errorf("Expected foo.png to be in the configmap")
-	} else {
-		if len(im) == 0 {
-			t.Errorf("Expected image to be non-empty")
-		}
+	if len(image) == 0 {
+		t.Error("expected the image to be non-empty")
 	}
 }
 
 func TestBindFrom(t *testing.T) {
-	composeFile := `
-services:
-    web:
-        image: nginx:1.29
-        volumes:
-        - data:/var/www
+	t.Parallel()
+	project := newProject("testapp",
+		newService("web").image("nginx:1.29").volume("data", "/var/www").build(),
+		newService("fpm").
+			image("php:fpm").
+			volume("data", "/var/www").
+			label(labels.LabelPorts, "[9000]").
+			label(labels.LabelSamePod, "web").
+			build(),
+	)
+	project.Volumes = types.Volumes{"data": {Name: "data"}}
 
-    fpm:
-        image: php:fpm
-        volumes:
-        - data:/var/www
-        labels:
-            %[1]s/ports: |
-                - 9000
-            %[1]s/same-pod: web
-
-volumes:
-    data:
-`
-
-	composeFile = fmt.Sprintf(composeFile, labels.KatenaryLabelPrefix)
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
-
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
-
-	output := internalCompileTest(t, "-s", developementFile)
-	dt := v1.Deployment{}
-	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
-		t.Errorf(unmarshalError, err)
+	output := renderProjectTemplate(t, project, developementFile)
+	deployment := v1.Deployment{}
+	if err := yaml.Unmarshal(output, &deployment); err != nil {
+		t.Fatalf("%s\n%s", unmarshalError, err)
 	}
-	// both containers should have the same volume mount
-	if dt.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name != "data" {
-		t.Errorf("Expected container 0 volume name to be data: %v", dt)
+
+	containers := deployment.Spec.Template.Spec.Containers
+	if len(containers) != 2 {
+		t.Fatalf("expected 2 containers, got %d", len(containers))
 	}
-	if dt.Spec.Template.Spec.Containers[1].VolumeMounts[0].Name != "data" {
-		t.Errorf("Expected container 1 volume name to be data: %v", dt)
+	for i, container := range containers {
+		if name := container.VolumeMounts[0].Name; name != "data" {
+			t.Errorf("expected container %d volume name data, got %s", i, name)
+		}
 	}
 }
 
 func TestExchangeVolume(t *testing.T) {
-	composeFile := `
-services:
-  app1:
-    image: nginx:1.29
-    labels:
-      %[1]s/exchange-volumes: |-
-        - name: data
-          mountPath: /var/www
-  app2:
-    image: foo:bar
-    labels:
-      %[1]s/same-pod: app1
-      %[1]s/exchange-volumes: |-
-        - name: data
-          mountPath: /opt
-          init: cp -r /var/www /opt
-`
-	composeFile = fmt.Sprintf(composeFile, labels.KatenaryLabelPrefix)
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
+	t.Parallel()
+	project := newProject("testapp",
+		newService("app1").
+			image("nginx:1.29").
+			label(labels.LabelExchangeVolume, "- name: data\n  mountPath: /var/www").
+			build(),
+		newService("app2").
+			image("foo:bar").
+			label(labels.LabelSamePod, "app1").
+			label(labels.LabelExchangeVolume, "- name: data\n  mountPath: /opt\n  init: cp -r /var/www /opt").
+			build(),
+	)
 
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
-	output := internalCompileTest(t, "-s", "templates/app1/deployment.yaml")
-	dt := v1.Deployment{}
-	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
-		t.Errorf(unmarshalError, err)
+	output := renderProjectTemplate(t, project, "templates/app1/deployment.yaml")
+	deployment := v1.Deployment{}
+	if err := yaml.Unmarshal(output, &deployment); err != nil {
+		t.Fatalf("%s\n%s", unmarshalError, err)
 	}
-	// the deployment should have a volume named "data"
-	volumes := dt.Spec.Template.Spec.Volumes
+
 	found := false
-	for v := range volumes {
-		if volumes[v].Name == "exchange-data" {
+	for _, volume := range deployment.Spec.Template.Spec.Volumes {
+		if volume.Name == "exchange-data" {
 			found = true
 			break
 		}
 	}
 	if !found {
-		t.Errorf("Expected volume name to be data: %v", volumes)
+		t.Errorf("expected an exchange-data volume, got %v", deployment.Spec.Template.Spec.Volumes)
 	}
+
 	mounted := 0
-	// we should have a volume mount for both containers
-	containers := dt.Spec.Template.Spec.Containers
-	for c := range containers {
-		for _, vm := range containers[c].VolumeMounts {
-			if vm.Name == "exchange-data" {
+	for _, container := range deployment.Spec.Template.Spec.Containers {
+		for _, mount := range container.VolumeMounts {
+			if mount.Name == "exchange-data" {
 				mounted++
 			}
 		}
 	}
 	if mounted != 2 {
-		t.Errorf("Expected 2 mounted volumes, got %d", mounted)
+		t.Errorf("expected 2 mounts of exchange-data, got %d", mounted)
 	}
 }

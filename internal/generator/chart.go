@@ -42,6 +42,7 @@ type HelmChart struct {
 	Templates    map[string]*ChartTemplate `yaml:"-"`
 	Values       map[string]any            `yaml:"-"`
 	VolumeMounts map[string]any            `yaml:"-"`
+	Annotations  map[string]string         `yaml:"-"`
 	composeHash  *string                   `yaml:"-"`
 	Name         string                    `yaml:"name"`
 	Icon         string                    `yaml:"icon,omitempty"`
@@ -64,6 +65,9 @@ func NewChart(name string) *HelmChart {
 		AppVersion:  "", // set to 0.1.0 by default if no "main-app" label is found
 		Values: map[string]any{
 			"pullSecrets": []string{},
+		},
+		Annotations: map[string]string{
+			labels.AnnotationName("version"): Version,
 		},
 	}
 }
@@ -119,9 +123,13 @@ func (chart *HelmChart) SaveTemplates(templateDir string) {
 			fmt.Println(logger.IconFailure, err)
 			os.Exit(1)
 		}
-		defer f.Close()
 		if _, err := f.Write(t); err != nil {
-			logger.Failure("error wrting template file: ", err.Error())
+			_ = f.Close()
+			logger.Failure("error writing template file: ", err.Error())
+			os.Exit(1)
+		}
+		if err := f.Close(); err != nil {
+			logger.Failure("error closing template file: ", err.Error())
 			os.Exit(1)
 		}
 	}
@@ -129,7 +137,6 @@ func (chart *HelmChart) SaveTemplates(templateDir string) {
 
 // generateConfigMapsAndSecrets creates the configmaps and secrets from the environment variables.
 func (chart *HelmChart) generateConfigMapsAndSecrets(project *types.Project) error {
-	appName := chart.Name
 	for _, s := range project.Services {
 		if len(s.Environment) == 0 {
 			continue
@@ -161,7 +168,7 @@ func (chart *HelmChart) generateConfigMapsAndSecrets(project *types.Project) err
 
 		if len(secretsVar) > 0 {
 			s.Environment = secretsVar
-			sec := NewSecret(s, appName)
+			sec := NewSecret(s, chart)
 			y, _ := sec.Yaml()
 			name := sec.service.Name
 			chart.Templates[name+".secret.yaml"] = &ChartTemplate{
@@ -176,7 +183,7 @@ func (chart *HelmChart) generateConfigMapsAndSecrets(project *types.Project) err
 			delete(s.Environment, k)
 		}
 		if len(s.Environment) > 0 {
-			cm := NewConfigMap(s, appName, false)
+			cm := NewConfigMap(s, chart, false)
 			y, _ := cm.Yaml()
 			name := cm.service.Name
 			chart.Templates[name+".configmap.yaml"] = &ChartTemplate{
@@ -188,7 +195,7 @@ func (chart *HelmChart) generateConfigMapsAndSecrets(project *types.Project) err
 	return nil
 }
 
-func (chart *HelmChart) generateDeployment(service types.ServiceConfig, deployments map[string]*Deployment, services map[string]*Service, podToMerge map[string]*types.ServiceConfig, appName string) error {
+func (chart *HelmChart) generateDeployment(service types.ServiceConfig, deployments map[string]*Deployment, services map[string]*Service, podToMerge map[string]*types.ServiceConfig) error {
 	// check the "ports" label from container and add it to the service
 	if err := fixPorts(&service); err != nil {
 		return err
@@ -212,7 +219,7 @@ func (chart *HelmChart) generateDeployment(service types.ServiceConfig, deployme
 	deployments[service.Name] = d
 
 	// generate the cronjob if needed
-	chart.setCronJob(service, appName)
+	chart.setCronJob(service)
 
 	if exchange, ok := service.Labels[labels.LabelExchangeVolume]; ok {
 		// we need to add a volume and a mount point
@@ -235,12 +242,12 @@ func (chart *HelmChart) generateDeployment(service types.ServiceConfig, deployme
 	// create the needed service for the container port
 	// NOTE: ports from same-pod services are now added in generator.go after all services are processed
 	if len(service.Ports) > 0 {
-		s := NewService(service, appName)
+		s := NewService(service, chart)
 		services[service.Name] = s
 	}
 
 	// create all ingresses
-	if ingress := d.AddIngress(service, appName); ingress != nil {
+	if ingress := d.AddIngress(service); ingress != nil {
 		y, _ := ingress.Yaml()
 		chart.Templates[ingress.Filename()] = &ChartTemplate{
 			Content:     y,
@@ -249,7 +256,7 @@ func (chart *HelmChart) generateDeployment(service types.ServiceConfig, deployme
 	}
 
 	// create IngressRoute (Traefik CRD) if specified
-	if ingressRoute := d.AddIngressRoute(service, appName); ingressRoute != nil {
+	if ingressRoute := d.AddIngressRoute(service); ingressRoute != nil {
 		y, _ := ingressRoute.Yaml()
 		chart.Templates[ingressRoute.Filename()] = &ChartTemplate{
 			Content:     y,
@@ -274,11 +281,11 @@ func (chart *HelmChart) setChartVersion(service types.ServiceConfig) {
 }
 
 // setCronJob creates a cronjob from the service labels.
-func (chart *HelmChart) setCronJob(service types.ServiceConfig, appName string) *CronJob {
+func (chart *HelmChart) setCronJob(service types.ServiceConfig) *CronJob {
 	if _, ok := service.Labels[labels.LabelCronJob]; !ok {
 		return nil
 	}
-	cronjob, rbac := NewCronJob(service, chart, appName)
+	cronjob, rbac := NewCronJob(service, chart)
 	y, _ := cronjob.Yaml()
 	chart.Templates[cronjob.Filename()] = &ChartTemplate{
 		Content:     y,

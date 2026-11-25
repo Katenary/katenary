@@ -1,8 +1,8 @@
 package generator
 
 import (
-	"fmt"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -18,826 +18,526 @@ import (
 
 const webTemplateOutput = `templates/web/deployment.yaml`
 
-func TestGenerate(t *testing.T) {
-	composeFile := `
-services:
-    web:
-        image: nginx:1.29
-`
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
+// TestNewDeployment is a unit test: it builds the Deployment directly from an
+// in-memory service, without compose YAML, disk access or helm.
+func TestNewDeployment(t *testing.T) {
+	t.Parallel()
+	chart := NewChart("testapp")
+	service := newService("web").image("nginx:1.29").build()
 
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
+	deployment := NewDeployment(service, chart)
 
-	output := internalCompileTest(t, "-s", webTemplateOutput)
-
-	// dt := DeploymentTest{}
-	dt := v1.Deployment{}
-	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
-		t.Errorf(unmarshalError, err)
+	if deployment.Spec.Replicas == nil || *deployment.Spec.Replicas != 1 {
+		t.Errorf("expected 1 replica, got %v", deployment.Spec.Replicas)
+	}
+	if len(deployment.Spec.Template.Spec.Containers) != 1 {
+		t.Fatalf("expected 1 container, got %d", len(deployment.Spec.Template.Spec.Containers))
 	}
 
-	if *dt.Spec.Replicas != 1 {
-		t.Errorf("Expected replicas to be 1, got %d", dt.Spec.Replicas)
-		t.Errorf("Output: %s", output)
+	value, ok := chart.Values["web"].(*Value)
+	if !ok {
+		t.Fatal("expected a value for service web")
 	}
-
-	if dt.Spec.Template.Spec.Containers[0].Image != "nginx:1.29" {
-		t.Errorf("Expected image to be nginx:1.29, got %s", dt.Spec.Template.Spec.Containers[0].Image)
+	if value.Repository.Image != "nginx" {
+		t.Errorf("expected image nginx, got %s", value.Repository.Image)
+	}
+	if value.Repository.Tag != "1.29" {
+		t.Errorf("expected tag 1.29, got %s", value.Repository.Tag)
 	}
 }
 
-func TestGenerateOneDeploymentWithSamePod(t *testing.T) {
-	composeFile := `
-services:
-    web:
-        image: nginx:1.29
-        ports:
-        - 80:80
+// TestSamePodChartGolden is an integration test: the compose fixture is
+// converted once and the fully rendered chart is compared to a golden file.
+func TestSamePodChartGolden(t *testing.T) {
+	chartDir := filepath.Join(t.TempDir(), "chart")
 
-    fpm:
-        image: php:fpm
-        ports:
-        - 9000:9000
-        labels:
-            katenary.v4/same-pod: web
-`
-
-	outDir := "./chart"
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
-
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
-
-	output := internalCompileTest(t, "-s", webTemplateOutput)
-	dt := v1.Deployment{}
-	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
-		t.Errorf(unmarshalError, err)
-	}
-
-	if len(dt.Spec.Template.Spec.Containers) != 2 {
-		t.Errorf("Expected 2 containers, got %d", len(dt.Spec.Template.Spec.Containers))
-	}
-	// endsure that the fpm service is not created
-
-	var err error
-	_, err = helmTemplate(ConvertOptions{
-		OutputDir: outDir,
-	}, "-s", "templates/fpm/deployment.yaml")
-	if err == nil {
-		t.Errorf("Expected error, got nil")
-	}
-
-	// ensure that the web service is created and has got 2 ports
-	output, err = helmTemplate(ConvertOptions{
-		OutputDir: outDir,
-	}, "-s", "templates/web/service.yaml")
-	if err != nil {
-		t.Errorf("Error: %s", err)
-	}
-	service := corev1.Service{}
-	if err := yaml.Unmarshal([]byte(output), &service); err != nil {
-		t.Errorf(unmarshalError, err)
-	}
-
-	if len(service.Spec.Ports) != 2 {
-		t.Errorf("Expected 2 ports, got %d", len(service.Spec.Ports))
-	}
+	output := convertAndTemplate(t, testCompose("same-pod"), chartDir)
+	assertGolden(t, output, testGolden("same-pod"))
 }
 
 func TestDependsOn(t *testing.T) {
-	composeFile := `
-services:
-    web:
-        image: nginx:1.29
-        ports:
-        - 80:80
-        depends_on:
-        - database
+	t.Parallel()
+	project := newProject("testapp",
+		newService("web").image("nginx:1.29").port(80).dependsOn("database").build(),
+		newService("database").image("mariadb:10.5").port(3306).build(),
+	)
 
-    database:
-        image: mariadb:10.5
-        ports:
-        - 3306:3306
-`
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
-
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
-
-	output := internalCompileTest(t, "-s", webTemplateOutput)
-	dt := v1.Deployment{}
-	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
-		t.Errorf(unmarshalError, err)
+	output := renderProjectTemplate(t, project, webTemplateOutput)
+	deployment := v1.Deployment{}
+	if err := yaml.Unmarshal(output, &deployment); err != nil {
+		t.Fatalf("%s\n%s", unmarshalError, err)
 	}
 
-	if len(dt.Spec.Template.Spec.Containers) != 1 {
-		t.Errorf("Expected 1 container, got %d", len(dt.Spec.Template.Spec.Containers))
+	if len(deployment.Spec.Template.Spec.Containers) != 1 {
+		t.Errorf("expected 1 container, got %d", len(deployment.Spec.Template.Spec.Containers))
 	}
-	// find an init container
-	if len(dt.Spec.Template.Spec.InitContainers) != 1 {
-		t.Errorf("Expected 1 init container, got %d", len(dt.Spec.Template.Spec.InitContainers))
+	if len(deployment.Spec.Template.Spec.InitContainers) != 1 {
+		t.Fatalf("expected 1 init container, got %d", len(deployment.Spec.Template.Spec.InitContainers))
 	}
 
-	initContainer := dt.Spec.Template.Spec.InitContainers[0]
+	initContainer := deployment.Spec.Template.Spec.InitContainers[0]
 	if !strings.Contains(initContainer.Image, "quay.io/curl/curl") {
-		t.Errorf("Expected quay.io/curl/curl image, got %s", initContainer.Image)
+		t.Errorf("expected quay.io/curl/curl image, got %s", initContainer.Image)
 	}
 
 	fullCommand := strings.Join(initContainer.Command, " ")
-	if !strings.Contains(fullCommand, "curl") {
-		t.Errorf("Expected curl command (K8s API method), got %s", fullCommand)
+	for _, want := range []string{"curl", "/apis/apps/v1/namespaces/", "/deployments/", "readyReplicas"} {
+		if !strings.Contains(fullCommand, want) {
+			t.Errorf("expected %q in the init container command, got %s", want, fullCommand)
+		}
 	}
-
-	if !strings.Contains(fullCommand, "/apis/apps/v1/namespaces/") {
-		t.Errorf("Expected Kubernetes API call to /apis/apps/v1/namespaces/, got %s", fullCommand)
-	}
-
-	if !strings.Contains(fullCommand, "/deployments/") {
-		t.Errorf("Expected Kubernetes API call to /deployments/, got %s", fullCommand)
-	}
-
-	if !strings.Contains(fullCommand, "readyReplicas") {
-		t.Errorf("Expected readyReplicas check, got %s", fullCommand)
-	}
-
 	if len(initContainer.Env) == 0 {
-		t.Errorf("Expected environment variables to be set for namespace")
+		t.Error("expected environment variables for the namespace")
 	}
 
 	hasNamespace := false
 	for _, env := range initContainer.Env {
-		if env.Name == "NAMESPACE" && env.ValueFrom != nil && env.ValueFrom.FieldRef != nil {
-			if env.ValueFrom.FieldRef.FieldPath == "metadata.namespace" {
-				hasNamespace = true
-				break
-			}
+		if env.Name == "NAMESPACE" && env.ValueFrom != nil && env.ValueFrom.FieldRef != nil &&
+			env.ValueFrom.FieldRef.FieldPath == "metadata.namespace" {
+			hasNamespace = true
+			break
 		}
 	}
 	if !hasNamespace {
-		t.Errorf("Expected NAMESPACE env var with metadata.namespace fieldRef")
+		t.Error("expected NAMESPACE env var with metadata.namespace fieldRef")
 	}
 }
 
 func TestDependsOnLegacy(t *testing.T) {
-	composeFile := `
-services:
-    web:
-        image: nginx:1.29
-        ports:
-        - 80:80
-        depends_on:
-        - database
-        labels:
-            katenary.v4/depends-on: legacy
+	t.Parallel()
+	project := newProject("testapp",
+		newService("web").
+			image("nginx:1.29").
+			port(80).
+			dependsOn("database").
+			label(labels.LabelDependsOn, "legacy").
+			build(),
+		newService("database").image("mariadb:10.5").port(3306).build(),
+	)
 
-    database:
-        image: mariadb:10.5
-        ports:
-        - 3306:3306
-`
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
-
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
-
-	output := internalCompileTest(t, "-s", webTemplateOutput)
-	dt := v1.Deployment{}
-	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
-		t.Errorf(unmarshalError, err)
+	output := renderProjectTemplate(t, project, webTemplateOutput)
+	deployment := v1.Deployment{}
+	if err := yaml.Unmarshal(output, &deployment); err != nil {
+		t.Fatalf("%s\n%s", unmarshalError, err)
 	}
 
-	if len(dt.Spec.Template.Spec.InitContainers) != 1 {
-		t.Errorf("Expected 1 init container, got %d", len(dt.Spec.Template.Spec.InitContainers))
+	if len(deployment.Spec.Template.Spec.InitContainers) != 1 {
+		t.Fatalf("expected 1 init container, got %d", len(deployment.Spec.Template.Spec.InitContainers))
 	}
-
-	initContainer := dt.Spec.Template.Spec.InitContainers[0]
+	initContainer := deployment.Spec.Template.Spec.InitContainers[0]
 	if !strings.Contains(initContainer.Image, "busybox") {
-		t.Errorf("Expected busybox image, got %s", initContainer.Image)
+		t.Errorf("expected busybox image, got %s", initContainer.Image)
 	}
-
-	fullCommand := strings.Join(initContainer.Command, " ")
-	if !strings.Contains(fullCommand, "nc") {
-		t.Errorf("Expected nc (netcat) command for legacy method, got %s", fullCommand)
+	if !strings.Contains(strings.Join(initContainer.Command, " "), "nc") {
+		t.Errorf("expected nc (netcat) for the legacy method, got %v", initContainer.Command)
 	}
 }
 
 func TestHelmDependencies(t *testing.T) {
-	composeFile := `
-services:
-    web:
-        image: nginx:1.29
-        ports:
-        - 80:80
+	t.Parallel()
+	project := newProject("testapp",
+		newService("web").image("nginx:1.29").port(80).build(),
+		newService("mariadb").
+			image("mariadb:10.5").
+			port(3306).
+			label(labels.LabelDependencies, `
+- name: mariadb
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 18.x.X`).
+			build(),
+	)
 
-    mariadb:
-        image: mariadb:10.5
-        ports:
-        - 3306:3306
-        labels:
-            %s/dependencies: |
-                - name: mariadb
-                  repository: oci://registry-1.docker.io/bitnamicharts
-                  version: 18.x.X
-
-    `
-	composeFile = fmt.Sprintf(composeFile, labels.Prefix())
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
-
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
-
-	output := internalCompileTest(t, "-s", webTemplateOutput)
-	dt := v1.Deployment{}
-	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
-		t.Errorf(unmarshalError, err)
-	}
-
-	// ensure that there is no mariasb deployment
-	_, err := helmTemplate(ConvertOptions{
-		OutputDir: "./chart",
-	}, "-s", "templates/mariadb/deployment.yaml")
-	if err == nil {
-		t.Errorf("Expected error, got nil")
-	}
-
-	// check that Chart.yaml has the dependency
-	chart := HelmChart{}
-	chartFile := "./chart/Chart.yaml"
-	if _, err := os.Stat(chartFile); os.IsNotExist(err) {
-		t.Errorf("Chart.yaml does not exist")
-	}
-	chartContent, err := os.ReadFile(chartFile)
+	chart, err := Generate(project)
 	if err != nil {
-		t.Errorf("Error reading Chart.yaml: %s", err)
+		t.Fatalf("generate failed: %s", err)
 	}
-	if err := yaml.Unmarshal(chartContent, &chart); err != nil {
-		t.Errorf(unmarshalError, err)
+	if _, ok := chart.Templates["mariadb.deployment.yaml"]; ok {
+		t.Error("a helm dependency service must not have a deployment")
 	}
 
-	if len(chart.Dependencies) != 1 {
-		t.Errorf("Expected 1 dependency, got %d", len(chart.Dependencies))
+	chart.Version = "0.1.0"
+	chartFile := filepath.Join(t.TempDir(), "Chart.yaml")
+	buildCharYamlFile(chart, project, chartFile)
+
+	content, err := os.ReadFile(chartFile)
+	if err != nil {
+		t.Fatalf("cannot read Chart.yaml: %s", err)
+	}
+	helmChart := HelmChart{}
+	if err := yaml.Unmarshal(content, &helmChart); err != nil {
+		t.Fatalf("%s\n%s", unmarshalError, err)
+	}
+	if len(helmChart.Dependencies) != 1 {
+		t.Errorf("expected 1 dependency, got %d", len(helmChart.Dependencies))
 	}
 }
 
 func TestLivenessProbesFromHealthCheck(t *testing.T) {
-	composeFile := `
-services:
-    web:
-        image: nginx:1.29
-        ports:
-        - 80:80
-        healthcheck:
-            test: ["CMD", "curl", "-f", "http://localhost"]
-            interval: 5s
-            timeout: 3s
-            retries: 3
-        `
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
+	t.Parallel()
+	project := newProject("testapp",
+		newService("web").
+			image("nginx:1.29").
+			port(80).
+			healthcheckTest("CMD", "curl", "-f", "http://localhost").
+			build(),
+	)
 
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
-
-	output := internalCompileTest(t, "-s", webTemplateOutput)
-	dt := v1.Deployment{}
-	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
-		t.Errorf(unmarshalError, err)
+	output := renderProjectTemplate(t, project, webTemplateOutput)
+	deployment := v1.Deployment{}
+	if err := yaml.Unmarshal(output, &deployment); err != nil {
+		t.Fatalf("%s\n%s", unmarshalError, err)
 	}
-
-	if dt.Spec.Template.Spec.Containers[0].LivenessProbe == nil {
-		t.Errorf("Expected liveness probe to be set")
+	if deployment.Spec.Template.Spec.Containers[0].LivenessProbe == nil {
+		t.Error("expected a liveness probe")
 	}
 }
 
 func TestProbesFromLabels(t *testing.T) {
-	composeFile := `
-services:
-    web:
-        image: nginx:1.29
-        ports:
-        - 80:80
-        labels:
-            %s/health-check: |
-                livenessProbe:
-                    httpGet:
-                        path: /healthz
-                        port: 80
-                readinessProbe:
-                    httpGet:
-                        path: /ready
-                        port: 80
-    `
-	composeFile = fmt.Sprintf(composeFile, labels.Prefix())
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
+	t.Parallel()
+	project := newProject("testapp",
+		newService("web").
+			image("nginx:1.29").
+			port(80).
+			label(labels.LabelHealthCheck, `
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 80
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: 80`).
+			build(),
+	)
 
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
-
-	output := internalCompileTest(t, "-s", webTemplateOutput)
-	dt := v1.Deployment{}
-	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
-		t.Errorf(unmarshalError, err)
+	output := renderProjectTemplate(t, project, webTemplateOutput)
+	deployment := v1.Deployment{}
+	if err := yaml.Unmarshal(output, &deployment); err != nil {
+		t.Fatalf("%s\n%s", unmarshalError, err)
 	}
 
-	if dt.Spec.Template.Spec.Containers[0].LivenessProbe == nil {
-		t.Errorf("Expected liveness probe to be set")
+	container := deployment.Spec.Template.Spec.Containers[0]
+	if container.LivenessProbe == nil {
+		t.Fatal("expected a liveness probe")
 	}
-	if dt.Spec.Template.Spec.Containers[0].ReadinessProbe == nil {
-		t.Errorf("Expected readiness probe to be set")
+	if container.ReadinessProbe == nil {
+		t.Fatal("expected a readiness probe")
 	}
-	t.Logf("LivenessProbe: %+v", dt.Spec.Template.Spec.Containers[0].LivenessProbe)
-
-	// ensure that the liveness probe is set to /healthz
-	if dt.Spec.Template.Spec.Containers[0].LivenessProbe.HTTPGet.Path != "/healthz" {
-		t.Errorf("Expected liveness probe path to be /healthz, got %s", dt.Spec.Template.Spec.Containers[0].LivenessProbe.HTTPGet.Path)
+	if container.LivenessProbe.HTTPGet.Path != "/healthz" {
+		t.Errorf("expected liveness path /healthz, got %s", container.LivenessProbe.HTTPGet.Path)
 	}
-
-	// ensure that the readiness probe is set to /ready
-	if dt.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Path != "/ready" {
-		t.Errorf("Expected readiness probe path to be /ready, got %s", dt.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Path)
+	if container.ReadinessProbe.HTTPGet.Path != "/ready" {
+		t.Errorf("expected readiness path /ready, got %s", container.ReadinessProbe.HTTPGet.Path)
 	}
 }
 
 func TestSetValues(t *testing.T) {
-	composeFile := `
-services:
-    web:
-        image: nginx:1.29
-        environment:
-            FOO: bar
-            BAZ: qux
-        labels:
-            %s/values: |
-                - FOO
-`
+	t.Parallel()
+	project := newProject("testapp",
+		newService("web").
+			image("nginx:1.29").
+			env("FOO", "bar").
+			env("BAZ", "qux").
+			label(labels.LabelValues, "- FOO").
+			build(),
+	)
 
-	composeFile = fmt.Sprintf(composeFile, labels.Prefix())
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
-
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
-
-	output := internalCompileTest(t, "-s", webTemplateOutput)
-	dt := v1.Deployment{}
-	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
-		t.Errorf(unmarshalError, err)
-	}
-
-	// readh the values.yaml, we must have FOO in web environment but not BAZ
-	valuesFile := "./chart/values.yaml"
-	if _, err := os.Stat(valuesFile); os.IsNotExist(err) {
-		t.Errorf("values.yaml does not exist")
-	}
-	valuesContent, err := os.ReadFile(valuesFile)
-	if err != nil {
-		t.Errorf("Error reading values.yaml: %s", err)
-	}
+	values := projectValues(t, project)
 	mapping := struct {
 		Web struct {
 			Environment map[string]string `yaml:"environment"`
 		} `yaml:"web"`
 	}{}
-	if err := yaml3.Unmarshal(valuesContent, &mapping); err != nil {
-		t.Errorf(unmarshalError, err)
+	if err := yaml3.Unmarshal(values, &mapping); err != nil {
+		t.Fatalf("%s\n%s", unmarshalError, err)
 	}
 
-	if v, ok := mapping.Web.Environment["FOO"]; !ok {
-		t.Errorf("Expected FOO in web environment")
-		if v != "bar" {
-			t.Errorf("Expected FOO to be bar, got %s", v)
-		}
+	if value, ok := mapping.Web.Environment["FOO"]; !ok || value != "bar" {
+		t.Errorf("expected FOO=bar in web environment, got %q (present: %v)", value, ok)
 	}
-	if v, ok := mapping.Web.Environment["BAZ"]; ok {
-		t.Errorf("Expected BAZ not in web environment")
-		if v != "qux" {
-			t.Errorf("Expected BAZ to be qux, got %s", v)
-		}
+	if value, ok := mapping.Web.Environment["BAZ"]; ok {
+		t.Errorf("expected BAZ to stay in the configmap, got %q", value)
 	}
 }
 
 func TestWithUnderscoreInContainerName(t *testing.T) {
-	composeFile := `
-services:
-    web-app:
-        image: nginx:1.29
-        container_name: web_app_container
-        environment:
-            FOO: BAR
-        labels:
-            %s/values: |
-                - FOO
-`
-	composeFile = fmt.Sprintf(composeFile, labels.Prefix())
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
+	t.Parallel()
+	project := newProject("testapp",
+		newService("web-app").
+			image("nginx:1.29").
+			containerName("web_app_container").
+			env("FOO", "BAR").
+			label(labels.LabelValues, "- FOO").
+			build(),
+	)
 
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
-
-	output := internalCompileTest(t, "-s", "templates/web_app/deployment.yaml")
-	dt := v1.Deployment{}
-	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
-		t.Errorf(unmarshalError, err)
+	output := renderProjectTemplate(t, project, "templates/web_app/deployment.yaml")
+	deployment := v1.Deployment{}
+	if err := yaml.Unmarshal(output, &deployment); err != nil {
+		t.Fatalf("%s\n%s", unmarshalError, err)
 	}
-	// find container.name
-	containerName := dt.Spec.Template.Spec.Containers[0].Name
-	if strings.Contains(containerName, "_") {
-		t.Errorf("Expected container name to not contain underscores, got %s", containerName)
+	if name := deployment.Spec.Template.Spec.Containers[0].Name; strings.Contains(name, "_") {
+		t.Errorf("expected no underscore in the container name, got %s", name)
 	}
 }
 
 func TestWithDashes(t *testing.T) {
-	composeFile := `
-services:
-    web-app:
-        image: nginx:1.29
-        environment:
-            FOO: BAR
-        labels:
-            %s/values: |
-                - FOO
-`
+	t.Parallel()
+	project := newProject("testapp",
+		newService("web-app").
+			image("nginx:1.29").
+			env("FOO", "BAR").
+			label(labels.LabelValues, "- FOO").
+			build(),
+	)
 
-	composeFile = fmt.Sprintf(composeFile, labels.Prefix())
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
-
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
-
-	output := internalCompileTest(t, "-s", "templates/web_app/deployment.yaml")
-	dt := v1.Deployment{}
-	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
-		t.Errorf(unmarshalError, err)
-	}
-
-	valuesFile := "./chart/values.yaml"
-	if _, err := os.Stat(valuesFile); os.IsNotExist(err) {
-		t.Errorf("values.yaml does not exist")
-	}
-	valuesContent, err := os.ReadFile(valuesFile)
-	if err != nil {
-		t.Errorf("Error reading values.yaml: %s", err)
-	}
+	values := projectValues(t, project)
 	mapping := struct {
 		Web struct {
 			Environment map[string]string `yaml:"environment"`
 		} `yaml:"web_app"`
 	}{}
-	if err := yaml3.Unmarshal(valuesContent, &mapping); err != nil {
-		t.Errorf(unmarshalError, err)
+	if err := yaml3.Unmarshal(values, &mapping); err != nil {
+		t.Fatalf("%s\n%s", unmarshalError, err)
 	}
-
-	// we must have FOO in web_app environment (not web-app)
-	// this validates that the service name is converted to a valid k8s name
-	if v, ok := mapping.Web.Environment["FOO"]; !ok {
-		t.Errorf("Expected FOO in web_app environment")
-		if v != "BAR" {
-			t.Errorf("Expected FOO to be BAR, got %s", v)
-		}
+	if value, ok := mapping.Web.Environment["FOO"]; !ok || value != "BAR" {
+		t.Errorf("expected FOO=BAR under web_app, got %q (present: %v)", value, ok)
 	}
 }
 
 func TestDashesWithValueFrom(t *testing.T) {
-	composeFile := `
-services:
-    web-app:
-        image: nginx:1.29
-        environment:
-            FOO: BAR
-        labels:
-            %[1]s/values: |
-                - FOO
-    web2:
-        image: nginx:1.29
-        labels:
-            %[1]s/values-from: |
-                BAR: web-app.FOO
-`
+	t.Parallel()
+	project := newProject("testapp",
+		newService("web-app").
+			image("nginx:1.29").
+			env("FOO", "BAR").
+			label(labels.LabelValues, "- FOO").
+			build(),
+		newService("web2").
+			image("nginx:1.29").
+			label(labels.LabelValuesFrom, "BAR: web-app.FOO").
+			build(),
+	)
 
-	composeFile = fmt.Sprintf(composeFile, labels.Prefix())
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
-
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
-
-	output := internalCompileTest(t, "-s", "templates/web2/deployment.yaml")
-	dt := v1.Deployment{}
-	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
-		t.Errorf(unmarshalError, err)
+	output := renderProjectTemplate(t, project, "templates/web2/deployment.yaml")
+	deployment := v1.Deployment{}
+	if err := yaml.Unmarshal(output, &deployment); err != nil {
+		t.Fatalf("%s\n%s", unmarshalError, err)
+	}
+	env := deployment.Spec.Template.Spec.Containers[0].Env[0]
+	if env.Value != "" {
+		t.Errorf("expected an empty value, got %q", env.Value)
+	}
+	if env.ValueFrom == nil {
+		t.Error("expected valueFrom to be set")
 	}
 
-	valuesFile := "./chart/values.yaml"
-	if _, err := os.Stat(valuesFile); os.IsNotExist(err) {
-		t.Errorf("values.yaml does not exist")
-	}
-	valuesContent, err := os.ReadFile(valuesFile)
-	if err != nil {
-		t.Errorf("Error reading values.yaml: %s", err)
-	}
+	values := projectValues(t, project)
 	mapping := struct {
 		Web struct {
 			Environment map[string]string `yaml:"environment"`
 		} `yaml:"web_app"`
 	}{}
-	if err := yaml3.Unmarshal(valuesContent, &mapping); err != nil {
-		t.Errorf(unmarshalError, err)
+	if err := yaml3.Unmarshal(values, &mapping); err != nil {
+		t.Fatalf("%s\n%s", unmarshalError, err)
 	}
-
-	// we must have FOO in web_app environment (not web-app)
-	// this validates that the service name is converted to a valid k8s name
-	if v, ok := mapping.Web.Environment["FOO"]; !ok {
-		t.Errorf("Expected FOO in web_app environment")
-		if v != "BAR" {
-			t.Errorf("Expected FOO to be BAR, got %s", v)
-		}
-	}
-
-	// ensure that the deployment has the value from the other service
-	barenv := dt.Spec.Template.Spec.Containers[0].Env[0]
-	if barenv.Value != "" {
-		t.Errorf("Expected value to be empty")
-	}
-	if barenv.ValueFrom == nil {
-		t.Errorf("Expected valueFrom to be set")
+	// web-app was renamed to web_app and the variable is kept in values.yaml
+	if _, ok := mapping.Web.Environment["FOO"]; !ok {
+		t.Error("expected FOO under web_app in values.yaml")
 	}
 }
 
 func TestCheckCommand(t *testing.T) {
-	composeFile := `
-services:
-    web-app:
-        image: nginx:1.29
-        command:
-            - sh
-            - -c
-            - |-
-                echo "Hello, World!"
-                echo "Done"
-`
+	t.Parallel()
+	project := newProject("testapp",
+		newService("web-app").
+			image("nginx:1.29").
+			command("sh", "-c", "echo \"Hello, World!\"\necho \"Done\"").
+			build(),
+	)
 
-	// composeFile = fmt.Sprintf(composeFile, labels.Prefix())
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
-
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
-
-	output := internalCompileTest(t, "-s", "templates/web_app/deployment.yaml")
-	dt := v1.Deployment{}
-	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
-		t.Errorf(unmarshalError, err)
+	output := renderProjectTemplate(t, project, "templates/web_app/deployment.yaml")
+	deployment := v1.Deployment{}
+	if err := yaml.Unmarshal(output, &deployment); err != nil {
+		t.Fatalf("%s\n%s", unmarshalError, err)
 	}
-	// find the command in the container
-	command := dt.Spec.Template.Spec.Containers[0].Args
-	if len(command) != 3 {
-		t.Errorf("Expected command to have 3 elements, got %d", len(command))
+
+	args := deployment.Spec.Template.Spec.Containers[0].Args
+	if len(args) != 3 {
+		t.Fatalf("expected 3 args, got %d", len(args))
 	}
-	if command[0] != "sh" || command[1] != "-c" {
-		t.Errorf("Expected command to be 'sh -c', got %s", strings.Join(command, " "))
+	if args[0] != "sh" || args[1] != "-c" {
+		t.Errorf("expected 'sh -c', got %v", args)
 	}
 }
 
 func TestEntryPoint(t *testing.T) {
-	composeFile := `
-services:
-  web:
-    image: nginx:1.29
-    entrypoint: /bin/foo
-    command: bar baz
-`
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
+	t.Parallel()
+	project := newProject("testapp",
+		newService("web").
+			image("nginx:1.29").
+			entrypoint("/bin/foo").
+			command("bar", "baz").
+			build(),
+	)
 
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
-
-	output := internalCompileTest(t, "-s", "templates/web/deployment.yaml")
-	t.Logf("Output: %s", output)
+	output := renderProjectTemplate(t, project, webTemplateOutput)
 	deployment := v1.Deployment{}
-	if err := yaml.Unmarshal([]byte(output), &deployment); err != nil {
-		t.Errorf(unmarshalError, err)
+	if err := yaml.Unmarshal(output, &deployment); err != nil {
+		t.Fatalf("%s\n%s", unmarshalError, err)
 	}
-	entryPoint := deployment.Spec.Template.Spec.Containers[0].Command
-	command := deployment.Spec.Template.Spec.Containers[0].Args
-	if entryPoint[0] != "/bin/foo" {
-		t.Errorf("Expected entrypoint to be /bin/foo, got %s", entryPoint[0])
+
+	container := deployment.Spec.Template.Spec.Containers[0]
+	if len(container.Command) == 0 || container.Command[0] != "/bin/foo" {
+		t.Errorf("expected entrypoint /bin/foo, got %v", container.Command)
 	}
-	if len(command) != 2 || command[0] != "bar" || command[1] != "baz" {
-		t.Errorf("Expected command to be 'bar baz', got %s", strings.Join(command, " "))
+	if len(container.Args) != 2 || container.Args[0] != "bar" || container.Args[1] != "baz" {
+		t.Errorf("expected args [bar baz], got %v", container.Args)
 	}
 }
 
 func TestRestrictedRBACGeneration(t *testing.T) {
-	composeFile := `
-services:
-    web:
-        image: nginx:1.29
-        ports:
-        - 80:80
-        depends_on:
-        - database
+	t.Parallel()
+	project := newProject("testapp",
+		newService("web").image("nginx:1.29").port(80).dependsOn("database").build(),
+		newService("database").image("mariadb:10.5").port(3306).build(),
+	)
 
-    database:
-        image: mariadb:10.5
-        ports:
-        - 3306:3306
-`
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
-
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
-
-	rbacOutput := internalCompileTest(t, "-s", "templates/web/depends-on.rbac.yaml")
+	rbacOutput := string(renderProjectTemplate(t, project, "templates/web/depends-on.rbac.yaml"))
 
 	docs := strings.Split(rbacOutput, "---\n")
-
-	// Filter out empty documents and strip helm template comments
-	var filteredDocs []string
+	filteredDocs := make([]string, 0, len(docs))
 	for _, doc := range docs {
-		if strings.TrimSpace(doc) != "" {
-			// Remove '# Source:' comment lines that helm template adds
-			lines := strings.Split(doc, "\n")
-			var contentLines []string
-			for _, line := range lines {
-				if !strings.HasPrefix(strings.TrimSpace(line), "# Source:") {
-					contentLines = append(contentLines, line)
-				}
-			}
-			filteredDocs = append(filteredDocs, strings.Join(contentLines, "\n"))
+		if strings.TrimSpace(doc) == "" {
+			continue
 		}
+		lines := strings.Split(doc, "\n")
+		contentLines := make([]string, 0, len(lines))
+		for _, line := range lines {
+			if !strings.HasPrefix(strings.TrimSpace(line), "# Source:") {
+				contentLines = append(contentLines, line)
+			}
+		}
+		filteredDocs = append(filteredDocs, strings.Join(contentLines, "\n"))
 	}
 
 	if len(filteredDocs) != 3 {
-		t.Fatalf("Expected 3 YAML documents in RBAC file, got %d (filtered from %d)", len(filteredDocs), len(docs))
+		t.Fatalf("expected 3 YAML documents in the RBAC file, got %d", len(filteredDocs))
 	}
 
+	docsByKind := make(map[string][]byte, len(filteredDocs))
+	for _, doc := range filteredDocs {
+		var meta struct {
+			Kind string `yaml:"kind"`
+		}
+		if err := yaml.Unmarshal([]byte(doc), &meta); err != nil {
+			t.Fatalf("cannot read the document kind: %v", err)
+		}
+		docsByKind[meta.Kind] = []byte(doc)
+	}
+
+	saDoc, ok := docsByKind["ServiceAccount"]
+	if !ok {
+		t.Fatal("ServiceAccount document not found")
+	}
 	var sa corev1.ServiceAccount
-	if err := yaml.Unmarshal([]byte(strings.TrimSpace(filteredDocs[0])), &sa); err != nil {
-		t.Errorf("Failed to unmarshal ServiceAccount: %v", err)
+	if err := yaml.Unmarshal(saDoc, &sa); err != nil {
+		t.Errorf("cannot unmarshal ServiceAccount: %v", err)
 	}
 	if sa.Kind != "ServiceAccount" {
-		t.Errorf("Expected Kind=ServiceAccount, got %s", sa.Kind)
+		t.Errorf("expected Kind=ServiceAccount, got %s", sa.Kind)
 	}
 	if !strings.Contains(sa.Name, "web") {
-		t.Errorf("Expected ServiceAccount name to contain 'web', got %s", sa.Name)
+		t.Errorf("expected the ServiceAccount name to contain web, got %s", sa.Name)
 	}
 
+	roleDoc, ok := docsByKind["Role"]
+	if !ok {
+		t.Fatal("Role document not found")
+	}
 	var role rbacv1.Role
-	if err := yaml.Unmarshal([]byte(strings.TrimSpace(filteredDocs[1])), &role); err != nil {
-		t.Errorf("Failed to unmarshal Role: %v", err)
+	if err := yaml.Unmarshal(roleDoc, &role); err != nil {
+		t.Errorf("cannot unmarshal Role: %v", err)
 	}
 	if role.Kind != "Role" {
-		t.Errorf("Expected Kind=Role, got %s", role.Kind)
+		t.Errorf("expected Kind=Role, got %s", role.Kind)
 	}
 	if len(role.Rules) != 1 {
-		t.Errorf("Expected 1 rule in Role, got %d", len(role.Rules))
+		t.Fatalf("expected 1 rule, got %d", len(role.Rules))
 	}
-
 	rule := role.Rules[0]
-	if !contains(rule.APIGroups, "apps") {
-		t.Error("Expected APIGroup to include 'apps'")
+	if !slices.Contains(rule.APIGroups, "apps") {
+		t.Error("expected APIGroup to include apps")
 	}
-	if !contains(rule.Resources, "deployments") {
-		t.Errorf("Expected Resource to include 'deployments', got %v", rule.Resources)
+	if !slices.Contains(rule.Resources, "deployments") {
+		t.Errorf("expected Resource to include deployments, got %v", rule.Resources)
 	}
-
-	for _, res := range rule.Resources {
-		if res == "*" {
-			t.Error("Role should not have wildcard (*) resource permissions")
-		}
-	}
-	for _, verb := range rule.Verbs {
-		if verb == "*" {
-			t.Error("Role should not have wildcard (*) verb permissions")
-		}
+	if slices.Contains(rule.Resources, "*") || slices.Contains(rule.Verbs, "*") {
+		t.Error("the restricted role must not use wildcards")
 	}
 
+	roleBindingDoc, ok := docsByKind["RoleBinding"]
+	if !ok {
+		t.Fatal("RoleBinding document not found")
+	}
 	var rb rbacv1.RoleBinding
-	if err := yaml.Unmarshal([]byte(strings.TrimSpace(filteredDocs[2])), &rb); err != nil {
-		t.Errorf("Failed to unmarshal RoleBinding: %v", err)
+	if err := yaml.Unmarshal(roleBindingDoc, &rb); err != nil {
+		t.Errorf("cannot unmarshal RoleBinding: %v", err)
 	}
 	if rb.Kind != "RoleBinding" {
-		t.Errorf("Expected Kind=RoleBinding, got %s", rb.Kind)
+		t.Errorf("expected Kind=RoleBinding, got %s", rb.Kind)
 	}
 	if len(rb.Subjects) != 1 {
-		t.Errorf("Expected 1 subject in RoleBinding, got %d", len(rb.Subjects))
+		t.Errorf("expected 1 subject, got %d", len(rb.Subjects))
 	}
 	if rb.Subjects[0].Kind != "ServiceAccount" {
-		t.Errorf("Expected Subject Kind=ServiceAccount, got %s", rb.Subjects[0].Kind)
+		t.Errorf("expected a ServiceAccount subject, got %s", rb.Subjects[0].Kind)
 	}
-
-	// Helm template renders the name, so check if it contains "web"
 	if !strings.Contains(rb.RoleRef.Name, "web") {
-		t.Errorf("Expected RoleRef Name to contain 'web', got %s", rb.RoleRef.Name)
+		t.Errorf("expected the RoleRef name to contain web, got %s", rb.RoleRef.Name)
 	}
 	if rb.RoleRef.Kind != "Role" {
-		t.Errorf("Expected RoleRef Kind=Role, got %s", rb.RoleRef.Kind)
+		t.Errorf("expected RoleRef Kind=Role, got %s", rb.RoleRef.Kind)
 	}
 }
 
 func TestDeploymentReferencesServiceAccount(t *testing.T) {
-	composeFile := `
-services:
-    web:
-        image: nginx:1.29
-        ports:
-        - 80:80
-        depends_on:
-        - database
+	t.Parallel()
+	project := newProject("testapp",
+		newService("web").image("nginx:1.29").port(80).dependsOn("database").build(),
+		newService("database").image("mariadb:10.5").port(3306).build(),
+	)
 
-    database:
-        image: mariadb:10.5
-        ports:
-        - 3306:3306
-`
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
-
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
-
-	output := internalCompileTest(t, "-s", "templates/web/deployment.yaml")
-
-	var dt v1.Deployment
-	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
-		t.Errorf("Failed to unmarshal Deployment: %v", err)
+	chart, err := Generate(project)
+	if err != nil {
+		t.Fatalf("generate failed: %s", err)
+	}
+	if _, ok := chart.Templates["web/depends-on.rbac.yaml"]; !ok {
+		t.Error("the depends-on RBAC template should exist")
 	}
 
-	serviceAccountName := dt.Spec.Template.Spec.ServiceAccountName
+	output := renderProjectTemplate(t, project, webTemplateOutput)
+	deployment := v1.Deployment{}
+	if err := yaml.Unmarshal(output, &deployment); err != nil {
+		t.Fatalf("%s\n%s", unmarshalError, err)
+	}
+
+	serviceAccountName := deployment.Spec.Template.Spec.ServiceAccountName
 	if !strings.Contains(serviceAccountName, "web") {
-		t.Errorf("Expected ServiceAccountName to contain 'web', got %s", serviceAccountName)
+		t.Errorf("expected the ServiceAccount name to contain web, got %s", serviceAccountName)
+	}
+	if len(deployment.Spec.Template.Spec.InitContainers) == 0 {
+		t.Fatal("expected an init container for depends_on")
 	}
 
-	if len(dt.Spec.Template.Spec.InitContainers) == 0 {
-		t.Fatal("Expected at least one init container for depends_on")
-	}
-
-	initContainer := dt.Spec.Template.Spec.InitContainers[0]
+	initContainer := deployment.Spec.Template.Spec.InitContainers[0]
 	if initContainer.Name != "wait-for-database" {
-		t.Errorf("Expected init container name 'wait-for-database', got %s", initContainer.Name)
+		t.Errorf("expected init container wait-for-database, got %s", initContainer.Name)
 	}
-
 	fullCommand := strings.Join(initContainer.Command, " ")
-	if !strings.Contains(fullCommand, "curl") {
-		t.Error("Expected init container to use curl for K8s API calls")
-	}
-	if !strings.Contains(fullCommand, "/apis/apps/v1/namespaces/") {
-		t.Error("Expected init container to call /apis/apps/v1/namespaces/ endpoint")
-	}
-	if !strings.Contains(fullCommand, "/deployments/") {
-		t.Error("Expected init container to access /deployments/ resource")
-	}
-	if !strings.Contains(fullCommand, "readyReplicas") {
-		t.Error("Expected init container to check readyReplicas")
-	}
-
-	hasNamespace := false
-	for _, env := range initContainer.Env {
-		if env.Name == "NAMESPACE" && env.ValueFrom != nil && env.ValueFrom.FieldRef != nil {
-			if env.ValueFrom.FieldRef.FieldPath == "metadata.namespace" {
-				hasNamespace = true
-				break
-			}
+	for _, want := range []string{"curl", "/apis/apps/v1/namespaces/", "/deployments/", "readyReplicas"} {
+		if !strings.Contains(fullCommand, want) {
+			t.Errorf("expected %q in the init container command, got %s", want, fullCommand)
 		}
 	}
-	if !hasNamespace {
-		t.Error("Expected NAMESPACE env var with metadata.namespace fieldRef")
-	}
-
-	_, err := os.Stat("./chart/templates/web/depends-on.rbac.yaml")
-	if os.IsNotExist(err) {
-		t.Error("RBAC file depends-on.rbac.yaml should exist for service using depends_on with K8s API")
-	} else if err != nil {
-		t.Errorf("Unexpected error checking RBAC file: %v", err)
-	}
-}
-
-func contains(slice []string, item string) bool {
-	return slices.Contains(slice, item)
 }

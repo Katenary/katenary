@@ -26,7 +26,8 @@ type Secret struct {
 }
 
 // NewSecret creates a new Secret from a compose service
-func NewSecret(service types.ServiceConfig, appName string) *Secret {
+func NewSecret(service types.ServiceConfig, chart *HelmChart) *Secret {
+	appName := chart.Name
 	secret := &Secret{
 		service: service,
 		Secret: &corev1.Secret{
@@ -37,7 +38,7 @@ func NewSecret(service types.ServiceConfig, appName string) *Secret {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        utils.TplName(service.Name, appName),
 				Labels:      GetLabels(service.Name, appName),
-				Annotations: Annotations,
+				Annotations: chart.Annotations,
 			},
 			Data: make(map[string][]byte),
 		},

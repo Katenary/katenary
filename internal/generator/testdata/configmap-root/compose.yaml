@@ -1,0 +1,10 @@
+name: configmaptest
+
+services:
+  web:
+    image: nginx
+    volumes:
+      - ./foo.txt:/etc/foo.txt
+    labels:
+      katenary.v4/configmap-files: |-
+        - ./foo.txt

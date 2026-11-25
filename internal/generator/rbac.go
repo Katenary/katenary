@@ -24,7 +24,8 @@ type RBAC struct {
 }
 
 // NewRBAC creates a new RBAC from a compose service. The appName is the name of the application taken from the project name.
-func NewRBAC(service types.ServiceConfig, appName string) *RBAC {
+func NewRBAC(service types.ServiceConfig, chart *HelmChart) *RBAC {
+	appName := chart.Name
 	role := &Role{
 		Role: &rbacv1.Role{
 			TypeMeta: metav1.TypeMeta{
@@ -34,7 +35,7 @@ func NewRBAC(service types.ServiceConfig, appName string) *RBAC {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        utils.TplName(service.Name, appName, "dependency"),
 				Labels:      GetLabels(service.Name, appName),
-				Annotations: Annotations,
+				Annotations: chart.Annotations,
 			},
 			Rules: []rbacv1.PolicyRule{
 				{
@@ -56,7 +57,7 @@ func NewRBAC(service types.ServiceConfig, appName string) *RBAC {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        utils.TplName(service.Name, appName),
 				Labels:      GetLabels(service.Name, appName),
-				Annotations: Annotations,
+				Annotations: chart.Annotations,
 			},
 			Subjects: []rbacv1.Subject{
 				{
@@ -83,7 +84,7 @@ func NewRBAC(service types.ServiceConfig, appName string) *RBAC {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        utils.TplName(service.Name, appName),
 				Labels:      GetLabels(service.Name, appName),
-				Annotations: Annotations,
+				Annotations: chart.Annotations,
 			},
 		},
 		service: &service,
@@ -121,15 +122,16 @@ func (r *Role) Filename() string {
 }
 
 func (r *Role) Yaml() ([]byte, error) {
-	if o, err := yaml.Marshal(r); err != nil {
+	o, err := yaml.Marshal(r)
+	if err != nil {
 		return nil, err
-	} else {
-		return UnWrapTPL(o), nil
 	}
+	return UnWrapTPL(o), nil
 }
 
 // NewServiceAccount creates a new ServiceAccount from a compose service.
-func NewServiceAccount(service types.ServiceConfig, appName string) *ServiceAccount {
+func NewServiceAccount(service types.ServiceConfig, chart *HelmChart) *ServiceAccount {
+	appName := chart.Name
 	return &ServiceAccount{
 		ServiceAccount: &corev1.ServiceAccount{
 			TypeMeta: metav1.TypeMeta{
@@ -139,7 +141,7 @@ func NewServiceAccount(service types.ServiceConfig, appName string) *ServiceAcco
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        utils.TplName(service.Name, appName, "dependency"),
 				Labels:      GetLabels(service.Name, appName),
-				Annotations: Annotations,
+				Annotations: chart.Annotations,
 			},
 		},
 		service: &service,
@@ -147,7 +149,8 @@ func NewServiceAccount(service types.ServiceConfig, appName string) *ServiceAcco
 }
 
 // NewRestrictedRole creates a Role with minimal permissions for init containers.
-func NewRestrictedRole(service types.ServiceConfig, appName string) *Role {
+func NewRestrictedRole(service types.ServiceConfig, chart *HelmChart) *Role {
+	appName := chart.Name
 	return &Role{
 		Role: &rbacv1.Role{
 			TypeMeta: metav1.TypeMeta{
@@ -157,7 +160,7 @@ func NewRestrictedRole(service types.ServiceConfig, appName string) *Role {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        utils.TplName(service.Name, appName, "dependency"),
 				Labels:      GetLabels(service.Name, appName),
-				Annotations: Annotations,
+				Annotations: chart.Annotations,
 			},
 			Rules: []rbacv1.PolicyRule{
 				{
@@ -172,7 +175,8 @@ func NewRestrictedRole(service types.ServiceConfig, appName string) *Role {
 }
 
 // NewRestrictedRoleBinding creates a RoleBinding that binds the restricted role to the ServiceAccount.
-func NewRestrictedRoleBinding(service types.ServiceConfig, appName string) *RoleBinding {
+func NewRestrictedRoleBinding(service types.ServiceConfig, chart *HelmChart) *RoleBinding {
+	appName := chart.Name
 	return &RoleBinding{
 		RoleBinding: &rbacv1.RoleBinding{
 			TypeMeta: metav1.TypeMeta{
@@ -182,7 +186,7 @@ func NewRestrictedRoleBinding(service types.ServiceConfig, appName string) *Role
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        utils.TplName(service.Name, appName, "dependency"),
 				Labels:      GetLabels(service.Name, appName),
-				Annotations: Annotations,
+				Annotations: chart.Annotations,
 			},
 			Subjects: []rbacv1.Subject{
 				{

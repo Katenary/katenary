@@ -56,7 +56,8 @@ type IngressRouteTLSDomain struct {
 }
 
 // NewIngressRoute creates a new Traefik IngressRoute from a compose service.
-func NewIngressRoute(service types.ServiceConfig, Chart *HelmChart, mapping *labelstructs.Ingress, serviceName, appName string) *IngressRoute {
+func NewIngressRoute(service types.ServiceConfig, chart *HelmChart, mapping *labelstructs.Ingress, serviceName string) *IngressRoute {
+	appName := chart.Name
 	fullName := `{{ $fullname }}-` + serviceName
 
 	// Build the route match rule
@@ -80,7 +81,7 @@ func NewIngressRoute(service types.ServiceConfig, Chart *HelmChart, mapping *lab
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        fullName,
 			Labels:      GetLabels(serviceName, appName),
-			Annotations: Annotations,
+			Annotations: chart.Annotations,
 		},
 		Spec: IngressRouteSpec{
 			EntryPoints: entryPoints,
@@ -131,7 +132,7 @@ func (ir *IngressRoute) Yaml() ([]byte, error) {
 	// We build the YAML as a string to ensure proper nesting.
 
 	// Build metadata block
-	metadata, err := yaml.Marshal(map[string]interface{}{
+	metadata, err := yaml.Marshal(map[string]any{
 		"name":        ir.Name,
 		"labels":      ir.Labels,
 		"annotations": ir.Annotations,
@@ -151,12 +152,12 @@ func (ir *IngressRoute) Yaml() ([]byte, error) {
 	ret = append(ret, "kind: "+ir.Kind+"\n"...)
 	ret = append(ret, "metadata:\n"...)
 	// Indent metadata content by 2 spaces
-	for _, line := range strings.Split(strings.TrimRight(string(metadata), "\n"), "\n") {
+	for line := range strings.SplitSeq(strings.TrimRight(string(metadata), "\n"), "\n") {
 		ret = append(ret, "  "+line+"\n"...)
 	}
 	ret = append(ret, "spec:\n"...)
 	// Indent spec content by 2 spaces
-	for _, line := range strings.Split(strings.TrimRight(string(spec), "\n"), "\n") {
+	for line := range strings.SplitSeq(strings.TrimRight(string(spec), "\n"), "\n") {
 		ret = append(ret, "  "+line+"\n"...)
 	}
 
@@ -171,15 +172,7 @@ func (ir *IngressRoute) Yaml() ([]byte, error) {
 	}
 
 	for _, line := range lines {
-		if strings.Contains(line, "labels:") {
-			// add annotations above labels from values.yaml (inside metadata block)
-			indent := strings.Repeat(" ", utils.CountStartingSpaces(line))
-			content := `` +
-				indent + `{{- if .Values.` + ir.serviceName + `.ingress.annotations -}}` + "\n" +
-				indent + `    {{- toYaml .Values.` + ir.serviceName + `.ingress.annotations | nindent __indent__ }}` + "\n" +
-				indent + `    {{- end }}` + "\n" +
-				line
-
+		if content, ok := ingressAnnotationsBlock(line, ir.serviceName); ok {
 			out = append(out, content)
 		} else {
 			out = append(out, line)

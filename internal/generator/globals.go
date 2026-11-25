@@ -2,8 +2,6 @@ package generator
 
 import (
 	"regexp"
-
-	"katenary.io/internal/generator/labels"
 )
 
 var (
@@ -12,9 +10,4 @@ var (
 	// ?s => multiline
 	// (?P<inc>.+?) => named capture group to "inc" variable (so we could use $inc in the replace)
 	replaceLabelRegexp = regexp.MustCompile(`(?s)__replace_.+?: '(?P<inc>.+?)'`)
-
-	// Standard annotations
-	Annotations = map[string]string{
-		labels.AnnotationName("version"): Version,
-	}
 )

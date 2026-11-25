@@ -1,0 +1,75 @@
+---
+# Source: samepod/templates/web/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    katenary.io/compose-hash: 5763d6656daa4bae74e71162db1e97148f18ca22
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: samepod
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: samepod-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: web
+  name: 'release-name-samepod-web'
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: http
+  - name: port-9000
+    port: 9000
+    protocol: TCP
+    targetPort: 9000
+  selector:
+    app.kubernetes.io/name: samepod
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/component: web
+
+---
+# Source: samepod/templates/web/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    katenary.io/compose-hash: 5763d6656daa4bae74e71162db1e97148f18ca22
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: samepod
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: samepod-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: web
+  name: 'release-name-samepod-web'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: samepod
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: web
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: samepod
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/component: web
+    spec:
+      containers:
+      - image: 'nginx:1.29'
+        imagePullPolicy: IfNotPresent
+        name: web
+        ports:
+        - containerPort: 80
+          name: http
+      - image: 'php:fpm'
+        imagePullPolicy: IfNotPresent
+        name: fpm
+        ports:
+        - containerPort: 9000
+          name: port-9000

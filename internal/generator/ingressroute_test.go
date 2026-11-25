@@ -1,313 +1,171 @@
 package generator
 
 import (
-	"fmt"
-	"os"
 	"strings"
 	"testing"
 
 	"katenary.io/internal/generator/labels"
+
+	"github.com/compose-spec/compose-go/v2/types"
 )
 
+func newIngressRouteProject(ingress string) *types.Project {
+	service := newService("web").
+		image("nginx:1.29").
+		port(80).
+		label(labels.LabelIngress, ingress).
+		build()
+	return newProject("testapp", service)
+}
+
 func TestIngressRoute(t *testing.T) {
-	composeFile := `
-services:
-    web:
-        image: nginx:1.29
-        ports:
-        - 80:80
-        labels:
-            %s/ingress: |-
-                hostname: my.test.tld
-                port: 80
-                type: ingressroute
-                enabled: true
- `
-	composeFile = fmt.Sprintf(composeFile, labels.KatenaryLabelPrefix)
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
+	t.Parallel()
+	project := newIngressRouteProject(`
+hostname: my.test.tld
+port: 80
+type: ingressroute
+enabled: true`)
 
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
+	output := renderProjectTemplate(t, project, "templates/web/ingressroute.yaml")
 
-	// Test that the ingressroute file is generated
-	output := internalCompileTest(
-		t,
-		"-s", "templates/web/ingressroute.yaml",
-	)
-
-	// Check that it's a Traefik IngressRoute
-	if !strings.Contains(output, "kind: IngressRoute") {
-		t.Errorf("Expected IngressRoute kind in output")
+	if !strings.Contains(string(output), "kind: IngressRoute") {
+		t.Errorf("expected an IngressRoute, got:\n%s", output)
 	}
-	if !strings.Contains(output, "apiVersion: traefik.io/v1alpha1") {
-		t.Errorf("Expected traefik.io/v1alpha1 apiVersion in output")
+	if !strings.Contains(string(output), "apiVersion: traefik.io/v1alpha1") {
+		t.Errorf("expected traefik.io/v1alpha1, got:\n%s", output)
 	}
-	if !strings.Contains(output, "my.test.tld") {
-		t.Errorf("Expected host my.test.tld in output")
+	if !strings.Contains(string(output), "my.test.tld") {
+		t.Errorf("expected host my.test.tld, got:\n%s", output)
 	}
 }
 
 func TestIngressRouteWithoutTLS(t *testing.T) {
-	composeFile := `
-services:
-    web:
-        image: nginx:1.29
-        ports:
-        - 80:80
-        labels:
-            %s/ingress: |-
-                hostname: plain.example.com
-                port: 80
-                type: ingressroute
-                enabled: true
-                tls:
-                  enabled: false
- `
-	composeFile = fmt.Sprintf(composeFile, labels.KatenaryLabelPrefix)
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
+	t.Parallel()
+	project := newIngressRouteProject(`
+hostname: plain.example.com
+port: 80
+type: ingressroute
+enabled: true
+tls:
+  enabled: false`)
 
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
+	output := renderProjectTemplate(t, project, "templates/web/ingressroute.yaml")
 
-	output := internalCompileTest(
-		t,
-		"-s", "templates/web/ingressroute.yaml",
-	)
-
-	if strings.Contains(output, "websecure") {
-		t.Errorf("Unexpected 'websecure' entryPoint when TLS is disabled")
+	if strings.Contains(string(output), "websecure") {
+		t.Errorf("unexpected websecure entrypoint when TLS is disabled:\n%s", output)
 	}
-	if strings.Contains(output, "tls:") {
-		t.Errorf("Unexpected TLS configuration when TLS is disabled")
+	if strings.Contains(string(output), "tls:") {
+		t.Errorf("unexpected TLS configuration when TLS is disabled:\n%s", output)
 	}
 }
 
 func TestIngressRouteDisablesStandardIngress(t *testing.T) {
-	composeFile := `
-services:
-    web:
-        image: nginx:1.29
-        ports:
-        - 80:80
-        labels:
-            %s/ingress: |-
-                hostname: my.test.tld
-                port: 80
-                type: ingressroute
-                enabled: true
- `
-	composeFile = fmt.Sprintf(composeFile, labels.KatenaryLabelPrefix)
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
+	t.Parallel()
+	project := newIngressRouteProject(`
+hostname: my.test.tld
+port: 80
+type: ingressroute
+enabled: true`)
 
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
+	output := renderProject(t, project)
 
-	output := internalCompileTest(t)
-
-	if !strings.Contains(output, "kind: IngressRoute") {
-		t.Errorf("Expected IngressRoute in output")
+	if !strings.Contains(string(output), "kind: IngressRoute") {
+		t.Errorf("expected an IngressRoute, got:\n%s", output)
 	}
-	if strings.Contains(output, "kind: Ingress\n") {
-		t.Errorf("Standard Ingress should not be rendered when type is ingressroute")
+	if strings.Contains(string(output), "kind: Ingress\n") {
+		t.Errorf("standard Ingress should not be rendered when type is ingressroute:\n%s", output)
 	}
 }
 
 func TestIngressRouteWithTLS(t *testing.T) {
-	composeFile := `
-services:
-    web:
-        image: nginx:1.29
-        ports:
-        - 443:443
-        labels:
-            %s/ingress: |-
-                hostname: secure.example.com
-                port: 443
-                type: ingressroute
-                enabled: true
-                tls:
-                  enabled: true
- `
-	composeFile = fmt.Sprintf(composeFile, labels.KatenaryLabelPrefix)
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
+	t.Parallel()
+	project := newIngressRouteProject(`
+hostname: secure.example.com
+port: 80
+type: ingressroute
+enabled: true
+tls:
+  enabled: true`)
 
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
+	output := renderProjectTemplate(t, project, "templates/web/ingressroute.yaml")
 
-	output := internalCompileTest(
-		t,
-		"-s", "templates/web/ingressroute.yaml",
-	)
-
-	// Check TLS configuration
-	if !strings.Contains(output, "tls:") {
-		t.Errorf("Expected TLS configuration in IngressRoute, got: %s", output)
+	if !strings.Contains(string(output), "tls:") {
+		t.Errorf("expected TLS configuration, got:\n%s", output)
 	}
-	if !strings.Contains(output, "secretName:") {
-		t.Errorf("Expected SecretName in TLS configuration, got: %s", output)
+	if !strings.Contains(string(output), "secretName:") {
+		t.Errorf("expected a secret name, got:\n%s", output)
 	}
-	// TLS implies the secure entrypoint.
-	if !strings.Contains(output, "websecure") {
-		t.Errorf("Expected 'websecure' entryPoint when TLS is enabled")
+	if !strings.Contains(string(output), "websecure") {
+		t.Errorf("expected the websecure entrypoint when TLS is enabled, got:\n%s", output)
 	}
 }
 
 func TestIngressRouteWithPath(t *testing.T) {
-	composeFile := `
-services:
-    web:
-        image: nginx:1.29
-        ports:
-        - 80:80
-        labels:
-            %s/ingress: |-
-                hostname: app.example.com
-                port: 80
-                path: /api
-                type: ingressroute
-                enabled: true
- `
-	composeFile = fmt.Sprintf(composeFile, labels.KatenaryLabelPrefix)
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
+	t.Parallel()
+	project := newIngressRouteProject(`
+hostname: app.example.com
+port: 80
+path: /api
+type: ingressroute
+enabled: true`)
 
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
+	output := renderProjectTemplate(t, project, "templates/web/ingressroute.yaml")
 
-	output := internalCompileTest(
-		t,
-		"-s", "templates/web/ingressroute.yaml",
-	)
-
-	// Check path prefix in match rule
-	if !strings.Contains(output, "PathPrefix") {
-		t.Errorf("Expected PathPrefix in match rule")
-	}
-	if !strings.Contains(output, "/api") {
-		t.Errorf("Expected path /api in match rule")
+	if !strings.Contains(string(output), "PathPrefix") || !strings.Contains(string(output), "/api") {
+		t.Errorf("expected a PathPrefix rule for /api, got:\n%s", output)
 	}
 }
 
 func TestIngressRouteEntryPoints(t *testing.T) {
-	composeFile := `
-services:
-    web:
-        image: nginx:1.29
-        ports:
-        - 80:80
-        labels:
-            %s/ingress: |-
-                hostname: app.example.com
-                port: 80
-                type: ingressroute
-                enabled: true
- `
-	composeFile = fmt.Sprintf(composeFile, labels.KatenaryLabelPrefix)
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
+	t.Parallel()
+	project := newIngressRouteProject(`
+hostname: app.example.com
+port: 80
+type: ingressroute
+enabled: true`)
 
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
+	output := renderProjectTemplate(t, project, "templates/web/ingressroute.yaml")
 
-	output := internalCompileTest(
-		t,
-		"-s", "templates/web/ingressroute.yaml",
-	)
-
-	// Check default entryPoints
-	if !strings.Contains(output, "web") {
-		t.Errorf("Expected 'web' entryPoint in IngressRoute")
+	if !strings.Contains(string(output), "web") {
+		t.Errorf("expected the web entrypoint, got:\n%s", output)
 	}
-	if !strings.Contains(output, "websecure") {
-		t.Errorf("Expected 'websecure' entryPoint in IngressRoute")
+	if !strings.Contains(string(output), "websecure") {
+		t.Errorf("expected the websecure entrypoint with the default TLS, got:\n%s", output)
 	}
 }
 
 func TestIngressRouteDisabled(t *testing.T) {
-	composeFile := `
-services:
-    web:
-        image: nginx:1.29
-        ports:
-        - 80:80
-        labels:
-            %s/ingress: |-
-                hostname: app.example.com
-                port: 80
-                type: ingressroute
-                enabled: false
- `
-	composeFile = fmt.Sprintf(composeFile, labels.KatenaryLabelPrefix)
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
+	t.Parallel()
+	project := newIngressRouteProject(`
+hostname: app.example.com
+port: 80
+type: ingressroute
+enabled: false`)
 
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
+	output := renderProject(t, project)
 
-	// When ingress is disabled, the file is generated but the helm template
-	// with -s flag will fail because output is empty due to conditional
-	// Instead, just verify the chart is valid by running helm template without -s
-	// The chart should lint successfully
-	output := internalCompileTest(
-		t,
-	)
-
-	// The output should not contain IngressRoute kind since it's disabled
-	if strings.Contains(output, "kind: IngressRoute") {
-		t.Errorf("IngressRoute should not be in output when disabled")
+	if strings.Contains(string(output), "kind: IngressRoute") {
+		t.Errorf("IngressRoute should not be rendered when disabled:\n%s", output)
 	}
 }
 
 func TestIngressRouteMetadata(t *testing.T) {
-	composeFile := `
-services:
-    web:
-        image: nginx:1.29
-        ports:
-        - 80:80
-        labels:
-            %s/ingress: |-
-                hostname: meta.example.com
-                port: 80
-                type: ingressroute
-                enabled: true
- `
-	composeFile = fmt.Sprintf(composeFile, labels.KatenaryLabelPrefix)
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
+	t.Parallel()
+	project := newIngressRouteProject(`
+hostname: meta.example.com
+port: 80
+type: ingressroute
+enabled: true`)
 
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
+	output := renderProjectTemplate(t, project, "templates/web/ingressroute.yaml")
 
-	output := internalCompileTest(
-		t,
-		"-s", "templates/web/ingressroute.yaml",
-	)
-
-	// Check that labels are present (like other objects - no metadata: block)
-	if !strings.Contains(output, "labels:") {
-		t.Errorf("Expected labels: in IngressRoute output")
+	if !strings.Contains(string(output), "app.kubernetes.io/component") {
+		t.Errorf("expected the app.kubernetes.io/component label, got:\n%s", output)
 	}
-
-	// Check that standard labels are present (set by GetLabels)
-	if !strings.Contains(output, "app.kubernetes.io/component") {
-		t.Errorf("Expected app.kubernetes.io/component label in IngressRoute")
+	if !strings.Contains(string(output), "app.kubernetes.io/name") {
+		t.Errorf("expected the app.kubernetes.io/name label, got:\n%s", output)
 	}
-
-	// Check that the standard labels are present
-	if !strings.Contains(output, "app.kubernetes.io/name") {
-		t.Errorf("Expected app.kubernetes.io/name label in IngressRoute")
+	if strings.Contains(string(output), "katenary.v3/component") {
+		t.Errorf("legacy katenary label found in output:\n%s", output)
 	}
 }

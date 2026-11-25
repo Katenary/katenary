@@ -1,0 +1,96 @@
+---
+# Source: ingressroute/templates/web/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    katenary.io/compose-hash: b181c3cf03c4ad2367db303974abefc6e44c3cd3
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: ingressroute
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: ingressroute-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: web
+  name: 'release-name-ingressroute-web'
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: http
+  selector:
+    app.kubernetes.io/name: ingressroute
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/component: web
+
+---
+# Source: ingressroute/templates/web/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    katenary.io/compose-hash: b181c3cf03c4ad2367db303974abefc6e44c3cd3
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: ingressroute
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: ingressroute-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: web
+  name: 'release-name-ingressroute-web'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ingressroute
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: web
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ingressroute
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/component: web
+    spec:
+      containers:
+      - image: 'nginx:1.29'
+        imagePullPolicy: IfNotPresent
+        name: web
+        ports:
+        - containerPort: 80
+          name: http
+
+---
+# Source: ingressroute/templates/web/ingressroute.yaml
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  annotations:
+    katenary.io/compose-hash: b181c3cf03c4ad2367db303974abefc6e44c3cd3
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: ingressroute
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: ingressroute-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: web
+  name: 'release-name-ingressroute-web'
+spec:
+  entryPoints:
+  - web
+  - websecure
+  routes:
+  - kind: Rule
+    match: Host("my.test.tld") && PathPrefix("/")
+    services:
+    - name: 'release-name-ingressroute-web'
+      port: 80
+  tls:
+    domains:
+    - main: 'my.test.tld'
+    secretName: 'release-name-ingressroute-web-tls'

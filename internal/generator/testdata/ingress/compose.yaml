@@ -1,0 +1,13 @@
+name: ingress
+
+services:
+  web:
+    image: nginx:1.29
+    ports:
+      - "80:80"
+      - "443:443"
+    labels:
+      katenary.v4/ingress: |-
+        hostname: my.test.tld
+        port: 80
+        enabled: true

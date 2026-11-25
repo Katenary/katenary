@@ -1,20 +1,15 @@
 package generator
 
 import (
-	"context"
-	"fmt"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"katenary.io/internal/generator/labels"
-	"katenary.io/internal/utils"
 
-	"github.com/compose-spec/compose-go/v2/cli"
 	"github.com/compose-spec/compose-go/v2/types"
 )
 
 func TestHasExposedPorts(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		service types.ServiceConfig
@@ -56,99 +51,52 @@ func TestHasExposedPorts(t *testing.T) {
 }
 
 func TestSplitPorts(t *testing.T) {
-	composeFileContent := `
-services:
-  foo:
-    image: nginx:latest
-    labels:
-      %[1]s/ports: 80,443
-`
-	composeFileContent = fmt.Sprintf(composeFileContent, labels.KatenaryLabelPrefix)
-	tmpDir, err := os.MkdirTemp("", "katenary-test-override")
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	composeFile := filepath.Join(tmpDir, "compose.yaml")
+	t.Parallel()
+	service := newService("foo").
+		image("nginx:latest").
+		label(labels.LabelPorts, "80,443").
+		build()
 
-	os.MkdirAll(tmpDir, utils.DirectoryPermission)
-	if err := os.WriteFile(composeFile, []byte(composeFileContent), 0o644); err != nil {
-		t.Log(err)
+	if err := fixPorts(&service); err != nil {
+		t.Fatalf("fixPorts failed: %s", err)
 	}
-	defer os.RemoveAll(tmpDir)
 
-	// chand dir to this directory
-	os.Chdir(tmpDir)
-	options, _ := cli.NewProjectOptions(nil,
-		cli.WithWorkingDirectory(tmpDir),
-		cli.WithDefaultConfigPath,
-	)
-	project, err := cli.ProjectFromOptions(context.TODO(), options)
-	if err != nil {
-		t.Fatal(err)
+	if len(service.Ports) != 2 {
+		t.Fatalf("expected 2 ports, got %d", len(service.Ports))
 	}
-	s := project.Services["foo"]
-	if err := fixPorts(&s); err != nil {
-		t.Errorf("Expected no error, got %s", err)
-	}
-	project.Services["foo"] = s
 	found := 0
-	for _, p := range project.Services["foo"].Ports {
-		switch p.Target {
-		case 80, 443:
+	for _, port := range service.Ports {
+		if port.Target == 80 || port.Target == 443 {
 			found++
 		}
 	}
 	if found != 2 {
-		t.Errorf("Expected 2 ports, got %d", found)
+		t.Errorf("expected ports 80 and 443, got %+v", service.Ports)
 	}
 }
 
 func TestSplitPortsWithDefault(t *testing.T) {
-	composeFileContent := `
-services:
-  foo:
-    image: nginx:latest
-    ports:
-      - 8080
-    labels:
-      %[1]s/ports: 80,443
-`
-	composeFileContent = fmt.Sprintf(composeFileContent, labels.KatenaryLabelPrefix)
-	tmpDir, err := os.MkdirTemp("", "katenary-test-override")
-	if err != nil {
-		t.Fatal(err)
-	}
-	composeFile := filepath.Join(tmpDir, "compose.yaml")
+	t.Parallel()
+	service := newService("foo").
+		image("nginx:latest").
+		port(8080).
+		label(labels.LabelPorts, "80,443").
+		build()
 
-	os.MkdirAll(tmpDir, utils.DirectoryPermission)
-	if err := os.WriteFile(composeFile, []byte(composeFileContent), 0o644); err != nil {
-		t.Log(err)
+	if err := fixPorts(&service); err != nil {
+		t.Fatalf("fixPorts failed: %s", err)
 	}
-	defer os.RemoveAll(tmpDir)
 
-	// chand dir to this directory
-	os.Chdir(tmpDir)
-	options, _ := cli.NewProjectOptions(nil,
-		cli.WithWorkingDirectory(tmpDir),
-		cli.WithDefaultConfigPath,
-	)
-	project, err := cli.ProjectFromOptions(context.TODO(), options)
-	if err != nil {
-		t.Fatal(err)
+	if len(service.Ports) != 3 {
+		t.Fatalf("expected 3 ports, got %d", len(service.Ports))
 	}
-	s := project.Services["foo"]
-	if err := fixPorts(&s); err != nil {
-		t.Errorf("Expected no error, got %s", err)
-	}
-	project.Services["foo"] = s
 	found := 0
-	for _, p := range project.Services["foo"].Ports {
-		switch p.Target {
-		case 80, 443, 8080:
+	for _, port := range service.Ports {
+		if port.Target == 80 || port.Target == 443 || port.Target == 8080 {
 			found++
 		}
 	}
 	if found != 3 {
-		t.Errorf("Expected 3 ports, got %d", found)
+		t.Errorf("expected ports 8080, 80 and 443, got %+v", service.Ports)
 	}
 }

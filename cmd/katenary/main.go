@@ -146,7 +146,7 @@ func generateConvertCommand() *cobra.Command {
 	convertCmd := &cobra.Command{
 		Use:   "convert",
 		Short: "Converts a docker-compose file to a Helm Chart",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			if len(strings.TrimSpace(givenAppVersion)) > 0 {
 				appVersion = &givenAppVersion
 			}
@@ -239,7 +239,7 @@ func generateVersionCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "version",
 		Short: "Print the version number of Katenary",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			fmt.Println(generator.GetVersion())
 		},
 	}
@@ -263,7 +263,7 @@ e.g.
   katenary help-labels map-env
 `,
 		ValidArgs: labels.GetLabelNames(),
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, args []string) {
 			if len(args) > 0 {
 				fmt.Println(labels.GetLabelHelpFor(args[0], markdown))
 				return
@@ -295,7 +295,7 @@ func generateHashComposefilesCommand() *cobra.Command {
 		Short: "Print the hash of the composefiles",
 		Long: `Print the hash of the composefiles
 If no composefile is specified, the hash of all composefiles is printed.`,
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, args []string) {
 			if len(args) > 0 {
 				if hash, err := utils.HashComposefiles(args); err != nil {
 					fmt.Println(err)
@@ -314,7 +314,7 @@ func generateSchemaCommand() *cobra.Command {
 		Use:   "schema",
 		Short: "Print the schema of the katenary file",
 		Long:  "Generate a schama for katenary.yaml file that can be used to validate the file or to use with yaml LSP to complete and check your configuration.",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			fmt.Println(katenaryfile.GenerateSchema())
 		},
 	}

@@ -44,7 +44,8 @@ type ConfigMap struct {
 
 // NewConfigMap creates a new ConfigMap from a compose service. The appName is the name of the application taken from the project name.
 // The ConfigMap is filled by environment variables and labels "map-env".
-func NewConfigMap(service types.ServiceConfig, appName string, forFile bool) *ConfigMap {
+func NewConfigMap(service types.ServiceConfig, chart *HelmChart, forFile bool) *ConfigMap {
+	appName := chart.Name
 	done := map[string]bool{}
 	drop := map[string]bool{}
 	labelValues := []string{}
@@ -59,7 +60,7 @@ func NewConfigMap(service types.ServiceConfig, appName string, forFile bool) *Co
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        utils.TplName(service.Name, appName),
 				Labels:      GetLabels(service.Name, appName),
-				Annotations: Annotations,
+				Annotations: chart.Annotations,
 			},
 			Data: make(map[string]string),
 		},
@@ -117,7 +118,8 @@ func NewConfigMap(service types.ServiceConfig, appName string, forFile bool) *Co
 // NewConfigMapFromDirectory creates a new ConfigMap from a compose service. This path is the path to the
 // file or directory. If the path is a directory, all files in the directory are added to the ConfigMap.
 // Each subdirectory are ignored. Note that the Generate() function will create the subdirectories ConfigMaps.
-func NewConfigMapFromDirectory(service types.ServiceConfig, appName, path string) *ConfigMap {
+func NewConfigMapFromDirectory(service types.ServiceConfig, chart *HelmChart, path string) *ConfigMap {
+	appName := chart.Name
 	normalized := path
 	normalized = strings.TrimLeft(normalized, ".")
 	normalized = strings.TrimLeft(normalized, "/")
@@ -135,7 +137,7 @@ func NewConfigMapFromDirectory(service types.ServiceConfig, appName, path string
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        utils.TplName(service.Name, appName) + "-" + normalized,
 				Labels:      GetLabels(service.Name, appName),
-				Annotations: Annotations,
+				Annotations: chart.Annotations,
 			},
 			Data: make(map[string]string),
 		},

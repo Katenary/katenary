@@ -1,0 +1,15 @@
+name: ingressroute
+
+services:
+  web:
+    image: nginx:1.29
+    ports:
+      - "80:80"
+    labels:
+      katenary.v4/ingress: |-
+        hostname: my.test.tld
+        port: 80
+        type: ingressroute
+        enabled: true
+        tls:
+          enabled: true

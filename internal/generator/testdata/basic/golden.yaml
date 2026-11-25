@@ -1,0 +1,87 @@
+---
+# Source: basic/templates/web/configmap.yaml
+apiVersion: v1
+data:
+  FOO: bar
+kind: ConfigMap
+metadata:
+  annotations:
+    katenary.io/compose-hash: 56d9f457c58a2ee4a4cc4f4b581fc3e4fb58a088
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: basic
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: basic-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: web
+  name: 'release-name-basic-web'
+
+---
+# Source: basic/templates/web/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    katenary.io/compose-hash: 56d9f457c58a2ee4a4cc4f4b581fc3e4fb58a088
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: basic
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: basic-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: web
+  name: 'release-name-basic-web'
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: http
+  selector:
+    app.kubernetes.io/name: basic
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/component: web
+
+---
+# Source: basic/templates/web/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    katenary.io/compose-hash: 56d9f457c58a2ee4a4cc4f4b581fc3e4fb58a088
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: basic
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: basic-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: web
+  name: 'release-name-basic-web'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: basic
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: web
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: basic
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/component: web
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: 'release-name-basic-web'
+        image: 'nginx:1.29'
+        imagePullPolicy: IfNotPresent
+        name: web
+        ports:
+        - containerPort: 80
+          name: http

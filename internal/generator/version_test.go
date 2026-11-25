@@ -8,6 +8,9 @@ import (
 func TestVersion(t *testing.T) {
 	expected := "v1.0.0"
 
+	originalVersion := Version
+	defer func() { Version = originalVersion }()
+
 	errorMessage := func(value, expected any) string {
 		return "Expected version to be " + expected.(string) + ", got " + value.(string)
 	}

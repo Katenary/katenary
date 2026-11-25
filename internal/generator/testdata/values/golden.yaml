@@ -1,0 +1,118 @@
+---
+# Source: values/templates/db/configmap.yaml
+apiVersion: v1
+data:
+  DB_USER: myuser
+kind: ConfigMap
+metadata:
+  annotations:
+    katenary.io/compose-hash: 88a5d466b9b52d55fe3dc096e0d148c3ec6959c0
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: values
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: values-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: db
+  name: 'release-name-values-db'
+
+---
+# Source: values/templates/web/configmap.yaml
+apiVersion: v1
+data:
+  BAZ: mapped
+  FOO: 'bar'
+kind: ConfigMap
+metadata:
+  annotations:
+    katenary.io/compose-hash: 88a5d466b9b52d55fe3dc096e0d148c3ec6959c0
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: values
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: values-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: web
+  name: 'release-name-values-web'
+
+---
+# Source: values/templates/db/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    katenary.io/compose-hash: 88a5d466b9b52d55fe3dc096e0d148c3ec6959c0
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: values
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: values-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: db
+  name: 'release-name-values-db'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: values
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: db
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: values
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/component: db
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: 'release-name-values-db'
+        - configMapRef:
+            name: 'release-name-values-web'
+        image: 'postgres:17'
+        imagePullPolicy: IfNotPresent
+        name: db
+
+---
+# Source: values/templates/web/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    katenary.io/compose-hash: 88a5d466b9b52d55fe3dc096e0d148c3ec6959c0
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: values
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: values-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: web
+  name: 'release-name-values-web'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: values
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: web
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: values
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/component: web
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: 'release-name-values-web'
+        image: 'nginx:1.29'
+        imagePullPolicy: IfNotPresent
+        name: web

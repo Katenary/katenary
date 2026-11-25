@@ -3,6 +3,6 @@ FROM docker.io/golang:${GOVERSION}
 # install helm
 RUN set -xe; \
   apt-get update && apt-get install -y curl; \
-  curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+  curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4 | bash -s -- --version v4.2.2
 
 

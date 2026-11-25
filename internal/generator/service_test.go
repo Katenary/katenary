@@ -1,83 +1,47 @@
 package generator
 
 import (
-	"os"
 	"testing"
-
-	v1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/yaml"
 )
 
-func TestBasicService(t *testing.T) {
-	composeFile := `
-services:
-    web:
-        image: nginx:1.29
-        ports:
-        - 80:80
-        - 443:443
-    `
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
+func TestNewService(t *testing.T) {
+	t.Parallel()
+	service := newService("web").port(80).port(443).build()
 
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
+	kubeService := NewService(service, NewChart("testapp"))
 
-	output := internalCompileTest(t, "-s", "templates/web/service.yaml")
-	service := v1.Service{}
-	if err := yaml.Unmarshal([]byte(output), &service); err != nil {
-		t.Errorf(unmarshalError, err)
+	if len(kubeService.Spec.Ports) != 2 {
+		t.Fatalf("expected 2 ports, got %d", len(kubeService.Spec.Ports))
 	}
-
-	if len(service.Spec.Ports) != 2 {
-		t.Errorf("Expected 2 ports, got %d", len(service.Spec.Ports))
-	}
-
-	foundPort := 0
-	for _, port := range service.Spec.Ports {
+	found := 0
+	for _, port := range kubeService.Spec.Ports {
 		if port.Port == 80 && port.TargetPort.StrVal == "http" {
-			foundPort++
+			found++
 		}
 		if port.Port == 443 && port.TargetPort.StrVal == "https" {
-			foundPort++
+			found++
 		}
 	}
-	if foundPort != 2 {
-		t.Errorf("Expected 2 ports, got %d", foundPort)
+	if found != 2 {
+		t.Errorf("expected http and https ports, got %+v", kubeService.Spec.Ports)
 	}
 }
 
-func TestWithSeveralUnknownPorts(t *testing.T) {
-	composeFile := `
-services:
-  multi:
-    image: nginx
-    ports:
-      - 12443
-      - 12480
-    labels:
-      katenary.v4/ingress: |-
-        port: 12443
-`
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
+func TestNewServiceWithUnknownPorts(t *testing.T) {
+	t.Parallel()
+	service := newService("multi").image("nginx").port(12443).port(12480).build()
 
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
+	kubeService := NewService(service, NewChart("testapp"))
 
-	output := internalCompileTest(t, "-s", "templates/multi/service.yaml")
-	service := v1.Service{}
-	if err := yaml.Unmarshal([]byte(output), &service); err != nil {
-		t.Errorf(unmarshalError, err)
+	if len(kubeService.Spec.Ports) != 2 {
+		t.Fatalf("expected 2 ports, got %d", len(kubeService.Spec.Ports))
 	}
-
-	if len(service.Spec.Ports) != 2 {
-		t.Errorf("Expected 2 ports, got %d", len(service.Spec.Ports))
+	if kubeService.Spec.Ports[0].Name == kubeService.Spec.Ports[1].Name {
+		t.Errorf("expected different port names, got %s and %s", kubeService.Spec.Ports[0].Name, kubeService.Spec.Ports[1].Name)
 	}
-	// ensure that both port names are different
-	if service.Spec.Ports[0].Name == service.Spec.Ports[1].Name {
-		t.Errorf("Expected different port names, got %s and %s", service.Spec.Ports[0].Name, service.Spec.Ports[1].Name)
+	for _, port := range kubeService.Spec.Ports {
+		if port.Name != "port-12443" && port.Name != "port-12480" {
+			t.Errorf("unexpected port name %q", port.Name)
+		}
 	}
 }

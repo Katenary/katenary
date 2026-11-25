@@ -59,7 +59,7 @@ steps:
     commands:
       - export GOMODCACHE="$PWD/.cache/go-mod"
       - export GOCACHE="$PWD/.cache/go-build"
-      - command -v helm || curl -sSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      - command -v helm || curl -sSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4 | bash -s -- --version v4.2.2
       - go mod tidy
       - go vet ./...
       - go test -tags ci -coverprofile=coverprofile.out -v ./...

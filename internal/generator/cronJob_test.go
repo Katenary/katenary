@@ -1,118 +1,75 @@
 package generator
 
 import (
-	"os"
 	"testing"
 
-	v1 "k8s.io/api/apps/v1"
-	batchv1 "k8s.io/api/batch/v1"
+	"katenary.io/internal/generator/labels"
+
 	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/yaml"
 )
 
-func TestBasicCronJob(t *testing.T) {
-	composeFile := `
-services:
-    cron:
-        image: fedora
-        labels:
-            katenary.v4/cronjob: |
-                image: alpine
-                command: echo hello
-                schedule: "*/1 * * * *"
-                rbac: false
-`
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
+func TestNewCronJob(t *testing.T) {
+	t.Parallel()
+	service := newService("cron").image("fedora").label(labels.LabelCronJob, `
+image: alpine
+command: echo hello
+schedule: "*/1 * * * *"
+rbac: false`).build()
 
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
+	chart := NewChart("testapp")
+	NewDeployment(service, chart) // populate the values like Generate does
 
-	output := internalCompileTest(t, "-s", "templates/cron/cronjob.yaml")
-	cronJob := batchv1.CronJob{}
-	if err := yaml.Unmarshal([]byte(output), &cronJob); err != nil {
-		t.Errorf(unmarshalError, err)
+	cronJob, rbac := NewCronJob(service, chart)
+	if cronJob == nil {
+		t.Fatal("expected a cronjob")
 	}
-	if cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Image != "alpine:latest" {
-		t.Errorf("Expected image to be alpine, got %s", cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Image)
-	}
-	if len(cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Args) != 3 {
-		t.Errorf("Expected 3 args, got %d", len(cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Args))
-	}
-	if cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Args[0] != "sh" ||
-		cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Args[1] != "-c" ||
-		cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Args[2] != "echo hello" {
-		t.Errorf("Expected args [sh -c echo hello], got %v", cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Args)
-	}
-	if cronJob.Spec.Schedule != "*/1 * * * *" {
-		t.Errorf("Expected schedule to be */1 * * * *, got %s", cronJob.Spec.Schedule)
+	if rbac != nil {
+		t.Errorf("expected no RBAC, got %+v", rbac)
 	}
 
-	// ensure that there are a deployment for the fedora Container
-	var err error
-	output, err = helmTemplate(ConvertOptions{
-		OutputDir: "./chart",
-	}, "-s", "templates/cron/deployment.yaml")
-	if err != nil {
-		t.Errorf("Error: %s", err)
+	container := cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers[0]
+	if len(container.Args) != 3 || container.Args[0] != "sh" || container.Args[1] != "-c" || container.Args[2] != "echo hello" {
+		t.Errorf("expected args [sh -c echo hello], got %v", container.Args)
 	}
-	deployment := v1.Deployment{}
-	if err := yaml.Unmarshal([]byte(output), &deployment); err != nil {
-		t.Errorf(unmarshalError, err)
+	if cronJob.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy != corev1.RestartPolicyOnFailure {
+		t.Errorf("expected restartPolicy OnFailure, got %s", cronJob.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy)
 	}
-	if deployment.Spec.Template.Spec.Containers[0].Image != "fedora:latest" {
-		t.Errorf("Expected image to be fedora, got %s", deployment.Spec.Template.Spec.Containers[0].Image)
+
+	value := chart.Values["cron"].(*Value)
+	if value.CronJob.Schedule != "*/1 * * * *" {
+		t.Errorf("expected schedule */1 * * * *, got %s", value.CronJob.Schedule)
+	}
+	if value.CronJob.Repository.Image != "alpine" {
+		t.Errorf("expected cronjob image alpine, got %s", value.CronJob.Repository.Image)
+	}
+	if value.Repository.Image != "fedora" {
+		t.Errorf("expected deployment image fedora, got %s", value.Repository.Image)
 	}
 }
 
-func TestCronJobbWithRBAC(t *testing.T) {
-	composeFile := `
-services:
-    cron:
-        image: fedora
-        labels:
-            katenary.v4/cronjob: |
-                image: alpine
-                command: echo hello
-                schedule: "*/1 * * * *"
-                rbac: true
-`
+func TestNewCronJobWithRBAC(t *testing.T) {
+	t.Parallel()
+	service := newService("cron").image("fedora").label(labels.LabelCronJob, `
+image: alpine
+command: echo hello
+schedule: "*/1 * * * *"
+rbac: true`).build()
 
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
-
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
-
-	output := internalCompileTest(t, "-s", "templates/cron/cronjob.yaml")
-	cronJob := batchv1.CronJob{}
-	if err := yaml.Unmarshal([]byte(output), &cronJob); err != nil {
-		t.Errorf(unmarshalError, err)
+	chart := NewChart("testapp")
+	cronJob, rbac := NewCronJob(service, chart)
+	if cronJob == nil {
+		t.Fatal("expected a cronjob")
+	}
+	if rbac == nil || rbac.ServiceAccount == nil {
+		t.Fatal("expected a service account")
 	}
 	if cronJob.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName == "" {
-		t.Errorf("Expected ServiceAccountName to be set")
+		t.Error("expected the cronjob to reference a service account")
 	}
-
-	// find the service account file
-	output, err := helmTemplate(ConvertOptions{
-		OutputDir: "./chart",
-	}, "-s", "templates/cron/serviceaccount.yaml")
-	if err != nil {
-		t.Errorf("Error: %s", err)
-	}
-	serviceAccount := corev1.ServiceAccount{}
-
-	if err := yaml.Unmarshal([]byte(output), &serviceAccount); err != nil {
-		t.Errorf(unmarshalError, err)
-	}
-	if serviceAccount.Name == "" {
-		t.Errorf("Expected ServiceAccountName to be set")
-	}
-
-	// ensure that the serviceAccount is equal to the cronJob
-	if serviceAccount.Name != cronJob.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName {
-		t.Errorf("Expected ServiceAccountName to be %s, got %s", cronJob.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName, serviceAccount.Name)
+	if cronJob.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName != rbac.ServiceAccount.Name {
+		t.Errorf("service account mismatch: cronjob uses %s, RBAC defines %s",
+			cronJob.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName,
+			rbac.ServiceAccount.Name,
+		)
 	}
 }

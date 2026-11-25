@@ -22,8 +22,8 @@ type Ingress struct {
 }
 
 // NewIngress creates a new standard Kubernetes Ingress from a compose service.
-func NewIngress(service types.ServiceConfig, Chart *HelmChart) *Ingress {
-	appName := Chart.Name
+func NewIngress(service types.ServiceConfig, chart *HelmChart) *Ingress {
+	appName := chart.Name
 
 	if service.Labels == nil {
 		service.Labels = make(map[string]string)
@@ -45,11 +45,11 @@ func NewIngress(service types.ServiceConfig, Chart *HelmChart) *Ingress {
 	serviceName := strings.ReplaceAll(service.Name, "_", "-")
 
 	// Add the ingress host to the values.yaml
-	if Chart.Values[service.Name] == nil {
-		Chart.Values[service.Name] = &Value{}
+	if chart.Values[service.Name] == nil {
+		chart.Values[service.Name] = &Value{}
 	}
 
-	Chart.Values[service.Name].(*Value).Ingress = &IngressValue{
+	chart.Values[service.Name].(*Value).Ingress = &IngressValue{
 		Enabled:             mapping.Enabled && mapping.Type != "ingressroute",
 		Path:                *mapping.Path,
 		Host:                mapping.Hostname,
@@ -60,14 +60,26 @@ func NewIngress(service types.ServiceConfig, Chart *HelmChart) *Ingress {
 		TLS:                 TLS{Enabled: mapping.TLS.Enabled},
 	}
 
-	return newStandardIngress(service, mapping, serviceName, appName)
+	return newStandardIngress(service, mapping, serviceName, appName, chart.Annotations)
+}
+
+// ingressAnnotationsBlock injects the ingress annotations from values.yaml
+// above a "labels:" line. It returns false when the line is not the labels one.
+func ingressAnnotationsBlock(line, serviceName string) (string, bool) {
+	if !strings.Contains(line, "labels:") {
+		return "", false
+	}
+	indent := strings.Repeat(" ", utils.CountStartingSpaces(line))
+	content := indent + `{{- if .Values.` + serviceName + `.ingress.annotations -}}` + "\n" +
+		indent + `    {{- toYaml .Values.` + serviceName + `.ingress.annotations | nindent __indent__ }}` + "\n" +
+		indent + `    {{- end }}` + "\n" +
+		line
+	return content, true
 }
 
 // NewIngressRouteFromService creates a Traefik IngressRoute from the same service config.
 // This is called separately to generate the IngressRoute file in addition to Ingress.
-func NewIngressRouteFromService(service types.ServiceConfig, Chart *HelmChart) Yaml {
-	appName := Chart.Name
-
+func NewIngressRouteFromService(service types.ServiceConfig, chart *HelmChart) Yaml {
 	if service.Labels == nil {
 		return nil
 	}
@@ -83,11 +95,11 @@ func NewIngressRouteFromService(service types.ServiceConfig, Chart *HelmChart) Y
 	}
 
 	serviceName := strings.ReplaceAll(service.Name, "_", "-")
-	return NewIngressRoute(service, Chart, mapping, serviceName, appName)
+	return NewIngressRoute(service, chart, mapping, serviceName)
 }
 
 // newStandardIngress creates a standard Kubernetes Ingress
-func newStandardIngress(service types.ServiceConfig, mapping *labelstructs.Ingress, serviceName, appName string) *Ingress {
+func newStandardIngress(service types.ServiceConfig, mapping *labelstructs.Ingress, serviceName, appName string, annotations map[string]string) *Ingress {
 	pathType := networkv1.PathTypeImplementationSpecific
 
 	fullName := `{{ $fullname }}-` + serviceName
@@ -116,7 +128,7 @@ func newStandardIngress(service types.ServiceConfig, mapping *labelstructs.Ingre
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        fullName,
 				Labels:      GetLabels(serviceName, appName),
-				Annotations: Annotations,
+				Annotations: annotations,
 			},
 			Spec: networkv1.IngressSpec{
 				IngressClassName: &ingressClassName,
@@ -201,24 +213,17 @@ func (ingress *Ingress) Yaml() ([]byte, error) {
 		`{{- $tlsname := printf "%s-%s-tls" $fullname "` + ingress.service.Name + `" -}}`,
 	}
 	for _, line := range lines {
-		if strings.Contains(line, "labels:") {
-			// add annotations above labels from values.yaml
-			indent := strings.Repeat(" ", utils.CountStartingSpaces(line))
-			content := `` +
-				indent + `{{- if .Values.` + serviceName + `.ingress.annotations -}}` + "\n" +
-				indent + `    {{- toYaml .Values.` + serviceName + `.ingress.annotations | nindent __indent__ }}` + "\n" +
-				indent + `    {{- end }}` + "\n" +
-				line
-
+		content, isLabels := ingressAnnotationsBlock(line, serviceName)
+		switch {
+		case isLabels:
 			out = append(out, content)
-		} else if strings.Contains(line, "ingressClassName: ") {
-			content := utils.Wrap(
+		case strings.Contains(line, "ingressClassName: "):
+			out = append(out, utils.Wrap(
 				line,
 				`{{- if ne .Values.`+serviceName+`.ingress.class "-" }}`,
 				`{{- end }}`,
-			)
-			out = append(out, content)
-		} else {
+			))
+		default:
 			out = append(out, line)
 		}
 	}

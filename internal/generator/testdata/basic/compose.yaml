@@ -1,0 +1,9 @@
+name: basic
+
+services:
+  web:
+    image: nginx:1.29
+    ports:
+      - "80:80"
+    environment:
+      FOO: bar

@@ -50,7 +50,7 @@ func Generate(project *types.Project) (*HelmChart, error) {
 	if err != nil {
 		return nil, err
 	}
-	Annotations[labels.AnnotationName("compose-hash")] = hash
+	chart.Annotations[labels.AnnotationName("compose-hash")] = hash
 	chart.composeHash = &hash
 
 	// drop all services with the "ignore" label
@@ -80,7 +80,7 @@ func Generate(project *types.Project) (*HelmChart, error) {
 
 	// first pass, create all deployments whatewer they are.
 	for _, service := range project.Services {
-		err := chart.generateDeployment(service, deployments, services, podToMerge, appName)
+		err := chart.generateDeployment(service, deployments, services, podToMerge)
 		if err != nil {
 			return nil, err
 		}
@@ -94,7 +94,7 @@ func Generate(project *types.Project) (*HelmChart, error) {
 		if err := fixPorts(&service); err != nil {
 			return nil, err
 		}
-		s := NewService(service, appName)
+		s := NewService(service, chart)
 		// add ports from same-pod services that target this service
 		for _, mergedSvc := range podToMerge {
 			if mergedSvc.Labels[labels.LabelSamePod] == service.Name {
@@ -414,17 +414,15 @@ func removeReplaceString(b []byte) []byte {
 
 // buildVolumes creates the volumes for the service.
 func buildVolumes(service types.ServiceConfig, chart *HelmChart, deployments map[string]*Deployment) error {
-	appName := chart.Name
 	for _, v := range service.Volumes {
 		// Do not add volumes if the pod is injected in a deployments
 		// via "same-pod" and the volume in destination deployment exists
 		if samePodVolume(service, v, deployments) {
 			continue
 		}
-		switch v.Type {
-		case "volume":
+		if v.Type == "volume" {
 			v.Source = utils.AsResourceName(v.Source)
-			pvc := NewVolumeClaim(service, v.Source, appName)
+			pvc := NewVolumeClaim(service, v.Source, chart)
 
 			// if the service is integrated in another deployment, we need to add the volume
 			// to the target deployment
@@ -459,11 +457,9 @@ func samePodVolume(service types.ServiceConfig, v types.ServiceVolumeConfig, dep
 		return false
 	}
 
-	targetDeployment := ""
-	if targetName, ok := service.Labels[labels.LabelSamePod]; !ok {
+	targetDeployment, ok := service.Labels[labels.LabelSamePod]
+	if !ok {
 		return false
-	} else {
-		targetDeployment = targetName
 	}
 
 	// get the target deployment
@@ -492,9 +488,9 @@ func (chart *HelmChart) generateRBAC(deployments map[string]*Deployment) error {
 			continue
 		}
 
-		sa := NewServiceAccount(*d.service, chart.Name)
-		role := NewRestrictedRole(*d.service, chart.Name)
-		rb := NewRestrictedRoleBinding(*d.service, chart.Name)
+		sa := NewServiceAccount(*d.service, chart)
+		role := NewRestrictedRole(*d.service, chart)
+		rb := NewRestrictedRoleBinding(*d.service, chart)
 
 		var buf bytes.Buffer
 

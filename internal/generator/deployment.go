@@ -77,7 +77,7 @@ func NewDeployment(service types.ServiceConfig, chart *HelmChart) *Deployment {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        utils.TplName(service.Name, appName),
 				Labels:      GetLabels(service.Name, appName),
-				Annotations: Annotations,
+				Annotations: chart.Annotations,
 			},
 			Spec: appsv1.DeploymentSpec{
 				Replicas: utils.Int32Ptr(1),
@@ -192,12 +192,12 @@ func (d *Deployment) AddHealthCheck(service types.ServiceConfig, container *core
 }
 
 // AddIngress adds an ingress to the deployment. It creates the ingress object.
-func (d *Deployment) AddIngress(service types.ServiceConfig, appName string) *Ingress {
+func (d *Deployment) AddIngress(service types.ServiceConfig) *Ingress {
 	return NewIngress(service, d.chart)
 }
 
 // AddIngressRoute adds an IngressRoute to the deployment if type is "ingressroute".
-func (d *Deployment) AddIngressRoute(service types.ServiceConfig, appName string) Yaml {
+func (d *Deployment) AddIngressRoute(service types.ServiceConfig) Yaml {
 	return NewIngressRouteFromService(service, d.chart)
 }
 
@@ -220,7 +220,7 @@ func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string) {
 	}
 }
 
-func (d *Deployment) AddLegacyVolume(name, kind string) {
+func (d *Deployment) AddLegacyVolume(name, _ string) {
 	// ensure the volume is not present
 	for _, v := range d.Spec.Template.Spec.Volumes {
 		if v.Name == name {
@@ -662,7 +662,7 @@ func (d *Deployment) SetServiceAccountName() {
 	}
 }
 
-func (d *Deployment) appendDirectoryToConfigMap(service types.ServiceConfig, appName string, volume types.ServiceVolumeConfig) {
+func (d *Deployment) appendDirectoryToConfigMap(service types.ServiceConfig, volume types.ServiceVolumeConfig) {
 	pathnme := utils.PathToName(volume.Source)
 	if _, ok := d.configMaps[pathnme]; !ok {
 		d.configMaps[pathnme] = &ConfigMapMount{
@@ -675,7 +675,7 @@ func (d *Deployment) appendDirectoryToConfigMap(service types.ServiceConfig, app
 	if err != nil {
 		logger.Fatal(err)
 	}
-	cm := NewConfigMapFromDirectory(service, appName, volume.Source)
+	cm := NewConfigMapFromDirectory(service, d.chart, volume.Source)
 	d.configMaps[pathnme] = &ConfigMapMount{
 		configMap: cm,
 		mountPath: append(d.configMaps[pathnme].mountPath, mountPathConfig{
@@ -696,7 +696,7 @@ func (d *Deployment) appendFileToConfigMap(service types.ServiceConfig, appName 
 	}
 	var cm *ConfigMap
 	if v, ok := d.configMaps[pathname]; !ok {
-		cm = NewConfigMap(*d.service, appName, true)
+		cm = NewConfigMap(*d.service, d.chart, true)
 		cm.usage = FileMapUsageFiles
 		cm.path = dirname
 		cm.Name = utils.TplName(service.Name, appName) + pathname
@@ -783,7 +783,7 @@ func (d *Deployment) bindVolumes(volume types.ServiceVolumeConfig, tobind map[st
 		}
 
 		if stat.IsDir() {
-			d.appendDirectoryToConfigMap(service, appName, volume)
+			d.appendDirectoryToConfigMap(service, volume)
 		} else {
 			d.appendFileToConfigMap(service, appName, volume)
 		}

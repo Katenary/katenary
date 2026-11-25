@@ -1,0 +1,14 @@
+name: depends-on
+
+services:
+  web:
+    image: nginx:1.29
+    ports:
+      - "80:80"
+    depends_on:
+      - database
+
+  database:
+    image: mariadb:10.5
+    ports:
+      - "3306:3306"

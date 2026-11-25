@@ -1,0 +1,104 @@
+---
+# Source: ingress/templates/web/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    katenary.io/compose-hash: 71eddb08a8bd7c9078093cf359a244652eba86b3
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: ingress
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: ingress-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: web
+  name: 'release-name-ingress-web'
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: http
+  - name: https
+    port: 443
+    protocol: TCP
+    targetPort: https
+  selector:
+    app.kubernetes.io/name: ingress
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/component: web
+
+---
+# Source: ingress/templates/web/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    katenary.io/compose-hash: 71eddb08a8bd7c9078093cf359a244652eba86b3
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: ingress
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: ingress-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: web
+  name: 'release-name-ingress-web'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ingress
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: web
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ingress
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/component: web
+    spec:
+      containers:
+      - image: 'nginx:1.29'
+        imagePullPolicy: IfNotPresent
+        name: web
+        ports:
+        - containerPort: 80
+          name: http
+        - containerPort: 443
+          name: https
+
+---
+# Source: ingress/templates/web/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    katenary.io/compose-hash: 71eddb08a8bd7c9078093cf359a244652eba86b3
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: ingress
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: ingress-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: web
+  name: 'release-name-ingress-web'
+spec:
+  rules:
+  - host: 'my.test.tld'
+    http:
+      paths:
+      - backend:
+          service:
+            name: 'release-name-ingress-web'
+            port:
+              name: http
+        path: '/'
+        pathType: ImplementationSpecific
+  tls:
+  - hosts:
+    - 'my.test.tld'
+    secretName: 'release-name-ingress-web-tls'

@@ -1,0 +1,14 @@
+name: samepod
+
+services:
+  web:
+    image: nginx:1.29
+    ports:
+      - "80:80"
+
+  fpm:
+    image: php:fpm
+    ports:
+      - "9000:9000"
+    labels:
+      katenary.v4/same-pod: web

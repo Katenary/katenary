@@ -27,7 +27,8 @@ type CronJob struct {
 }
 
 // NewCronJob creates a new CronJob from a compose service. The appName is the name of the application taken from the project name.
-func NewCronJob(service types.ServiceConfig, chart *HelmChart, appName string) (*CronJob, *RBAC) {
+func NewCronJob(service types.ServiceConfig, chart *HelmChart) (*CronJob, *RBAC) {
+	appName := chart.Name
 	labels, ok := service.Labels[labels.LabelCronJob]
 	if !ok {
 		return nil, nil
@@ -86,7 +87,7 @@ func NewCronJob(service types.ServiceConfig, chart *HelmChart, appName string) (
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        utils.TplName(service.Name, appName),
 				Labels:      GetLabels(service.Name, appName),
-				Annotations: Annotations,
+				Annotations: chart.Annotations,
 			},
 			Spec: batchv1.CronJobSpec{
 				Schedule: "{{ .Values." + service.Name + ".cronjob.schedule }}",
@@ -113,7 +114,7 @@ func NewCronJob(service types.ServiceConfig, chart *HelmChart, appName string) (
 
 	var rbac *RBAC
 	if mapping.Rbac {
-		rbac = NewRBAC(service, appName)
+		rbac = NewRBAC(service, chart)
 		// add the service account to the cronjob
 		cronjob.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = utils.TplName(service.Name, appName)
 	}

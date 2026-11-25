@@ -2,95 +2,51 @@ package generator
 
 import (
 	"bytes"
-	"fmt"
-	"os"
 	"testing"
 
 	"katenary.io/internal/generator/labels"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
 )
 
 func TestCreateSecretFromEnvironment(t *testing.T) {
-	composeFile := `
-services:
-    web:
-        image: nginx:1.29
-        environment:
-        - FOO=bar
-        - BAR=baz
-        labels:
-            %s/secrets: |-
-                - BAR
-`
-	composeFile = fmt.Sprintf(composeFile, labels.KatenaryLabelPrefix)
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
+	t.Parallel()
+	project := newProject("testapp",
+		newService("web").
+			env("FOO", "bar").
+			env("BAR", "baz").
+			label(labels.LabelSecrets, "- BAR").
+			build(),
+	)
 
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
+	output := renderProjectTemplate(t, project, "templates/web/secret.yaml")
+	secret := corev1.Secret{}
+	if err := yaml.Unmarshal(output, &secret); err != nil {
+		t.Fatalf("%s\n%s", unmarshalError, err)
+	}
 
-	output := internalCompileTest(t, "-s", "templates/web/secret.yaml")
-	secret := v1.Secret{}
-	if err := yaml.Unmarshal([]byte(output), &secret); err != nil {
-		t.Errorf(unmarshalError, err)
+	if len(secret.Data) != 1 {
+		t.Fatalf("expected 1 secret entry, got %d", len(secret.Data))
 	}
-	data := secret.Data
-	if len(data) != 1 {
-		t.Errorf("Expected 1 data, got %d", len(data))
-	}
-	// v1.Secret.Data is decoded, no problem
-	if string(data["BAR"]) != "baz" {
-		t.Errorf("Expected BAR to be baz, got %s", data["BAR"])
+	if string(secret.Data["BAR"]) != "baz" {
+		t.Errorf("expected BAR to be baz, got %s", secret.Data["BAR"])
 	}
 }
 
 func TestCreateSecretFromEnvironmentWithValue(t *testing.T) {
-	composeFile := `
-services:
-    web:
-        image: nginx:1.29
-        environment:
-        - FOO=bar
-        - BAR=baz
-        labels:
-            %[1]s/secrets: |-
-                - BAR
-            %[1]s/values: |-
-                - BAR
-`
-	composeFile = fmt.Sprintf(composeFile, labels.KatenaryLabelPrefix)
-	tmpDir := setup(composeFile)
-	defer teardown(tmpDir)
+	t.Parallel()
+	project := newProject("testapp",
+		newService("web").
+			env("FOO", "bar").
+			env("BAR", "baz").
+			label(labels.LabelSecrets, "- BAR").
+			label(labels.LabelValues, "- BAR").
+			build(),
+	)
 
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
-
-	force := false
-	outputDir := "./chart"
-	profiles := make([]string, 0)
-	helmdepUpdate := true
-	var appVersion *string
-	chartVersion := "0.1.0"
-	convertOptions := ConvertOptions{
-		Force:        force,
-		OutputDir:    outputDir,
-		Profiles:     profiles,
-		HelmUpdate:   helmdepUpdate,
-		AppVersion:   appVersion,
-		ChartVersion: chartVersion,
-	}
-	if err := Convert(convertOptions, "compose.yml"); err != nil {
-		t.Fatalf("Failed to convert compose file: %s", err)
-	}
-	c, err := os.ReadFile("chart/values.yaml")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !bytes.Contains(c, []byte("BAR: baz")) {
-		t.Errorf("Expected BAR to be baz, got %s", c)
+	values := projectValues(t, project)
+	if !bytes.Contains(values, []byte("BAR: baz")) {
+		t.Errorf("expected values.yaml to contain BAR: baz, got:\n%s", values)
 	}
 }

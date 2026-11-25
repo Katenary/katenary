@@ -1,0 +1,11 @@
+name: cronjob
+
+services:
+  cron:
+    image: fedora
+    labels:
+      katenary.v4/cronjob: |
+        image: alpine
+        command: echo hello
+        schedule: "*/1 * * * *"
+        rbac: true

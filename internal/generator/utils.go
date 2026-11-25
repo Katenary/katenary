@@ -103,9 +103,9 @@ func UnWrapTPL(in []byte) []byte {
 }
 
 func ToK8SYaml(obj any) ([]byte, error) {
-	if o, err := yaml.Marshal(obj); err != nil {
-		return nil, nil
-	} else {
-		return UnWrapTPL(o), nil
+	o, err := yaml.Marshal(obj)
+	if err != nil {
+		return nil, err
 	}
+	return UnWrapTPL(o), nil
 }

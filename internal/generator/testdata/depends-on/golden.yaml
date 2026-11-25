@@ -1,0 +1,219 @@
+---
+# Source: depends-on/templates/web/depends-on.rbac.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    katenary.io/compose-hash: d8cad91e63f708461bd843871eab93e42d3f52fc
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: depends-on
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: depends-on-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: web
+  name: 'release-name-depends-on-web-dependency'
+---
+# Source: depends-on/templates/web/depends-on.rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    katenary.io/compose-hash: d8cad91e63f708461bd843871eab93e42d3f52fc
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: depends-on
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: depends-on-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: web
+  name: 'release-name-depends-on-web-dependency'
+rules:
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - get
+---
+# Source: depends-on/templates/web/depends-on.rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    katenary.io/compose-hash: d8cad91e63f708461bd843871eab93e42d3f52fc
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: depends-on
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: depends-on-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: web
+  name: 'release-name-depends-on-web-dependency'
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: 'release-name-depends-on-web-dependency'
+subjects:
+- kind: ServiceAccount
+  name: 'release-name-depends-on-web-dependency'
+  namespace: 'default'
+
+---
+# Source: depends-on/templates/database/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    katenary.io/compose-hash: d8cad91e63f708461bd843871eab93e42d3f52fc
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: depends-on
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: depends-on-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: database
+  name: 'release-name-depends-on-database'
+spec:
+  ports:
+  - name: mysql
+    port: 3306
+    protocol: TCP
+    targetPort: mysql
+  selector:
+    app.kubernetes.io/name: depends-on
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/component: database
+
+---
+# Source: depends-on/templates/web/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    katenary.io/compose-hash: d8cad91e63f708461bd843871eab93e42d3f52fc
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: depends-on
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: depends-on-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: web
+  name: 'release-name-depends-on-web'
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: http
+  selector:
+    app.kubernetes.io/name: depends-on
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/component: web
+
+---
+# Source: depends-on/templates/database/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    katenary.io/compose-hash: d8cad91e63f708461bd843871eab93e42d3f52fc
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: depends-on
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: depends-on-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: database
+  name: 'release-name-depends-on-database'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: depends-on
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: database
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: depends-on
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/component: database
+    spec:
+      containers:
+      - image: 'mariadb:10.5'
+        imagePullPolicy: IfNotPresent
+        name: database
+        ports:
+        - containerPort: 3306
+          name: mysql
+
+---
+# Source: depends-on/templates/web/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    katenary.io/compose-hash: d8cad91e63f708461bd843871eab93e42d3f52fc
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: depends-on
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: depends-on-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: web
+  name: 'release-name-depends-on-web'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: depends-on
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: web
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: depends-on
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/component: web
+    spec:
+      containers:
+      - image: 'nginx:1.29'
+        imagePullPolicy: IfNotPresent
+        name: web
+        ports:
+        - containerPort: 80
+          name: http
+      initContainers:
+      - command:
+        - /bin/sh
+        - -c
+        - |-
+          NAMESPACE=${NAMESPACE:-default}
+          DEPLOYMENT_NAME=release-name-depends-on-database
+          KUBERNETES_SERVICE_HOST=${KUBERNETES_SERVICE_HOST:-kubernetes.default.svc}
+          KUBERNETES_SERVICE_PORT=${KUBERNETES_SERVICE_PORT:-443}
+
+          until curl -s -o- --header="Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+            --cacert=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+            "https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}/apis/apps/v1/namespaces/${NAMESPACE}/deployments/${DEPLOYMENT_NAME}" \
+            | grep -q '"readyReplicas":\s*[1-9][0-9]*'; do
+            sleep 2
+          done
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        image: quay.io/curl/curl:latest
+        name: wait-for-database
+      serviceAccountName: 'release-name-depends-on-web-dependency'

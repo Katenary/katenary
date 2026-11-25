@@ -97,9 +97,8 @@ func GetContainerByName(name string, containers []corev1.Container) (*corev1.Con
 func TplValue(serviceName, variable string, pipes ...string) string {
 	if len(pipes) == 0 {
 		return `{{ tpl .Values.` + serviceName + `.` + variable + ` $ }}`
-	} else {
-		return `{{ tpl .Values.` + serviceName + `.` + variable + ` $ | ` + strings.Join(pipes, " | ") + ` }}`
 	}
+	return `{{ tpl .Values.` + serviceName + `.` + variable + ` $ | ` + strings.Join(pipes, " | ") + ` }}`
 }
 
 // PathToName converts a path to a kubernetes complient name.
@@ -126,9 +125,9 @@ type EnvConfig struct {
 }
 
 // GetValuesFromLabel returns a map of values from a label.
-func GetValuesFromLabel(service types.ServiceConfig, LabelValues string) map[string]*EnvConfig {
+func GetValuesFromLabel(service types.ServiceConfig, labelValues string) map[string]*EnvConfig {
 	descriptions := make(map[string]*EnvConfig)
-	if v, ok := service.Labels[LabelValues]; ok {
+	if v, ok := service.Labels[labelValues]; ok {
 		labelContent := []any{}
 		err := yaml.Unmarshal([]byte(v), &labelContent)
 		if err != nil {
@@ -149,7 +148,7 @@ func GetValuesFromLabel(service types.ServiceConfig, LabelValues string) map[str
 					descriptions[k.(string)] = &EnvConfig{Service: service, Description: v.(string)}
 				}
 			default:
-				logger.Fatalf("Unknown type in label: %s %T", LabelValues, value)
+				logger.Fatalf("Unknown type in label: %s %T", labelValues, value)
 			}
 		}
 	}

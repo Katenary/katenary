@@ -94,8 +94,15 @@ var ingressTLSHelp = `# Ingress TLS configuration
 # name is generated. You can specify the secret name to use your own secret.
 `
 
-// keyRegExp checks if the line starts by a #
-var keyRegExp = regexp.MustCompile(`^\s*[^#]+:.*`)
+var (
+	// keyRegExp checks if the line starts by a #
+	keyRegExp = regexp.MustCompile(`^\s*[^#]+:.*`)
+
+	chartNameLineRegexp    = regexp.MustCompile(`(?m)^name:`)
+	chartVersionLineRegexp = regexp.MustCompile(`(?m)^version:`)
+	templateExprRegexp     = regexp.MustCompile(`(?s)\{\{(.*?)\}\}`)
+	whiteSpaceRegexp       = regexp.MustCompile(`\s+`)
+)
 
 // Convert a compose (docker, podman...) project to a helm chart.
 // It calls Generate() to generate the chart and then write it to the disk.
@@ -239,13 +246,14 @@ func addChartDoc(values []byte, project *types.Project) []byte {
 
 	lines := strings.Split(string(values), "\n")
 	for i, line := range lines {
-		if regexp.MustCompile(`(?m)^name:`).MatchString(line) {
+		switch {
+		case chartNameLineRegexp.MatchString(line):
 			doc := "\n# Name of the chart (required), basically the name of the project.\n"
 			lines[i] = doc + line
-		} else if regexp.MustCompile(`(?m)^version:`).MatchString(line) {
+		case chartVersionLineRegexp.MatchString(line):
 			doc := "\n# Version of the chart (required)\n"
 			lines[i] = doc + line
-		} else if strings.Contains(line, "appVersion:") {
+		case strings.Contains(line, "appVersion:"):
 			spaces := utils.CountStartingSpaces(line)
 			doc := fmt.Sprintf(
 				"\n%s# Version of the application (required).\n%s# This should be the main application version.\n",
@@ -253,7 +261,7 @@ func addChartDoc(values []byte, project *types.Project) []byte {
 				strings.Repeat(" ", spaces),
 			)
 			lines[i] = doc + line
-		} else if strings.Contains(line, "dependencies:") {
+		case strings.Contains(line, "dependencies:"):
 			spaces := utils.CountStartingSpaces(line)
 			doc := fmt.Sprintf("\n"+
 				"%s# Dependencies are external charts that this chart will depend on.\n"+
@@ -418,14 +426,11 @@ func addMainTagAppDoc(values []byte, project *types.Project) []byte {
 
 	for _, service := range project.Services {
 		// read the label LabelMainApp
-		if v, ok := service.Labels[labels.LabelMainApp]; !ok {
+		v, ok := service.Labels[labels.LabelMainApp]
+		if !ok || v == "false" || v == "no" || v == "0" {
 			continue
-		} else if v == "false" || v == "no" || v == "0" {
-			continue
-		} else {
-			logger.Log(logger.IconConfig, "Adding main tag app doc for service", service.Name)
 		}
-
+		logger.Log(logger.IconConfig, "Adding main tag app doc for service", service.Name)
 		lines = addMainAppDoc(lines, service)
 	}
 
@@ -616,16 +621,12 @@ func callHelmUpdate(config ConvertOptions) {
 }
 
 func removeNewlinesInsideBrackets(values []byte) []byte {
-	re, err := regexp.Compile(`(?s)\{\{(.*?)\}\}`)
-	if err != nil {
-		logger.Fatal(err)
-	}
-	return re.ReplaceAllFunc(values, func(b []byte) []byte {
+	return templateExprRegexp.ReplaceAllFunc(values, func(b []byte) []byte {
 		// get the first match
-		matches := re.FindSubmatch(b)
+		matches := templateExprRegexp.FindSubmatch(b)
 		replacement := bytes.ReplaceAll(matches[1], []byte("\n"), []byte(" "))
 		// remove repeated spaces
-		replacement = regexp.MustCompile(`\s+`).ReplaceAll(replacement, []byte(" "))
+		replacement = whiteSpaceRegexp.ReplaceAll(replacement, []byte(" "))
 		// remove newlines inside brackets
 		return bytes.ReplaceAll(b, matches[1], replacement)
 	})

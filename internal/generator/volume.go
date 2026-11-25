@@ -24,7 +24,8 @@ type VolumeClaim struct {
 }
 
 // NewVolumeClaim creates a new VolumeClaim from a compose service.
-func NewVolumeClaim(service types.ServiceConfig, volumeName, appName string) *VolumeClaim {
+func NewVolumeClaim(service types.ServiceConfig, volumeName string, chart *HelmChart) *VolumeClaim {
+	appName := chart.Name
 	fixedName := utils.FixedResourceName(volumeName)
 	return &VolumeClaim{
 		volumeName: volumeName,
@@ -37,7 +38,7 @@ func NewVolumeClaim(service types.ServiceConfig, volumeName, appName string) *Vo
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        utils.TplName(service.Name, appName) + "-" + fixedName,
 				Labels:      GetLabels(service.Name, appName),
-				Annotations: Annotations,
+				Annotations: chart.Annotations,
 			},
 			Spec: v1.PersistentVolumeClaimSpec{
 				AccessModes: []v1.PersistentVolumeAccessMode{

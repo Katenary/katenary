@@ -57,9 +57,7 @@ func ReadMeFile(charname, description string, values map[string]any) string {
 	parseValues("", vv, result)
 
 	funcMap := template.FuncMap{
-		"repeat": func(s string, count int) string {
-			return strings.Repeat(s, count)
-		},
+		"repeat": strings.Repeat,
 	}
 	tpl, err := template.New("readme").Funcs(funcMap).Parse(readmeTemplate)
 	if err != nil {

@@ -1,0 +1,21 @@
+name: values
+
+services:
+  web:
+    image: nginx:1.29
+    environment:
+      FOO: bar
+      BAZ: qux
+    labels:
+      katenary.v4/values: |-
+        - FOO
+      katenary.v4/map-env: |-
+        BAZ: mapped
+
+  db:
+    image: postgres:17
+    environment:
+      DB_USER: myuser
+    labels:
+      katenary.v4/env-from: |-
+        - web

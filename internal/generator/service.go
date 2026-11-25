@@ -22,7 +22,8 @@ type Service struct {
 }
 
 // NewService creates a new Service from a compose service.
-func NewService(service types.ServiceConfig, appName string) *Service {
+func NewService(service types.ServiceConfig, chart *HelmChart) *Service {
+	appName := chart.Name
 	ports := []v1.ServicePort{}
 
 	s := &Service{
@@ -35,7 +36,7 @@ func NewService(service types.ServiceConfig, appName string) *Service {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        utils.TplName(service.Name, appName),
 				Labels:      GetLabels(service.Name, appName),
-				Annotations: Annotations,
+				Annotations: chart.Annotations,
 			},
 			Spec: v1.ServiceSpec{
 				Selector: GetMatchLabels(service.Name, appName),
@@ -51,7 +52,7 @@ func NewService(service types.ServiceConfig, appName string) *Service {
 }
 
 // AddPort adds a port to the service.
-func (s *Service) AddPort(port types.ServicePortConfig, serviceName ...string) {
+func (s *Service) AddPort(port types.ServicePortConfig) {
 	var name string
 	var finalport intstr.IntOrString
 
