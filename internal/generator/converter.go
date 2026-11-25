@@ -23,7 +23,7 @@ import (
 )
 
 const ingressClassHelp = `# Default value for ingress.class
-# class: "traefik"
+# class: "-"
 # If the value is "-", controller will not set ingressClassName
 # If the value is "", Ingress will be set to an empty string, so
 # controller will use the default value for ingressClass

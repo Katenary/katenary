@@ -50,14 +50,14 @@ func NewIngress(service types.ServiceConfig, Chart *HelmChart) *Ingress {
 	}
 
 	Chart.Values[service.Name].(*Value).Ingress = &IngressValue{
-		Enabled:            mapping.Enabled,
-		Path:               *mapping.Path,
-		Host:               mapping.Hostname,
-		Class:              *mapping.Class,
-		Type:               mapping.Type,
+		Enabled:             mapping.Enabled && mapping.Type != "ingressroute",
+		Path:                *mapping.Path,
+		Host:                mapping.Hostname,
+		Class:               *mapping.Class,
+		Type:                mapping.Type,
 		IngressRouteEnabled: mapping.Type == "ingressroute" && mapping.Enabled,
-		Annotations:        mapping.Annotations,
-		TLS:                TLS{Enabled: mapping.TLS.Enabled},
+		Annotations:         mapping.Annotations,
+		TLS:                 TLS{Enabled: mapping.TLS.Enabled},
 	}
 
 	return newStandardIngress(service, mapping, serviceName, appName)

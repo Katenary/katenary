@@ -18,7 +18,7 @@ var _ Yaml = (*IngressRoute)(nil)
 type IngressRoute struct {
 	metav1.TypeMeta   `yaml:",inline"`
 	metav1.ObjectMeta `yaml:"metadata"`
-	Spec              IngressRouteSpec `yaml:"spec"`
+	Spec              IngressRouteSpec     `yaml:"spec"`
 	service           *types.ServiceConfig `yaml:"-"`
 	appName           string               `yaml:"-"`
 	serviceName       string               `yaml:"-"`
@@ -26,15 +26,15 @@ type IngressRoute struct {
 
 // IngressRouteSpec defines the spec for Traefik IngressRoute
 type IngressRouteSpec struct {
-	EntryPoints []string              `json:"entryPoints,omitempty" yaml:"entryPoints,omitempty"`
-	Routes      []IngressRouteRoute  `json:"routes" yaml:"routes"`
-	TLS         *IngressRouteTLS     `json:"tls,omitempty" yaml:"tls,omitempty"`
+	EntryPoints []string            `json:"entryPoints,omitempty" yaml:"entryPoints,omitempty"`
+	Routes      []IngressRouteRoute `json:"routes" yaml:"routes"`
+	TLS         *IngressRouteTLS    `json:"tls,omitempty" yaml:"tls,omitempty"`
 }
 
 // IngressRouteRoute defines a route in the IngressRoute
 type IngressRouteRoute struct {
-	Match    string             `json:"match" yaml:"match"`
-	Kind     string             `json:"kind" yaml:"kind"`
+	Match    string                `json:"match" yaml:"match"`
+	Kind     string                `json:"kind" yaml:"kind"`
 	Services []IngressRouteService `json:"services" yaml:"services"`
 }
 
@@ -46,7 +46,7 @@ type IngressRouteService struct {
 
 // IngressRouteTLS defines TLS configuration for IngressRoute
 type IngressRouteTLS struct {
-	SecretName string   `json:"secretName,omitempty" yaml:"secretName,omitempty"`
+	SecretName string                  `json:"secretName,omitempty" yaml:"secretName,omitempty"`
 	Domains    []IngressRouteTLSDomain `json:"domains,omitempty" yaml:"domains,omitempty"`
 }
 
@@ -66,6 +66,12 @@ func NewIngressRoute(service types.ServiceConfig, Chart *HelmChart, mapping *lab
 		match += ` && PathPrefix("` + path + `")`
 	}
 
+	tlsEnabled := mapping.TLS != nil && mapping.TLS.Enabled
+	entryPoints := []string{"web"}
+	if tlsEnabled {
+		entryPoints = append(entryPoints, "websecure")
+	}
+
 	ir := &IngressRoute{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "IngressRoute",
@@ -77,7 +83,7 @@ func NewIngressRoute(service types.ServiceConfig, Chart *HelmChart, mapping *lab
 			Annotations: Annotations,
 		},
 		Spec: IngressRouteSpec{
-			EntryPoints: []string{"web", "websecure"},
+			EntryPoints: entryPoints,
 			Routes: []IngressRouteRoute{
 				{
 					Match: match,
@@ -97,7 +103,7 @@ func NewIngressRoute(service types.ServiceConfig, Chart *HelmChart, mapping *lab
 	}
 
 	// Add TLS configuration if enabled
-	if mapping.TLS != nil && mapping.TLS.Enabled {
+	if tlsEnabled {
 		tlsSecretName := `{{ .Values.` + serviceName + `.ingress.tls.secretName | default $tlsname }}`
 		ir.Spec.TLS = &IngressRouteTLS{
 			SecretName: tlsSecretName,
@@ -183,4 +189,3 @@ func (ir *IngressRoute) Yaml() ([]byte, error) {
 	ret = []byte(strings.Join(out, "\n"))
 	return ret, nil
 }
-

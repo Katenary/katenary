@@ -49,6 +49,75 @@ services:
 	}
 }
 
+func TestIngressRouteWithoutTLS(t *testing.T) {
+	composeFile := `
+services:
+    web:
+        image: nginx:1.29
+        ports:
+        - 80:80
+        labels:
+            %s/ingress: |-
+                hostname: plain.example.com
+                port: 80
+                type: ingressroute
+                enabled: true
+                tls:
+                  enabled: false
+ `
+	composeFile = fmt.Sprintf(composeFile, labels.KatenaryLabelPrefix)
+	tmpDir := setup(composeFile)
+	defer teardown(tmpDir)
+
+	currentDir, _ := os.Getwd()
+	os.Chdir(tmpDir)
+	defer os.Chdir(currentDir)
+
+	output := internalCompileTest(
+		t,
+		"-s", "templates/web/ingressroute.yaml",
+	)
+
+	if strings.Contains(output, "websecure") {
+		t.Errorf("Unexpected 'websecure' entryPoint when TLS is disabled")
+	}
+	if strings.Contains(output, "tls:") {
+		t.Errorf("Unexpected TLS configuration when TLS is disabled")
+	}
+}
+
+func TestIngressRouteDisablesStandardIngress(t *testing.T) {
+	composeFile := `
+services:
+    web:
+        image: nginx:1.29
+        ports:
+        - 80:80
+        labels:
+            %s/ingress: |-
+                hostname: my.test.tld
+                port: 80
+                type: ingressroute
+                enabled: true
+ `
+	composeFile = fmt.Sprintf(composeFile, labels.KatenaryLabelPrefix)
+	tmpDir := setup(composeFile)
+	defer teardown(tmpDir)
+
+	currentDir, _ := os.Getwd()
+	os.Chdir(tmpDir)
+	defer os.Chdir(currentDir)
+
+	output := internalCompileTest(t)
+
+	if !strings.Contains(output, "kind: IngressRoute") {
+		t.Errorf("Expected IngressRoute in output")
+	}
+	if strings.Contains(output, "kind: Ingress\n") {
+		t.Errorf("Standard Ingress should not be rendered when type is ingressroute")
+	}
+}
+
 func TestIngressRouteWithTLS(t *testing.T) {
 	composeFile := `
 services:
@@ -84,6 +153,10 @@ services:
 	}
 	if !strings.Contains(output, "secretName:") {
 		t.Errorf("Expected SecretName in TLS configuration, got: %s", output)
+	}
+	// TLS implies the secure entrypoint.
+	if !strings.Contains(output, "websecure") {
+		t.Errorf("Expected 'websecure' entryPoint when TLS is enabled")
 	}
 }
 
