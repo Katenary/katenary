@@ -90,7 +90,7 @@ func NewDeployment(service types.ServiceConfig, chart *HelmChart) *Deployment {
 					},
 					Spec: corev1.PodSpec{
 						NodeSelector: map[string]string{
-							labels.LabelName("node-selector"): "replace",
+							labels.AnnotationName("node-selector"): "replace",
 						},
 					},
 				},
@@ -641,9 +641,9 @@ func (d *Deployment) Yaml() ([]byte, error) {
 		content[i] = line
 	}
 
-	// find the katenary.v3/node-selector line, and remove it
+	// find the node-selector placeholder line, and remove it
 	for i, line := range content {
-		if strings.Contains(line, labels.LabelName("node-selector")) {
+		if strings.Contains(line, labels.AnnotationName("node-selector")) {
 			content = append(content[:i], content[i+1:]...)
 			continue
 		}

@@ -186,16 +186,16 @@ services:
             - database
         labels:
             # expose the port 80 as an ingress
-            katenary.v3/ingress: |-
+            katenary.v4/ingress: |-
                 hostname: myapp.example.com
                 port: 80
             # make adaptations, DB_HOST environment is actually the service name
-            katenary.v3/map-env: |-
+            katenary.v4/map-env: |-
                 DB_HOST: '{{ .Release.Name }}-database'
             # get the values from the "database" service
             # this will use the database secrets and environment,
             # see the "database" service to see the values
-            katenary.v3/values-from: |-
+            katenary.v4/values-from: |-
                 DB_USER: database.MARIADB_USER
                 DB_PASSWORD: database.MARIADB_PASSWORD
 
@@ -211,10 +211,10 @@ services:
         labels:
             # no need to declare this port in docker-compose
             # but katenary will need it
-            katenary.v3/ports: |-
+            katenary.v4/ports: |-
                 - 3306
             # these variables are secrets
-            katenary.v3/secrets: |-
+            katenary.v4/secrets: |-
                 - MARIADB_ROOT_PASSWORD
                 - MARIADB_PASSWORD
 ```
@@ -227,22 +227,22 @@ These labels could be found by `katenary help-labels`, and can be placed as labe
 To get more information about a label, use `katenary help-label <name_without_prefix>
 e.g. katenary help-label dependencies
 
-katenary.v3/configmap-files:	[]string			Inject files as Configmap.
-katenary.v3/cronjob:		object				Create a cronjob from the service.
-katenary.v3/dependencies:	[]object			Add Helm dependencies to the service.
-katenary.v3/description:	string				Description of the service
-katenary.v3/env-from:		[]string			Add environment variables from another service.
-katenary.v3/exchange-volumes:	[]object			Add exchange volumes (empty directory on the node) to share data
-katenary.v3/health-check:	object				Health check to be added to the deployment.
-katenary.v3/ignore:		bool				Ignore the service
-katenary.v3/ingress:		object				Ingress rules to be added to the service.
-katenary.v3/main-app:		bool				Mark the service as the main app.
-katenary.v3/map-env:		map[string]string		Map env vars from the service to the deployment.
-katenary.v3/ports:		[]uint32			Ports to be added to the service.
-katenary.v3/same-pod:		string				Move the same-pod deployment to the target deployment.
-katenary.v3/secrets:		[]string			Env vars to be set as secrets.
-katenary.v3/values:		[]string or map[string]string	Environment variables to be added to the values.yaml
-katenary.v3/values-from:	map[string]string		Add values from another service.
+katenary.v4/configmap-files:	[]string			Inject files as Configmap.
+katenary.v4/cronjob:		object				Create a cronjob from the service.
+katenary.v4/dependencies:	[]object			Add Helm dependencies to the service.
+katenary.v4/description:	string				Description of the service
+katenary.v4/env-from:		[]string			Add environment variables from another service.
+katenary.v4/exchange-volumes:	[]object			Add exchange volumes (empty directory on the node) to share data
+katenary.v4/health-check:	object				Health check to be added to the deployment.
+katenary.v4/ignore:		bool				Ignore the service
+katenary.v4/ingress:		object				Ingress rules to be added to the service.
+katenary.v4/main-app:		bool				Mark the service as the main app.
+katenary.v4/map-env:		map[string]string		Map env vars from the service to the deployment.
+katenary.v4/ports:		[]uint32			Ports to be added to the service.
+katenary.v4/same-pod:		string				Move the same-pod deployment to the target deployment.
+katenary.v4/secrets:		[]string			Env vars to be set as secrets.
+katenary.v4/values:		[]string or map[string]string	Environment variables to be added to the values.yaml
+katenary.v4/values-from:	map[string]string		Add values from another service.
 ```
 
 ## Katenary.yaml file and schema validation
@@ -256,7 +256,7 @@ For example, instead of using this:
 services:
     web:
         image: nginx:latest
-        katenary.v3/ingress: |-
+        katenary.v4/ingress: |-
             hostname: myapp.example.com
             port: 80
 ```

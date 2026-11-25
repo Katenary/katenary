@@ -62,7 +62,7 @@ services:
         ports:
         - 9000:9000
         labels:
-            katenary.v3/same-pod: web
+            katenary.v4/same-pod: web
 `
 
 	outDir := "./chart"
@@ -195,7 +195,7 @@ services:
         depends_on:
         - database
         labels:
-            katenary.v3/depends-on: legacy
+            katenary.v4/depends-on: legacy
 
     database:
         image: mariadb:10.5

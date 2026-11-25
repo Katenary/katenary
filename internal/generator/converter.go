@@ -2,7 +2,6 @@ package generator
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -154,7 +153,10 @@ func Convert(config ConvertOptions, dockerComposeFile ...string) error {
 	}
 
 	// TODO: use katenary.yaml file here to set the labels
-	katenaryfile.OverrideWithConfig(project)
+	if err := katenaryfile.OverrideWithConfig(project); err != nil {
+		logger.Failure(err.Error())
+		return err
+	}
 
 	if !config.Force {
 		// check if the chart directory exists
@@ -690,33 +692,28 @@ func helmUpdate(config ConvertOptions) error {
 	return cmd.Run()
 }
 
-// check if the project makes use of older labels (kanetary.[^v3])
+// checkOldLabels reports labels that use a prefix from an older Katenary
+// version. Those labels are not read anymore, so converting silently would
+// produce a chart missing part of the user configuration.
 func checkOldLabels(project *types.Project) error {
-	badServices := make([]string, 0)
+	badServices := make([]string, 0, len(project.Services))
+	seen := make(map[string]struct{})
 	for _, service := range project.Services {
 		for label := range service.Labels {
-			if strings.Contains(label, "katenary.") && !strings.Contains(label, labels.KatenaryLabelPrefix) {
-				badServices = append(badServices, fmt.Sprintf("- %s: %s", service.Name, label))
+			if !labels.IsLegacyLabel(label) {
+				continue
 			}
+			line := fmt.Sprintf("- %s: %s -> %s", service.Name, label, labels.LegacyLabelSuggestion(label))
+			if _, ok := seen[line]; ok {
+				continue
+			}
+			seen[line] = struct{}{}
+			badServices = append(badServices, line)
 		}
 	}
-	if len(badServices) > 0 {
-		message := fmt.Sprintf(` Old labels detected in project "%s".
-
-  The current version of katenary uses labels with the prefix "%s" which are not compatible with previous versions.
-  Your project is not compatible with this version.
-  
-  Please upgrade your labels to follow the current version
-  
-  Services to upgrade:
-%s`,
-			project.Name,
-			labels.KatenaryLabelPrefix[0:len(labels.KatenaryLabelPrefix)-1],
-			strings.Join(badServices, "\n"),
-		)
-
-		return errors.New(utils.WordWrap(message, 80))
-
+	if len(badServices) == 0 {
+		return nil
 	}
-	return nil
+
+	return labels.LegacyLabelsError(project.Name, badServices)
 }
