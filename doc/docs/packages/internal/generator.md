@@ -70,6 +70,15 @@ func GetVersion() string
 
 GetVersion return the version of katneary. It's important to understand that the version is set at compile time for the github release. But, it the user get katneary using \`go install\`, the version should be different.
 
+<a name="HasExposedPorts"></a>
+## func [HasExposedPorts](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/generator/utils.go#L80>)
+
+```go
+func HasExposedPorts(service types.ServiceConfig) bool
+```
+
+HasExposedPorts returns true if the service exposes ports, either directly in the compose file or through the katenary.v3/ports label.
+
 <a name="Helper"></a>
 ## func [Helper](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/generator/helper.go#L16>)
 
@@ -89,7 +98,7 @@ func NewCronJob(service types.ServiceConfig, chart *HelmChart, appName string) (
 NewCronJob creates a new CronJob from a compose service. The appName is the name of the application taken from the project name.
 
 <a name="ToK8SYaml"></a>
-## func [ToK8SYaml](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/generator/utils.go#L91>)
+## func [ToK8SYaml](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/generator/utils.go#L105>)
 
 ```go
 func ToK8SYaml(obj any) ([]byte, error)
@@ -98,7 +107,7 @@ func ToK8SYaml(obj any) ([]byte, error)
 
 
 <a name="UnWrapTPL"></a>
-## func [UnWrapTPL](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/generator/utils.go#L87>)
+## func [UnWrapTPL](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/generator/utils.go#L101>)
 
 ```go
 func UnWrapTPL(in []byte) []byte
@@ -480,24 +489,30 @@ type HelmChart struct {
 ```
 
 <a name="Generate"></a>
-### func [Generate](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/generator/generator.go#L32>)
+### func [Generate](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/generator/generator.go#L39>)
 
 ```go
 func Generate(project *types.Project) (*HelmChart, error)
 ```
 
-Generate a chart from a compose project. This does not write files to disk, it only creates the HelmChart object.
+Generate creates a HelmChart from a docker\-compose project. It does not write files to disk but returns the HelmChart object with all templates.
 
-The Generate function will create the HelmChart object this way:
+The function performs the following steps:
 
-- Detect the service port name or leave the port number if not found.
-- Create a deployment for each service that are not ingore.
-- Create a service and ingresses for each service that has ports and/or declared ingresses.
-- Create a PVC or Configmap volumes for each volume.
-- Create init containers for each service which has dependencies to other services.
-- Create a chart dependencies.
-- Create a configmap and secrets from the environment variables.
-- Merge the same\-pod services.
+1. Computes a hash of compose files and adds it as an annotation.
+2. Removes services marked with the "ignore" label.
+3. Fixes container and resource names \(removes dashes\).
+4. Detects the main app and sets the chart version.
+5. Creates deployments for all services.
+6. Creates PVCs and ConfigMaps for volumes.
+7. Merges same\-pod services into their target deployments.
+8. Creates init containers for services with depends\_on relationships.
+9. Generates RBAC resources for services needing K8s API access.
+10. Generates ConfigMaps and Secrets from environment variables.
+11. Applies shared configuration from env\-from labels.
+12. Generates Kubernetes Service resources for services with ports.
+13. Processes YAML templates by replacing placeholders and computing indentation.
+14. Generates helper templates.
 
 <a name="NewChart"></a>
 ### func [NewChart](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/generator/chart.go#L57>)

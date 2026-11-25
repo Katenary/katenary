@@ -65,6 +65,7 @@ nav:
       - packages/cmd/katenary.md
       - packages/internal/parser.md
       - packages/internal/utils.md
+      - packages/internal/logger.md
       - Generator:
           - Index: packages/internal/generator.md
           - ExtraFiles: packages/internal/generator/extrafiles.md

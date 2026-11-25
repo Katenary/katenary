@@ -36,6 +36,7 @@ const (
 )
 
 var (
+	infos    []string
 	warnings []string
 	mu       sync.Mutex
 )
@@ -74,6 +75,14 @@ func Warnf(format string, msg ...any) {
 	defer mu.Unlock()
 	warning := fmt.Sprintf(format, msg...)
 	warnings = append(warnings, warning)
+}
+
+// InfoBufferedf stores a formatted informational message for buffered display.
+func InfoBufferedf(format string, msg ...any) {
+	mu.Lock()
+	defer mu.Unlock()
+	info := fmt.Sprintf(format, msg...)
+	infos = append(infos, info)
 }
 
 // Success prints a success message.
@@ -125,6 +134,22 @@ func Fatal(msg ...any) {
 // Fatalf prints a fatal error message with formatting and exits with code 1.
 func Fatalf(format string, msg ...any) {
 	fatalf(ColorRed, IconFailure, format, msg...)
+}
+
+// FlushInfos prints all buffered info messages under the given title.
+func FlushInfos(title string) {
+	mu.Lock()
+	defer mu.Unlock()
+	if len(infos) > 0 {
+		fmt.Println()
+		fmt.Print(IconInfo, " ", title, reset)
+		fmt.Println()
+		for _, info := range infos {
+			fmt.Println("  •", info)
+		}
+		fmt.Println()
+		infos = nil
+	}
 }
 
 // FlushWarnings prints all collected warnings at the end of the conversion.

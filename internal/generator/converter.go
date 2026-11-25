@@ -217,6 +217,9 @@ func Convert(config ConvertOptions, dockerComposeFile ...string) error {
 	// call helm update if needed
 	callHelmUpdate(config)
 
+	// flush info messages (services without ports) before warnings
+	logger.FlushInfos("The following services have no exposed ports:")
+
 	// flush warnings after all conversion is complete
 	logger.FlushWarnings()
 

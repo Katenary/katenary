@@ -21,6 +21,7 @@ button.md-clipboard::after {
   transition: all 0.5s ease;
   color: var(--lt-color-gray-500);
 }
+
 button.md-clipboard:hover::after {
   color: var(--md-primary-bg-color);
 }
@@ -95,11 +96,12 @@ h3[id*="katenaryio"] {
 }
 
 @media all and (min-width: 1399px) {
-  .zoomable label > * {
+  .zoomable label>* {
     cursor: zoom-in;
     transition: all 0.2s ease-in-out;
   }
-  .zoomable input[type="checkbox"]:checked ~ label > * {
+
+  .zoomable input[type="checkbox"]:checked~label>* {
     transform: scale(2);
     cursor: zoom-out;
     box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
@@ -112,6 +114,11 @@ h3[id*="katenaryio"] {
   text-align: center;
   padding: 1rem;
 }
+
 #klee svg {
   zoom: 2;
+}
+
+h3 {
+  color: var(--md-code-hl-special-color);
 }
