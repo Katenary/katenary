@@ -75,6 +75,20 @@ func fixPorts(service *types.ServiceConfig) error {
 	return nil
 }
 
+// HasExposedPorts returns true if the service exposes ports, either directly
+// in the compose file or through the katenary.v3/ports label.
+func HasExposedPorts(service types.ServiceConfig) bool {
+	if len(service.Ports) > 0 {
+		return true
+	}
+	// fixPorts mutates its argument, work on a copy to avoid side effects and
+	// to apply the same parsing rules as the deployment generation.
+	if err := fixPorts(&service); err != nil {
+		return false
+	}
+	return len(service.Ports) > 0
+}
+
 // isIgnored returns true if the service is ignored.
 func isIgnored(service types.ServiceConfig) bool {
 	if v, ok := service.Labels[labels.LabelIgnore]; ok {

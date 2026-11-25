@@ -8,7 +8,21 @@ import "katenary.io/internal/logger"
 
 Package logger provides simple logging functions with icons and colors.
 
-## func [Failure](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L75>)
+## Constants
+
+<a name="ColorGreen"></a>
+
+```go
+const (
+    ColorGreen   = "\033[38;5;34m"
+    ColorRed     = "\033[38;5;196m"
+    ColorOrange  = "\033[38;5;214m"
+    ColorWarning = "\033[38;5;214m"
+)
+```
+
+<a name="Failure"></a>
+## func [Failure](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L99>)
 
 ```go
 func Failure(msg ...any)
@@ -17,7 +31,7 @@ func Failure(msg ...any)
 Failure prints a failure message.
 
 <a name="Failuref"></a>
-## func [Failuref](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L81>)
+## func [Failuref](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L104>)
 
 ```go
 func Failuref(format string, msg ...any)
@@ -26,7 +40,7 @@ func Failuref(format string, msg ...any)
 Failuref prints a formatted failure message.
 
 <a name="Fatal"></a>
-## func [Fatal](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L108>)
+## func [Fatal](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L130>)
 
 ```go
 func Fatal(msg ...any)
@@ -35,7 +49,7 @@ func Fatal(msg ...any)
 Fatal prints a fatal error message and exits with code 1.
 
 <a name="Fatalf"></a>
-## func [Fatalf](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L114>)
+## func [Fatalf](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L135>)
 
 ```go
 func Fatalf(format string, msg ...any)
@@ -43,8 +57,26 @@ func Fatalf(format string, msg ...any)
 
 Fatalf prints a fatal error message with formatting and exits with code 1.
 
+<a name="FlushInfos"></a>
+## func [FlushInfos](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L140>)
+
+```go
+func FlushInfos(title string)
+```
+
+FlushInfos prints all buffered info messages under the given title.
+
+<a name="FlushWarnings"></a>
+## func [FlushWarnings](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L156>)
+
+```go
+func FlushWarnings()
+```
+
+FlushWarnings prints all collected warnings at the end of the conversion.
+
 <a name="Info"></a>
-## func [Info](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L41>)
+## func [Info](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L55>)
 
 ```go
 func Info(msg ...any)
@@ -52,8 +84,17 @@ func Info(msg ...any)
 
 Info prints an informational message.
 
+<a name="InfoBufferedf"></a>
+## func [InfoBufferedf](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L81>)
+
+```go
+func InfoBufferedf(format string, msg ...any)
+```
+
+InfoBufferedf stores a formatted informational message for buffered display.
+
 <a name="Infof"></a>
-## func [Infof](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L46>)
+## func [Infof](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L60>)
 
 ```go
 func Infof(format string, msg ...any)
@@ -62,7 +103,7 @@ func Infof(format string, msg ...any)
 Infof prints a formatted informational message.
 
 <a name="Log"></a>
-## func [Log](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L87>)
+## func [Log](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L109>)
 
 ```go
 func Log(icon Icon, msg ...any)
@@ -71,7 +112,7 @@ func Log(icon Icon, msg ...any)
 Log prints a message with a custom icon.
 
 <a name="Logf"></a>
-## func [Logf](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L92>)
+## func [Logf](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L114>)
 
 ```go
 func Logf(icon Icon, format string, msg ...any)
@@ -80,7 +121,7 @@ func Logf(icon Icon, format string, msg ...any)
 Logf prints a formatted message with a custom icon.
 
 <a name="Print"></a>
-## func [Print](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L31>)
+## func [Print](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L45>)
 
 ```go
 func Print(msg ...any)
@@ -89,7 +130,7 @@ func Print(msg ...any)
 Print prints a message without icon.
 
 <a name="Printf"></a>
-## func [Printf](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L36>)
+## func [Printf](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L50>)
 
 ```go
 func Printf(format string, msg ...any)
@@ -98,7 +139,7 @@ func Printf(format string, msg ...any)
 Printf prints a formatted message without icon.
 
 <a name="Success"></a>
-## func [Success](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L63>)
+## func [Success](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L89>)
 
 ```go
 func Success(msg ...any)
@@ -107,7 +148,7 @@ func Success(msg ...any)
 Success prints a success message.
 
 <a name="Successf"></a>
-## func [Successf](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L69>)
+## func [Successf](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L94>)
 
 ```go
 func Successf(format string, msg ...any)
@@ -116,7 +157,7 @@ func Successf(format string, msg ...any)
 Successf prints a formatted success message.
 
 <a name="Warn"></a>
-## func [Warn](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L51>)
+## func [Warn](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L65>)
 
 ```go
 func Warn(msg ...any)
@@ -125,7 +166,7 @@ func Warn(msg ...any)
 Warn prints a warning message.
 
 <a name="Warnf"></a>
-## func [Warnf](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L57>)
+## func [Warnf](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L73>)
 
 ```go
 func Warnf(format string, msg ...any)
@@ -134,7 +175,7 @@ func Warnf(format string, msg ...any)
 Warnf prints a formatted warning message.
 
 <a name="Icon"></a>
-## type [Icon](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L10>)
+## type [Icon](<https://repo.katenary.io/Katenary/katenary/blob/feature/better-depends-on/internal/logger/logger.go#L11>)
 
 Icon is a unicode icon
 

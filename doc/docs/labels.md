@@ -154,9 +154,9 @@ Method to check if a service is ready (for depends_on).
 When a service uses `depends_on`, Katenary creates an initContainer to wait
 for the dependent service to be ready.
 
-By default, Katenary uses the Kubernetes API to check if the service endpoint
-has ready addresses. This method does not require the service to expose a port
-and does not create a Kubernetes Service automatically.
+By default, Katenary uses the Kubernetes API to check if the deployment's
+`readyReplicas` status is greater than 0. This method does not require the
+service to expose a port and does not create a Kubernetes Service automatically.
 
 If you need to create a Kubernetes Service for external access, use the
 `katenary.v3/ports` label instead.

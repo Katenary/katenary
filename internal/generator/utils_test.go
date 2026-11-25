@@ -11,7 +11,49 @@ import (
 	"katenary.io/internal/utils"
 
 	"github.com/compose-spec/compose-go/v2/cli"
+	"github.com/compose-spec/compose-go/v2/types"
 )
+
+func TestHasExposedPorts(t *testing.T) {
+	tests := []struct {
+		name    string
+		service types.ServiceConfig
+		want    bool
+	}{
+		{
+			name:    "no ports",
+			service: types.ServiceConfig{},
+			want:    false,
+		},
+		{
+			name:    "compose ports",
+			service: types.ServiceConfig{Ports: []types.ServicePortConfig{{Target: 80}}},
+			want:    true,
+		},
+		{
+			name:    "ports label as list",
+			service: types.ServiceConfig{Labels: map[string]string{labels.LabelPorts: "[80, 443]"}},
+			want:    true,
+		},
+		{
+			name:    "ports label as comma separated string",
+			service: types.ServiceConfig{Labels: map[string]string{labels.LabelPorts: "80,443"}},
+			want:    true,
+		},
+		{
+			name:    "empty ports label",
+			service: types.ServiceConfig{Labels: map[string]string{labels.LabelPorts: ""}},
+			want:    false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := HasExposedPorts(tt.service); got != tt.want {
+				t.Errorf("HasExposedPorts() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
 
 func TestSplitPorts(t *testing.T) {
 	composeFileContent := `

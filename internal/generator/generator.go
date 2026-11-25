@@ -3,7 +3,9 @@ package generator
 import (
 	"bytes"
 	"fmt"
+	"maps"
 	"regexp"
+	"slices"
 	"strings"
 
 	"katenary.io/internal/generator/labels"
@@ -16,19 +18,24 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// Generate a chart from a compose project.
-// This does not write files to disk, it only creates the HelmChart object.
+// Generate creates a HelmChart from a docker-compose project.
+// It does not write files to disk but returns the HelmChart object with all templates.
 //
-// The Generate function will create the HelmChart object this way:
-//
-//   - Detect the service port name or leave the port number if not found.
-//   - Create a deployment for each service that are not ingore.
-//   - Create a service and ingresses for each service that has ports and/or declared ingresses.
-//   - Create a PVC or Configmap volumes for each volume.
-//   - Create init containers for each service which has dependencies to other services.
-//   - Create a chart dependencies.
-//   - Create a configmap and secrets from the environment variables.
-//   - Merge the same-pod services.
+// The function performs the following steps:
+//  1. Computes a hash of compose files and adds it as an annotation.
+//  2. Removes services marked with the "ignore" label.
+//  3. Fixes container and resource names (removes dashes).
+//  4. Detects the main app and sets the chart version.
+//  5. Creates deployments for all services.
+//  6. Creates PVCs and ConfigMaps for volumes.
+//  7. Merges same-pod services into their target deployments.
+//  8. Creates init containers for services with depends_on relationships.
+//  9. Generates RBAC resources for services needing K8s API access.
+//  10. Generates ConfigMaps and Secrets from environment variables.
+//  11. Applies shared configuration from env-from labels.
+//  12. Generates Kubernetes Service resources for services with ports.
+//  13. Processes YAML templates by replacing placeholders and computing indentation.
+//  14. Generates helper templates.
 func Generate(project *types.Project) (*HelmChart, error) {
 	var (
 		appName     = project.Name
@@ -76,6 +83,14 @@ func Generate(project *types.Project) (*HelmChart, error) {
 		err := chart.generateDeployment(service, deployments, services, podToMerge, appName)
 		if err != nil {
 			return nil, err
+		}
+	}
+
+	// warn users about services without exposed ports, in a stable order
+	for _, name := range slices.Sorted(maps.Keys(project.Services)) {
+		service := project.Services[name]
+		if !HasExposedPorts(service) {
+			logger.InfoBufferedf("Service %s has no exposed ports. No Kubernetes Service will be created for it. Declare ports or use the katenary.v3/ports label if you need a Service.", service.Name)
 		}
 	}
 
@@ -131,17 +146,6 @@ func Generate(project *types.Project) (*HelmChart, error) {
 				err := fmt.Errorf("service %[1]s depends on %[2]s, but %[2]s is not defined", s.Name, d)
 				logger.Failure(err.Error())
 				return nil, err
-			}
-		}
-	}
-
-	// warn users if dependent service has no ports
-	for _, s := range project.Services {
-		for _, d := range s.GetDependencies() {
-			if dep, ok := deployments[d]; ok {
-				if len(dep.service.Ports) == 0 {
-					logger.Warnf("Service %s is used in depends_on but has no ports declared. No Kubernetes Service will be created for it. Add katenary.v3/ports label if you need to create a Service.", d)
-				}
 			}
 		}
 	}
@@ -505,10 +509,6 @@ func (chart *HelmChart) generateRBAC(deployments map[string]*Deployment) error {
 		}
 
 		serviceMap[d.service.Name] = true
-	}
-
-	for svcName := range serviceMap {
-		logger.Log(logger.IconPackage, "Creating RBAC", svcName)
 	}
 
 	return nil
