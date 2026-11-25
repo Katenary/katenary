@@ -1,5 +1,11 @@
 # Basic Usage
 
+> **⚠️ v4 breaking change:** input labels now use the `katenary.v4/` prefix
+> (v1/v2 `katenary.io/*` and v3 `katenary.v3/*` labels are rejected), and the
+> generated Kubernetes labels and selector follow the standard
+> `app.kubernetes.io/*`. Read the [migration guide](migrate-v4.md) before
+> upgrading an existing project or chart.
+
 Basically, you can use `katenary` to transpose a docker-compose file (or any compose file compatible with
 `podman-compose` and `docker-compose`) to a configurable Helm Chart. This resulting helm chart can be installed with
 `helm` command to your Kubernetes cluster.

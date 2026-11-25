@@ -4,6 +4,18 @@
 
 # Welcome to Katenary documentation
 
+!!! danger "Katenary v4 is a breaking release"
+    The input label prefix changes from `katenary.v3/` to `katenary.v4/`, and
+    the labels and selector added to the generated Kubernetes objects also
+    change (standard `app.kubernetes.io/*` and `helm.sh/chart` labels).
+
+    Katenary **refuses to convert** a project that still uses v1/v2
+    (`katenary.io/*`) or v3 (`katenary.v3/*`) labels. Because
+    `Deployment.spec.selector` is immutable, an existing release must be
+    recreated when upgrading a generated chart.
+
+    Read the [migration guide](migrate-v4.md) first.
+
 🚀 Unleash Productivity with Katenary! 🚀
 
 Tired of manual conversions? Katenary harnesses the labels from your "compose" file to craft complete Helm Charts
