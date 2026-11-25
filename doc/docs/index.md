@@ -188,8 +188,9 @@ thing! :heart:
 
     **Documentation is built with:** <br />
 
-    <a href="https://www.mkdocs.org/" target="_blank">MkDocs</a> using <a
-    href="https://squidfunk.github.io/mkdocs-material/" target="_blank">Material for MkDocs</a> theme template.
+    <a href="https://zensical.org/" target="_blank">Zensical</a>, the successor of
+    <a href="https://www.mkdocs.org/" target="_blank">MkDocs</a> and
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank">Material for MkDocs</a>.
 
 # License
 
