@@ -7,6 +7,8 @@
 # Required secrets (repository or organization level):
 #   registry_user      Forgejo user allowed to write packages on repo.katenary.io
 #   registry_password  Token for that user (registry + package API)
+#   CACHE_S3_ACCESS_KEY / CACHE_S3_SECRET_KEY
+#                      Scaleway S3 credentials for the Go module/build cache
 
 when:
   # Pull requests may target any branch (develop, master, feature...).
@@ -23,6 +25,29 @@ when:
 
 steps:
   # ---------------------------------------------------------------------------
+  # Go cache (push only: secrets are not available to pull requests)
+  # ---------------------------------------------------------------------------
+  - name: cache-restore
+    image: rclone/rclone:1.75.2
+    when:
+      - event: push
+    failure: ignore
+    environment:
+      RCLONE_CONFIG_C_TYPE: s3
+      RCLONE_CONFIG_C_PROVIDER: Scaleway
+      RCLONE_CONFIG_C_ENDPOINT: https://s3.fr-par.scw.cloud
+      RCLONE_CONFIG_C_REGION: fr-par
+      RCLONE_CONFIG_C_ACCESS_KEY_ID:
+        from_secret: CACHE_S3_ACCESS_KEY
+      RCLONE_CONFIG_C_SECRET_ACCESS_KEY:
+        from_secret: CACHE_S3_SECRET_KEY
+    commands:
+      - export KEY="go-$(sha256sum go.sum | cut -c1-16)"
+      - mkdir -p .cache/go-mod .cache/go-build
+      - rclone copy "c:m3d-woodpecker-cache/${CI_REPO}/go-mod/$${KEY}" .cache/go-mod --transfers 8 || true
+      - rclone copy "c:m3d-woodpecker-cache/${CI_REPO}/go-build/${CI_COMMIT_BRANCH}" .cache/go-build --transfers 8 || true
+
+  # ---------------------------------------------------------------------------
   # Tests (Gitea: go-test.yaml)
   # ---------------------------------------------------------------------------
   - name: tests
@@ -32,11 +57,32 @@ steps:
     environment:
       CGO_ENABLED: "0"
     commands:
+      - export GOMODCACHE="$PWD/.cache/go-mod"
+      - export GOCACHE="$PWD/.cache/go-build"
       - command -v helm || curl -sSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
       - go mod tidy
       - go vet ./...
       - go test -tags ci -coverprofile=coverprofile.out -v ./...
       - go tool cover -func=coverprofile.out
+
+  - name: cache-save
+    image: rclone/rclone:1.75.2
+    when:
+      - event: push
+    failure: ignore
+    environment:
+      RCLONE_CONFIG_C_TYPE: s3
+      RCLONE_CONFIG_C_PROVIDER: Scaleway
+      RCLONE_CONFIG_C_ENDPOINT: https://s3.fr-par.scw.cloud
+      RCLONE_CONFIG_C_REGION: fr-par
+      RCLONE_CONFIG_C_ACCESS_KEY_ID:
+        from_secret: CACHE_S3_ACCESS_KEY
+      RCLONE_CONFIG_C_SECRET_ACCESS_KEY:
+        from_secret: CACHE_S3_SECRET_KEY
+    commands:
+      - export KEY="go-$(sha256sum go.sum | cut -c1-16)"
+      - rclone copy .cache/go-mod "c:m3d-woodpecker-cache/${CI_REPO}/go-mod/$${KEY}" --transfers 8 || true
+      - rclone copy .cache/go-build "c:m3d-woodpecker-cache/${CI_REPO}/go-build/${CI_COMMIT_BRANCH}" --transfers 8 || true
 
   # ---------------------------------------------------------------------------
   # Release binaries and packages (Gitea: build-and-package.yaml)
