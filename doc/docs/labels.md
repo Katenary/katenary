@@ -1,5 +1,10 @@
 # Labels documentation
 
+> **⚠️ v4 breaking change:** all labels documented here use the
+> `katenary.v4/` prefix. v1/v2 (`katenary.io/`) and v3 (`katenary.v3/`) labels
+> are no longer read; Katenary refuses to convert such a project. See the
+> [migration guide](migrate-v4.md).
+
 Katenary proposes labels to set in `compose.yaml` files (or override files) to configure the Helm Chart generation.
 Because it is sometimes needed to have structured values, it is necessary to use the YAML syntax.
 While compose labels are string, we can use _here-doc_ syntax using `|` to use YAML multiline as value.

@@ -15,6 +15,13 @@
 Tired of manual conversions? Katenary harnesses the labels from your "`compose`" file to craft complete Helm Charts
 effortlessly, saving you time and energy.
 
+> **⚠️ Katenary v4 is a breaking release.** The input label prefix changes from
+> `katenary.v3/` to `katenary.v4/`, and the labels and selector added to the
+> generated Kubernetes objects also change. A project still using v1/v2/v3
+> labels is refused by the converter. Read the
+> [migration guide](https://katenary.readthedocs.io/latest/migrate-v4/) before
+> upgrading.
+
 🛠️ Simple automated CLI: Katenary handles the grunt work, generating everything needed for seamless service binding
 and Helm Chart creation.
 
@@ -220,6 +227,11 @@ services:
 ```
 
 ## Labels
+
+> **⚠️ v4 breaking change:** all labels now use the `katenary.v4/` prefix.
+> Labels from v1/v2 (`katenary.io/`) and v3 (`katenary.v3/`) are no longer read
+> and make the conversion fail. See the
+> [migration guide](https://katenary.readthedocs.io/latest/migrate-v4/).
 
 These labels could be found by `katenary help-labels`, and can be placed as labels inside your docker-compose file:
 
