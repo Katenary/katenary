@@ -21,12 +21,13 @@
 
 {{- define "__APP__.labels" -}}
 {{ include "__APP__.selectorLabels" .}}
-{{ if .Chart.Version -}}
-{{ printf "__PREFIX__/chart-version: '%s'" .Chart.Version }}
+{{- if .Chart.Version }}
+{{ printf "helm.sh/chart: %s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
-{{ if .Chart.AppVersion -}}
-{{ printf "__PREFIX__/app-version: '%s'" .Chart.AppVersion }}
+{{- if .Chart.AppVersion }}
+{{ printf "app.kubernetes.io/version: '%s'" .Chart.AppVersion }}
 {{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
 
 {{- define "__APP__.selectorLabels" -}}

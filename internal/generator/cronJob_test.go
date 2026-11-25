@@ -16,7 +16,7 @@ services:
     cron:
         image: fedora
         labels:
-            katenary.v3/cronjob: |
+            katenary.v4/cronjob: |
                 image: alpine
                 command: echo hello
                 schedule: "*/1 * * * *"
@@ -72,7 +72,7 @@ services:
     cron:
         image: fedora
         labels:
-            katenary.v3/cronjob: |
+            katenary.v4/cronjob: |
                 image: alpine
                 command: echo hello
                 schedule: "*/1 * * * *"

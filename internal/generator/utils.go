@@ -76,7 +76,7 @@ func fixPorts(service *types.ServiceConfig) error {
 }
 
 // HasExposedPorts returns true if the service exposes ports, either directly
-// in the compose file or through the katenary.v3/ports label.
+// in the compose file or through the ports label.
 func HasExposedPorts(service types.ServiceConfig) bool {
 	if len(service.Ports) > 0 {
 		return true

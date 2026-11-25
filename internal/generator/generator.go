@@ -50,7 +50,7 @@ func Generate(project *types.Project) (*HelmChart, error) {
 	if err != nil {
 		return nil, err
 	}
-	Annotations[labels.LabelName("compose-hash")] = hash
+	Annotations[labels.AnnotationName("compose-hash")] = hash
 	chart.composeHash = &hash
 
 	// drop all services with the "ignore" label
@@ -110,7 +110,7 @@ func Generate(project *types.Project) (*HelmChart, error) {
 	for _, name := range slices.Sorted(maps.Keys(project.Services)) {
 		service := project.Services[name]
 		if !HasExposedPorts(service) {
-			logger.InfoBufferedf("Service %s has no exposed ports. No Kubernetes Service will be created for it. Declare ports or use the katenary.v3/ports label if you need a Service.", service.Name)
+			logger.InfoBufferedf("Service %s has no exposed ports. No Kubernetes Service will be created for it. Declare ports or use the %s label if you need a Service.", service.Name, labels.LabelPorts)
 		}
 	}
 

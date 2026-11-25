@@ -3,6 +3,7 @@ package katenaryfile
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"os"
 	"reflect"
 	"strings"
@@ -45,7 +46,7 @@ type Service struct {
 // OverrideWithConfig overrides the project with the katenary.yaml file. It
 // will set the labels of the services with the values from the katenary.yaml file.
 // It work in memory, so it will not modify the original project.
-func OverrideWithConfig(project *types.Project) {
+func OverrideWithConfig(project *types.Project) error {
 	var yamlFile string
 	var err error
 	for _, yamlFile = range allowedKatenaryYamlFileNames {
@@ -56,18 +57,36 @@ func OverrideWithConfig(project *types.Project) {
 	}
 	if err != nil {
 		// no katenary file found
-		return
+		return nil
 	}
 	logger.Info("Using katenary file", yamlFile)
 
-	services := make(map[string]Service)
-	fp, err := os.Open(yamlFile)
+	raw, err := os.ReadFile(yamlFile)
 	if err != nil {
-		return
+		return err
 	}
-	if err := yaml.NewDecoder(fp).Decode(&services); err != nil {
-		logger.Fatal(err)
-		return
+
+	// Detect keys still using an old label prefix: they would be silently
+	// ignored by the decoder.
+	var rawServices map[string]map[string]any
+	if err := yaml.Unmarshal(raw, &rawServices); err != nil {
+		return fmt.Errorf("cannot parse katenary file %s: %w", yamlFile, err)
+	}
+	badLabels := make([]string, 0)
+	for serviceName, fields := range rawServices {
+		for key := range fields {
+			if labels.IsLegacyLabel(key) {
+				badLabels = append(badLabels, fmt.Sprintf("- %s: %s -> %s", serviceName, key, labels.LegacyLabelSuggestion(key)))
+			}
+		}
+	}
+	if len(badLabels) > 0 {
+		return labels.LegacyLabelsError(project.Name, badLabels)
+	}
+
+	services := make(map[string]Service)
+	if err := yaml.Unmarshal(raw, &services); err != nil {
+		return fmt.Errorf("cannot parse katenary file %s: %w", yamlFile, err)
 	}
 	for _, p := range project.Services {
 		name := p.Name
@@ -103,6 +122,7 @@ func OverrideWithConfig(project *types.Project) {
 		}
 	}
 	logger.Info("Katenary file loaded successfully, the services are now configured.")
+	return nil
 }
 
 func getLabelContent(o any, service *types.ServiceConfig, labelName string) error {

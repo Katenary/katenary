@@ -57,7 +57,7 @@ services:
       - 12443
       - 12480
     labels:
-      katenary.v3/ingress: |-
+      katenary.v4/ingress: |-
         port: 12443
 `
 	tmpDir := setup(composeFile)

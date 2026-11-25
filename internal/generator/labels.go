@@ -2,11 +2,11 @@ package generator
 
 import (
 	"fmt"
-
-	"katenary.io/internal/generator/labels"
 )
 
-var componentLabel = labels.LabelName("component")
+// componentLabel is the standard Kubernetes label identifying the component
+// (the compose service) inside the application.
+const componentLabel = "app.kubernetes.io/component"
 
 // GetLabels returns the labels for a service. It uses the appName to replace the __replace__ in the labels.
 // This is used to generate the labels in the templates.

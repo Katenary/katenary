@@ -19,7 +19,7 @@
 #   This is an {{ "{{ example }}" }}.
 #
 #   This will display "This is an {{ exemple }}" in the output.
-# - Use {{ .KatenaryPrefix }} to let Katenary replace it with the label prefix (e.g. "katenary.v3")
+# - Use {{ .KatenaryPrefix }} to let Katenary replace it with the label prefix (e.g. "katenary.v4")
 
 "main-app":
   short: "Mark the service as the main app."
@@ -387,7 +387,7 @@
     service to expose a port and does not create a Kubernetes Service automatically.
 
     If you need to create a Kubernetes Service for external access, use the
-    `katenary.v3/ports` label instead.
+    `katenary.v4/ports` label instead.
 
     Set this label to `legacy` to use the old netcat method that requires a port
     to be defined for the dependent service.

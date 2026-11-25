@@ -24,7 +24,7 @@ GenerateSchema generates the schema for the katenary.yaml file.
 ## func OverrideWithConfig
 
 ```go
-func OverrideWithConfig(project *types.Project)
+func OverrideWithConfig(project *types.Project) error
 ```
 
 OverrideWithConfig overrides the project with the katenary.yaml file. It will set the labels of the services with the values from the katenary.yaml file. It work in memory, so it will not modify the original project.

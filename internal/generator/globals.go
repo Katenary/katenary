@@ -13,8 +13,8 @@ var (
 	// (?P<inc>.+?) => named capture group to "inc" variable (so we could use $inc in the replace)
 	replaceLabelRegexp = regexp.MustCompile(`(?s)__replace_.+?: '(?P<inc>.+?)'`)
 
-	// Standard annotationss
+	// Standard annotations
 	Annotations = map[string]string{
-		labels.LabelName("version"): Version,
+		labels.AnnotationName("version"): Version,
 	}
 )

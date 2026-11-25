@@ -17,7 +17,7 @@ func TestPrefix(t *testing.T) {
 	}{
 		{
 			name: "TestPrefix",
-			want: "katenary.v3",
+			want: "katenary.v4",
 		},
 	}
 	for _, tt := range tests {
@@ -74,5 +74,40 @@ func TestGetLabelHelpFor(t *testing.T) {
 	help = GetLabelHelpFor("main-app", true)
 	if help == "" {
 		t.Errorf("GetLabelHelpFor() = %v, want %v", help, "Help")
+	}
+}
+
+func TestIsLegacyLabel(t *testing.T) {
+	tests := []struct {
+		label string
+		want  bool
+	}{
+		{"katenary.io/ports", true},
+		{"katenary.v1/ports", true},
+		{"katenary.v2/ports", true},
+		{"katenary.v3/ports", true},
+		{"katenary.v4/ports", false},
+		{"example.com/ports", false},
+		{"ports", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.label, func(t *testing.T) {
+			if got := IsLegacyLabel(tt.label); got != tt.want {
+				t.Errorf("IsLegacyLabel(%q) = %v, want %v", tt.label, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestLegacyLabelSuggestion(t *testing.T) {
+	tests := map[string]string{
+		"katenary.v3/ports":   "katenary.v4/ports",
+		"katenary.io/ingress": "katenary.v4/ingress",
+		"katenary.v2/mapenv":  "katenary.v4/mapenv",
+	}
+	for legacy, want := range tests {
+		if got := LegacyLabelSuggestion(legacy); got != want {
+			t.Errorf("LegacyLabelSuggestion(%q) = %q, want %q", legacy, got, want)
+		}
 	}
 }

@@ -16,7 +16,23 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-const KatenaryLabelPrefix = "katenary.v3"
+// KatenaryLabelPrefix is the prefix used by labels read from compose files and
+// katenary files. It is versioned so that a configuration written for an older
+// Katenary version is never silently reinterpreted.
+const KatenaryLabelPrefix = "katenary.v4"
+
+// KatenaryAnnotationPrefix is the stable prefix used for annotations added to
+// the generated Kubernetes objects. Annotations are internal metadata, not user
+// configuration, so they are not versioned.
+const KatenaryAnnotationPrefix = "katenary.io"
+
+// LegacyLabelPrefixes lists the label prefixes used by previous versions.
+var LegacyLabelPrefixes = []string{
+	"katenary.io/", // v1 and v2
+	"katenary.v1/", // defensive
+	"katenary.v2/", // defensive
+	"katenary.v3/", // v3
+}
 
 // Known labels.
 const (
@@ -60,6 +76,32 @@ type Label = string
 
 func LabelName(name string) Label {
 	return Label(KatenaryLabelPrefix + "/" + name)
+}
+
+// AnnotationName returns the stable annotation key for an internal annotation.
+func AnnotationName(name string) string {
+	return KatenaryAnnotationPrefix + "/" + name
+}
+
+// IsLegacyLabel reports whether the given label key uses a prefix from an older
+// Katenary version.
+func IsLegacyLabel(label string) bool {
+	for _, prefix := range LegacyLabelPrefixes {
+		if strings.HasPrefix(label, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+// LegacyLabelSuggestion returns the v4 label that should replace a legacy one.
+// Only the prefix is rewritten: some labels were renamed between v1/v2 and v3,
+// the migration guide lists the matching names.
+func LegacyLabelSuggestion(legacy string) Label {
+	if i := strings.LastIndex(legacy, "/"); i >= 0 {
+		return LabelName(legacy[i+1:])
+	}
+	return LabelName(legacy)
 }
 
 // Help is the documentation of a label.

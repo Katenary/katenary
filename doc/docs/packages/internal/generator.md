@@ -21,9 +21,9 @@ If you want to change or override the write behavior, you can use the HelmChart.
 ```go
 var (
 
-    // Standard annotationss
+    // Standard annotations
     Annotations = map[string]string{
-        labels.LabelName("version"): Version,
+        labels.AnnotationName("version"): Version,
     }
 )
 ```
@@ -77,7 +77,7 @@ GetVersion return the version of katneary. It's important to understand that the
 func HasExposedPorts(service types.ServiceConfig) bool
 ```
 
-HasExposedPorts returns true if the service exposes ports, either directly in the compose file or through the katenary.v3/ports label.
+HasExposedPorts returns true if the service exposes ports, either directly in the compose file or through the ports label.
 
 <a name="Helper"></a>
 ## func Helper

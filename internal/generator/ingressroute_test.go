@@ -301,9 +301,9 @@ services:
 		t.Errorf("Expected labels: in IngressRoute output")
 	}
 
-	// Check that katenary labels are present (set by GetLabels)
-	if !strings.Contains(output, "katenary.v3/component") {
-		t.Errorf("Expected katenary.v3/component label in IngressRoute")
+	// Check that standard labels are present (set by GetLabels)
+	if !strings.Contains(output, "app.kubernetes.io/component") {
+		t.Errorf("Expected app.kubernetes.io/component label in IngressRoute")
 	}
 
 	// Check that the standard labels are present
