@@ -86,6 +86,26 @@ func Generate(project *types.Project) (*HelmChart, error) {
 		}
 	}
 
+	// second pass, create services for services with ports (now podToMerge is fully populated)
+	for _, service := range project.Services {
+		if !HasExposedPorts(service) {
+			continue
+		}
+		if err := fixPorts(&service); err != nil {
+			return nil, err
+		}
+		s := NewService(service, appName)
+		// add ports from same-pod services that target this service
+		for _, mergedSvc := range podToMerge {
+			if mergedSvc.Labels[labels.LabelSamePod] == service.Name {
+				for _, p := range mergedSvc.Ports {
+					s.AddPort(p)
+				}
+			}
+		}
+		services[service.Name] = s
+	}
+
 	// warn users about services without exposed ports, in a stable order
 	for _, name := range slices.Sorted(maps.Keys(project.Services)) {
 		service := project.Services[name]
@@ -203,12 +223,9 @@ func Generate(project *types.Project) (*HelmChart, error) {
 
 	// generate all services
 	for _, s := range services {
-		// add the service ports to the target service if it's a "same-pod" service
-		if samePod, ok := podToMerge[s.service.Name]; ok {
-			// get the target service
-			target := services[samePod.Name]
-			// merge the services
-			s.Spec.Ports = append(s.Spec.Ports, target.Spec.Ports...)
+		// skip same-pod services - they are merged into target deployments
+		if _, isSamePod := podToMerge[s.service.Name]; isSamePod {
+			continue
 		}
 		y, _ := s.Yaml()
 		chart.Templates[s.Filename()] = &ChartTemplate{
@@ -217,12 +234,11 @@ func Generate(project *types.Project) (*HelmChart, error) {
 		}
 	}
 
-	// drop all "same-pod" services
-	for _, s := range podToMerge {
-		// get the target service
-		target := services[s.Name]
-		if target != nil {
-			delete(chart.Templates, target.Filename())
+	// drop all "same-pod" service templates (they are merged into target deployments)
+	for name := range podToMerge {
+		// find the service for this same-pod service
+		if svc, ok := services[name]; ok {
+			delete(chart.Templates, svc.Filename())
 		}
 	}
 

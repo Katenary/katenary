@@ -229,10 +229,11 @@ func (chart *HelmChart) generateDeployment(service types.ServiceConfig, deployme
 	// get the same-pod label if exists, add it to the list.
 	// We later will copy some parts to the target deployment and remove this one.
 	if samePod, ok := service.Labels[labels.LabelSamePod]; ok && samePod != "" {
-		podToMerge[samePod] = &service
+		podToMerge[service.Name] = &service
 	}
 
 	// create the needed service for the container port
+	// NOTE: ports from same-pod services are now added in generator.go after all services are processed
 	if len(service.Ports) > 0 {
 		s := NewService(service, appName)
 		services[service.Name] = s
@@ -242,6 +243,15 @@ func (chart *HelmChart) generateDeployment(service types.ServiceConfig, deployme
 	if ingress := d.AddIngress(service, appName); ingress != nil {
 		y, _ := ingress.Yaml()
 		chart.Templates[ingress.Filename()] = &ChartTemplate{
+			Content:     y,
+			Servicename: service.Name,
+		}
+	}
+
+	// create IngressRoute (Traefik CRD) if specified
+	if ingressRoute := d.AddIngressRoute(service, appName); ingressRoute != nil {
+		y, _ := ingressRoute.Yaml()
+		chart.Templates[ingressRoute.Filename()] = &ChartTemplate{
 			Content:     y,
 			Servicename: service.Name,
 		}
