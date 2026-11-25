@@ -5,7 +5,6 @@
 # releases are built on `releases/*` tags.
 #
 # Required secrets (repository or organization level):
-#   sonar_token        SonarCloud token
 #   registry_user      Forgejo user allowed to write packages on repo.katenary.io
 #   registry_password  Token for that user (registry + package API)
 
@@ -32,18 +31,7 @@ steps:
       - go mod tidy
       - go vet ./...
       - go test -tags ci -coverprofile=coverprofile.out -v ./...
-      - go test -tags ci -coverprofile=coverprofile.out -json -v ./... > gotest.json
       - go tool cover -func=coverprofile.out
-
-  - name: sonar
-    image: sonarsource/sonar-scanner-cli:11
-    when:
-      - event: [pull_request, push]
-    environment:
-      SONAR_TOKEN:
-        from_secret: sonar_token
-    commands:
-      - sonar-scanner -Dsonar.organization=katenary -Dsonar.projectKey=katenary_katenary
 
   # ---------------------------------------------------------------------------
   # Release binaries and packages (Gitea: build-and-package.yaml)

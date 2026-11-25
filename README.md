@@ -5,9 +5,6 @@
 <div style="text-align:center; margin: auto 0 4em 0" align="center">
 
 [![Documentation Status](https://readthedocs.org/projects/katenary/badge/?version=latest)](https://katenary.readthedocs.io/latest/?badge=latest)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=katenary_katenary&metric=coverage)](https://sonarcloud.io/summary/new_code?id=katenary_katenary)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=katenary_katenary&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=katenary_katenary)
-[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=katenary_katenary&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=katenary_katenary)
 
 </div>
 
