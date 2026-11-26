@@ -1,5 +1,5 @@
 ARG GOVERSION=1.24
-FROM docker.io/golang:${GOVERSION}
+FROM docker.io/library/golang:${GOVERSION}
 # install helm
 RUN set -xe; \
   apt-get update && apt-get install -y curl; \

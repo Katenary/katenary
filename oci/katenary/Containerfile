@@ -1,6 +1,6 @@
 ARG GOVERSION=1.25
 
-FROM docker.io/golang:${GOVERSION} AS builder
+FROM docker.io/library/golang:${GOVERSION} AS builder
 ARG VERSION
 RUN \
   if [ "${VERSION}" = "" ]; then\ 

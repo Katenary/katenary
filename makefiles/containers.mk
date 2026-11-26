@@ -27,7 +27,7 @@ else
 		$(CTN_USERMAP) \
 		$(PKG_OCI_IMAGE)
 endif
-BUILD_IMAGE=docker.io/golang:$(GOVERSION)
+BUILD_IMAGE=docker.io/library/golang:$(GOVERSION)
 	
 GO_OCI:=$(CTN) run --rm -it \
 	-v $(PWD):/go/src/katenary:z \

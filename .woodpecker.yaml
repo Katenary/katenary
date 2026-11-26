@@ -28,7 +28,7 @@ steps:
   # Go cache (push only: secrets are not available to pull requests)
   # ---------------------------------------------------------------------------
   - name: cache-restore
-    image: rclone/rclone:1.75.2
+    image: docker.io/rclone/rclone:1.75.2
     when:
       - event: push
     failure: ignore
@@ -51,7 +51,7 @@ steps:
   # Tests (Gitea: go-test.yaml)
   # ---------------------------------------------------------------------------
   - name: tests
-    image: golang:1.25
+    image: docker.io/library/golang:1.25
     when:
       - event: [pull_request, push]
     environment:
@@ -66,7 +66,7 @@ steps:
       - go tool cover -func=coverprofile.out
 
   - name: cache-save
-    image: rclone/rclone:1.75.2
+    image: docker.io/rclone/rclone:1.75.2
     when:
       - event: push
     failure: ignore
@@ -88,7 +88,7 @@ steps:
   # Release binaries and packages (Gitea: build-and-package.yaml)
   # ---------------------------------------------------------------------------
   - name: release-binaries
-    image: golang:1.25
+    image: docker.io/library/golang:1.25
     when:
       - event: tag
     environment:
@@ -143,7 +143,7 @@ steps:
         done
 
   - name: release-windows
-    image: golang:1.25
+    image: docker.io/library/golang:1.25
     when:
       - event: tag
     environment:
@@ -166,7 +166,7 @@ steps:
         mv nsis/katenary-windows-setup.exe dist/katenary-windows-setup.exe
 
   - name: release-upload
-    image: curlimages/curl:8.23.0
+    image: docker.io/curlimages/curl:8.23.0
     when:
       - event: tag
     environment:
@@ -246,7 +246,7 @@ steps:
   # `latest`/`stable`/`develop` are RTD version slugs; a branch name also works.
   # Check the project's versions page: /projects/katenary/versions/
   - name: trigger-readthedocs
-    image: curlimages/curl:8.23.0
+    image: docker.io/curlimages/curl:8.23.0
     when:
       - event: push
         branch: [master, develop]
