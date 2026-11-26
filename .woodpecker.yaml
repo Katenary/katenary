@@ -268,4 +268,4 @@ steps:
         curl -4fsS -X POST \
           --data-urlencode "token=$${RTD_TOKEN}" \
           --data-urlencode "branches=$${RTD_VERSION}" \
-          https://app.readthedocs.org/api/v2/webhook/katenary/336933/
+          https://app.readthedocs.org/api/v2/webhook/katenary/336935/
