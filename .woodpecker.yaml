@@ -265,7 +265,7 @@ steps:
           RTD_VERSION="$${CI_COMMIT_BRANCH:-}"
         fi
         echo "Read the Docs: build version $${RTD_VERSION}"
-        curl -fsS -X POST \
+        curl -4fsS -X POST \
           --data-urlencode "token=$${RTD_TOKEN}" \
           --data-urlencode "branches=$${RTD_VERSION}" \
           https://app.readthedocs.org/api/v2/webhook/katenary/336933/
