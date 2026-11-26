@@ -4,10 +4,10 @@ serve-doc: doc
 	@cd doc && \
 		[ -d venv ] || python -m venv venv; \
 		source venv/bin/activate && \
-		echo "==> Installing requirements in the virtual env..."
+		echo "==> Installing requirements in the virtual env..." && \
 		pip install -qq -r requirements.txt && \
-		echo "==> Serving doc with mkdocs..." && \
-		mkdocs serve
+		echo "==> Serving doc with Zensical..." && \
+		zensical serve
 
 
 doc:
@@ -22,10 +22,10 @@ manpage:
 		source venv/bin/activate && \
 		echo "==> Installing requirements in the virtual env..." && \
 		pip install -qq -r requirements.txt && \
+		echo "==> Building the documentation with Zensical..." && \
+		zensical build && \
 		echo "==> Generating manpage..." && \
-		MANPAGE=true mkdocs build && \
-		rm -rf site &&
-		echo "==> Manpage generated in doc/share/man/man1/katenary.1"
+		python manpage.py
 
 install-gomarkdoc:
 	go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest

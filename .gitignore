@@ -30,3 +30,7 @@ __pycache__
 katenary
 !cmd/katenary
 !oci/katenary
+
+# zensical build
+doc/site/
+doc/.cache/

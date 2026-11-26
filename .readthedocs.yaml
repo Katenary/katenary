@@ -1,20 +1,20 @@
 # .readthedocs.yaml
 # Read the Docs configuration file
-# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+# See https://docs.readthedocs.com/platform/stable/config-file/v2.html for details
 
 # Required
 version: 2
 
-# Set the version of Python and other tools you might need
 build:
   os: ubuntu-24.04
   tools:
-    python: "3.12"
-
-mkdocs:
-  configuration: doc/mkdocs.yml
-
-# Optionally declare the Python requirements required to build your docs
-python:
-   install:
-   - requirements: doc/requirements.txt
+    python: "3.13"
+  jobs:
+    install:
+      - pip install -r doc/requirements.txt
+    build:
+      html:
+        - zensical build -f doc/mkdocs.yml
+    post_build:
+      - mkdir -p $READTHEDOCS_OUTPUT/html/
+      - cp -r doc/site/* $READTHEDOCS_OUTPUT/html/

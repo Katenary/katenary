@@ -2,17 +2,6 @@ site_name: Katenary documentation
 docs_dir: ./docs
 plugins:
   - search
-  - inline-svg
-  - manpage:
-      enabled: true
-      preprocess: preprocess.py
-      pages:
-        - title: Katenary
-          header: Katenary helm chart generator
-          output: share/man/man1/katenary.1
-          inputs:
-            - usage.md
-            - labels.md
 theme:
   name: material
   custom_dir: overrides
