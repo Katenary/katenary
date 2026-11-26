@@ -3,6 +3,9 @@ package generator
 import (
 	"strings"
 
+	"katenary.io/internal/generator/labels"
+	"katenary.io/internal/generator/labels/labelstructs"
+
 	"github.com/compose-spec/compose-go/v2/types"
 )
 
@@ -38,8 +41,13 @@ type IngressValue struct {
 }
 
 // Value will be saved in values.yaml. It contains configuration for all deployment and services.
+type NetworkPolicyValue struct {
+	Enabled bool `yaml:"enabled"`
+}
+
 type Value struct {
 	Repository      *RepositoryValue             `yaml:"repository,omitempty"`
+	NetworkPolicy   *NetworkPolicyValue          `yaml:"networkPolicy,omitempty"`
 	Persistence     map[string]*PersistenceValue `yaml:"persistence,omitempty"`
 	Ingress         *IngressValue                `yaml:"ingress,omitempty"`
 	Environment     map[string]any               `yaml:"environment,omitempty"`
@@ -60,6 +68,11 @@ func NewValue(service types.ServiceConfig, main ...bool) *Value {
 	replicas := uint32(1)
 	v := &Value{
 		Replicas: &replicas,
+	}
+	if raw, ok := service.Labels[labels.LabelNetworkPolicy]; ok {
+		if policy, err := labelstructs.NetworkPolicyFrom(raw); err == nil {
+			v.NetworkPolicy = &NetworkPolicyValue{Enabled: policy.Enabled}
+		}
 	}
 
 	// find the image tag

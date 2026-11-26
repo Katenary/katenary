@@ -1,0 +1,19 @@
+name: security
+
+services:
+  web:
+    image: nginx:1.29
+    ports:
+      - "80:80"
+    user: "1000:1000"
+    read_only: true
+    labels:
+      katenary.v4/security-context: |-
+        pod:
+          fsGroup: 1000
+          seccompProfile:
+            type: RuntimeDefault
+        container:
+          runAsNonRoot: true
+          capabilities:
+            drop: [ALL]

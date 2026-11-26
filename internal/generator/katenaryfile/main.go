@@ -41,6 +41,8 @@ type Service struct {
 	EnvFrom         *labelstructs.EnvFrom          `yaml:"env-from,omitempty" json:"env-from,omitempty" jsonschema:"title=Env From,description=Inject environment variables from another service"`
 	ExchangeVolumes []*labelstructs.ExchangeVolume `yaml:"exchange-volumes,omitempty" json:"exchange-volumes,omitempty" jsonschema:"title=Exchange Volumes,description=Exchange volumes between services"`
 	ValuesFrom      *labelstructs.ValueFrom        `yaml:"values-from,omitempty" json:"values-from,omitempty" jsonschema:"title=Values From,description=Inject values from another service (secret or configmap environment variables)"`
+	SecurityContext *labelstructs.SecurityContext  `yaml:"security-context,omitempty" json:"security-context,omitempty" jsonschema:"title=Security Context,description=Pod and container security context"`
+	NetworkPolicy   *labelstructs.NetworkPolicy    `yaml:"network-policy,omitempty" json:"network-policy,omitempty" jsonschema:"title=Network Policy,description=Network policy configuration"`
 }
 
 // OverrideWithConfig overrides the project with the katenary.yaml file. It
@@ -119,6 +121,8 @@ func OverrideWithConfig(project *types.Project) error {
 			mustGetLabelContent(s.EnvFrom, labels.LabelEnvFrom)
 			mustGetLabelContent(s.ExchangeVolumes, labels.LabelExchangeVolume)
 			mustGetLabelContent(s.ValuesFrom, labels.LabelValuesFrom)
+			mustGetLabelContent(s.SecurityContext, labels.LabelSecurityContext)
+			mustGetLabelContent(s.NetworkPolicy, labels.LabelNetworkPolicy)
 		}
 	}
 	logger.Info("Katenary file loaded successfully, the services are now configured.")

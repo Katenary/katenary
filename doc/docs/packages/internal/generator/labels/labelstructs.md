@@ -8,7 +8,19 @@ import "katenary.io/internal/generator/labels/labelstructs"
 
 Package labelstructs is a package that contains the structs used to represent the labels in the yaml files.
 
-## type ConfigMapFiles
+## type [Capabilities](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/security.go#L14-L17>)
+
+Capabilities is the set of Linux capabilities added to or dropped from a container.
+
+```go
+type Capabilities struct {
+    Add  []string `yaml:"add,omitempty" json:"add,omitempty"`
+    Drop []string `yaml:"drop,omitempty" json:"drop,omitempty"`
+}
+```
+
+<a name="ConfigMapFiles"></a>
+## type [ConfigMapFiles](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/configMap.go#L5>)
 
 
 
@@ -17,7 +29,7 @@ type ConfigMapFiles []string
 ```
 
 <a name="ConfigMapFileFrom"></a>
-### func ConfigMapFileFrom
+### func [ConfigMapFileFrom](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/configMap.go#L7>)
 
 ```go
 func ConfigMapFileFrom(data string) (ConfigMapFiles, error)
@@ -25,8 +37,26 @@ func ConfigMapFileFrom(data string) (ConfigMapFiles, error)
 
 
 
+<a name="ContainerSecurityContext"></a>
+## type [ContainerSecurityContext](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/security.go#L38-L47>)
+
+ContainerSecurityContext is the container\-level security context.
+
+```go
+type ContainerSecurityContext struct {
+    AllowPrivilegeEscalation *bool           `yaml:"allowPrivilegeEscalation,omitempty" json:"allowPrivilegeEscalation,omitempty"`
+    Privileged               *bool           `yaml:"privileged,omitempty" json:"privileged,omitempty"`
+    ReadOnlyRootFilesystem   *bool           `yaml:"readOnlyRootFilesystem,omitempty" json:"readOnlyRootFilesystem,omitempty"`
+    RunAsUser                *int64          `yaml:"runAsUser,omitempty" json:"runAsUser,omitempty"`
+    RunAsGroup               *int64          `yaml:"runAsGroup,omitempty" json:"runAsGroup,omitempty"`
+    RunAsNonRoot             *bool           `yaml:"runAsNonRoot,omitempty" json:"runAsNonRoot,omitempty"`
+    Capabilities             *Capabilities   `yaml:"capabilities,omitempty" json:"capabilities,omitempty"`
+    SeccompProfile           *SeccompProfile `yaml:"seccompProfile,omitempty" json:"seccompProfile,omitempty"`
+}
+```
+
 <a name="CronJob"></a>
-## type CronJob
+## type [CronJob](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/cronJob.go#L5-L10>)
 
 
 
@@ -40,7 +70,7 @@ type CronJob struct {
 ```
 
 <a name="CronJobFrom"></a>
-### func CronJobFrom
+### func [CronJobFrom](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/cronJob.go#L12>)
 
 ```go
 func CronJobFrom(data string) (*CronJob, error)
@@ -49,7 +79,7 @@ func CronJobFrom(data string) (*CronJob, error)
 
 
 <a name="Dependency"></a>
-## type Dependency
+## type [Dependency](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/dependencies.go#L6-L12>)
 
 Dependency is a dependency of a chart to other charts.
 
@@ -64,7 +94,7 @@ type Dependency struct {
 ```
 
 <a name="DependenciesFrom"></a>
-### func DependenciesFrom
+### func [DependenciesFrom](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/dependencies.go#L15>)
 
 ```go
 func DependenciesFrom(data string) ([]Dependency, error)
@@ -73,7 +103,7 @@ func DependenciesFrom(data string) ([]Dependency, error)
 DependenciesFrom returns a slice of dependencies from the given string.
 
 <a name="EnvFrom"></a>
-## type EnvFrom
+## type [EnvFrom](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/envFrom.go#L5>)
 
 
 
@@ -82,7 +112,7 @@ type EnvFrom []string
 ```
 
 <a name="EnvFromFrom"></a>
-### func EnvFromFrom
+### func [EnvFromFrom](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/envFrom.go#L8>)
 
 ```go
 func EnvFromFrom(data string) (EnvFrom, error)
@@ -91,7 +121,7 @@ func EnvFromFrom(data string) (EnvFrom, error)
 EnvFromFrom returns a EnvFrom from the given string.
 
 <a name="ExchangeVolume"></a>
-## type ExchangeVolume
+## type [ExchangeVolume](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/exchangeVolume.go#L5-L10>)
 
 
 
@@ -105,7 +135,7 @@ type ExchangeVolume struct {
 ```
 
 <a name="NewExchangeVolumes"></a>
-### func NewExchangeVolumes
+### func [NewExchangeVolumes](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/exchangeVolume.go#L12>)
 
 ```go
 func NewExchangeVolumes(data string) ([]*ExchangeVolume, error)
@@ -114,7 +144,7 @@ func NewExchangeVolumes(data string) ([]*ExchangeVolume, error)
 
 
 <a name="HealthCheck"></a>
-## type HealthCheck
+## type [HealthCheck](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/probes.go#L11-L14>)
 
 
 
@@ -126,7 +156,7 @@ type HealthCheck struct {
 ```
 
 <a name="ProbeFrom"></a>
-### func ProbeFrom
+### func [ProbeFrom](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/probes.go#L16>)
 
 ```go
 func ProbeFrom(data string) (*HealthCheck, error)
@@ -135,7 +165,7 @@ func ProbeFrom(data string) (*HealthCheck, error)
 
 
 <a name="Ingress"></a>
-## type Ingress
+## type [Ingress](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/ingress.go#L15-L24>)
 
 
 
@@ -153,7 +183,7 @@ type Ingress struct {
 ```
 
 <a name="IngressFrom"></a>
-### func IngressFrom
+### func [IngressFrom](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/ingress.go#L27>)
 
 ```go
 func IngressFrom(data string) (*Ingress, error)
@@ -162,7 +192,7 @@ func IngressFrom(data string) (*Ingress, error)
 IngressFrom creates a new Ingress from a compose service.
 
 <a name="MapEnv"></a>
-## type MapEnv
+## type [MapEnv](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/mapenv.go#L5>)
 
 
 
@@ -171,7 +201,7 @@ type MapEnv map[string]string
 ```
 
 <a name="MapEnvFrom"></a>
-### func MapEnvFrom
+### func [MapEnvFrom](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/mapenv.go#L8>)
 
 ```go
 func MapEnvFrom(data string) (MapEnv, error)
@@ -179,8 +209,129 @@ func MapEnvFrom(data string) (MapEnv, error)
 
 MapEnvFrom returns a MapEnv from the given string.
 
+<a name="NetworkPolicy"></a>
+## type [NetworkPolicy](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/networkpolicy.go#L53-L57>)
+
+NetworkPolicy is the network policy configuration of a service.
+
+```go
+type NetworkPolicy struct {
+    Enabled bool                 `yaml:"enabled" json:"enabled"`
+    Ingress NetworkPolicyIngress `yaml:"ingress,omitempty" json:"ingress,omitempty"`
+    Egress  NetworkPolicyEgress  `yaml:"egress,omitempty" json:"egress,omitempty"`
+}
+```
+
+<a name="NetworkPolicyFrom"></a>
+### func [NetworkPolicyFrom](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/networkpolicy.go#L61>)
+
+```go
+func NetworkPolicyFrom(data string) (*NetworkPolicy, error)
+```
+
+NetworkPolicyFrom parses the network\-policy label value. A plain boolean is accepted as a shortcut for \`enabled: \<bool\>\`.
+
+<a name="NetworkPolicyEgress"></a>
+## type [NetworkPolicyEgress](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/networkpolicy.go#L42-L50>)
+
+NetworkPolicyEgress is the egress configuration of a NetworkPolicy.
+
+```go
+type NetworkPolicyEgress struct {
+    AllowDNS           *bool               `yaml:"allowDNS,omitempty" json:"allowDNS,omitempty"`
+    AllowSameApp       *bool               `yaml:"allowSameApp,omitempty" json:"allowSameApp,omitempty"`
+    AllowDependencies  *bool               `yaml:"allowDependencies,omitempty" json:"allowDependencies,omitempty"`
+    AllowInternet      *bool               `yaml:"allowInternet,omitempty" json:"allowInternet,omitempty"`
+    AllowKubernetesAPI *bool               `yaml:"allowKubernetesAPI,omitempty" json:"allowKubernetesAPI,omitempty"`
+    DNSNamespace       string              `yaml:"dnsNamespace,omitempty" json:"dnsNamespace,omitempty"`
+    ExtraPeers         []NetworkPolicyPeer `yaml:"extraPeers,omitempty" json:"extraPeers,omitempty"`
+}
+```
+
+<a name="NetworkPolicyIPBlock"></a>
+## type [NetworkPolicyIPBlock](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/networkpolicy.go#L21-L24>)
+
+NetworkPolicyIPBlock is an IP block peer.
+
+```go
+type NetworkPolicyIPBlock struct {
+    CIDR   string   `yaml:"cidr" json:"cidr"`
+    Except []string `yaml:"except,omitempty" json:"except,omitempty"`
+}
+```
+
+<a name="NetworkPolicyIngress"></a>
+## type [NetworkPolicyIngress](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/networkpolicy.go#L34-L39>)
+
+NetworkPolicyIngress is the ingress configuration of a NetworkPolicy.
+
+```go
+type NetworkPolicyIngress struct {
+    FromSameApp       *bool               `yaml:"fromSameApp,omitempty" json:"fromSameApp,omitempty"`
+    FromIngress       *bool               `yaml:"fromIngress,omitempty" json:"fromIngress,omitempty"`
+    IngressNamespaces []string            `yaml:"ingressNamespaces,omitempty" json:"ingressNamespaces,omitempty"`
+    ExtraPeers        []NetworkPolicyPeer `yaml:"extraPeers,omitempty" json:"extraPeers,omitempty"`
+}
+```
+
+<a name="NetworkPolicyLabelSelector"></a>
+## type [NetworkPolicyLabelSelector](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/networkpolicy.go#L8-L11>)
+
+NetworkPolicyLabelSelector is a Kubernetes label selector.
+
+```go
+type NetworkPolicyLabelSelector struct {
+    MatchLabels      map[string]string                       `yaml:"matchLabels,omitempty" json:"matchLabels,omitempty"`
+    MatchExpressions []NetworkPolicyLabelSelectorRequirement `yaml:"matchExpressions,omitempty" json:"matchExpressions,omitempty"`
+}
+```
+
+<a name="NetworkPolicyLabelSelectorRequirement"></a>
+## type [NetworkPolicyLabelSelectorRequirement](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/networkpolicy.go#L14-L18>)
+
+NetworkPolicyLabelSelectorRequirement is a label selector expression.
+
+```go
+type NetworkPolicyLabelSelectorRequirement struct {
+    Key      string   `yaml:"key" json:"key"`
+    Operator string   `yaml:"operator" json:"operator"`
+    Values   []string `yaml:"values,omitempty" json:"values,omitempty"`
+}
+```
+
+<a name="NetworkPolicyPeer"></a>
+## type [NetworkPolicyPeer](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/networkpolicy.go#L27-L31>)
+
+NetworkPolicyPeer is a NetworkPolicy peer.
+
+```go
+type NetworkPolicyPeer struct {
+    PodSelector       *NetworkPolicyLabelSelector `yaml:"podSelector,omitempty" json:"podSelector,omitempty"`
+    NamespaceSelector *NetworkPolicyLabelSelector `yaml:"namespaceSelector,omitempty" json:"namespaceSelector,omitempty"`
+    IPBlock           *NetworkPolicyIPBlock       `yaml:"ipBlock,omitempty" json:"ipBlock,omitempty"`
+}
+```
+
+<a name="PodSecurityContext"></a>
+## type [PodSecurityContext](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/security.go#L26-L35>)
+
+PodSecurityContext is the pod\-level security context.
+
+```go
+type PodSecurityContext struct {
+    RunAsUser           *int64          `yaml:"runAsUser,omitempty" json:"runAsUser,omitempty"`
+    RunAsGroup          *int64          `yaml:"runAsGroup,omitempty" json:"runAsGroup,omitempty"`
+    RunAsNonRoot        *bool           `yaml:"runAsNonRoot,omitempty" json:"runAsNonRoot,omitempty"`
+    FSGroup             *int64          `yaml:"fsGroup,omitempty" json:"fsGroup,omitempty"`
+    FSGroupChangePolicy *string         `yaml:"fsGroupChangePolicy,omitempty" json:"fsGroupChangePolicy,omitempty"`
+    SupplementalGroups  []int64         `yaml:"supplementalGroups,omitempty" json:"supplementalGroups,omitempty"`
+    SeccompProfile      *SeccompProfile `yaml:"seccompProfile,omitempty" json:"seccompProfile,omitempty"`
+    Sysctls             []Sysctl        `yaml:"sysctls,omitempty" json:"sysctls,omitempty"`
+}
+```
+
 <a name="Ports"></a>
-## type Ports
+## type [Ports](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/ports.go#L5>)
 
 
 
@@ -189,7 +340,7 @@ type Ports []uint32
 ```
 
 <a name="PortsFrom"></a>
-### func PortsFrom
+### func [PortsFrom](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/ports.go#L8>)
 
 ```go
 func PortsFrom(data string) (Ports, error)
@@ -197,8 +348,20 @@ func PortsFrom(data string) (Ports, error)
 
 PortsFrom returns a Ports from the given string.
 
+<a name="SeccompProfile"></a>
+## type [SeccompProfile](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/security.go#L8-L11>)
+
+SeccompProfile is the seccomp profile applied to a pod or container.
+
+```go
+type SeccompProfile struct {
+    Type             string  `yaml:"type" json:"type"`
+    LocalhostProfile *string `yaml:"localhostProfile,omitempty" json:"localhostProfile,omitempty"`
+}
+```
+
 <a name="Secrets"></a>
-## type Secrets
+## type [Secrets](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/secrets.go#L5>)
 
 
 
@@ -207,7 +370,7 @@ type Secrets []string
 ```
 
 <a name="SecretsFrom"></a>
-### func SecretsFrom
+### func [SecretsFrom](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/secrets.go#L7>)
 
 ```go
 func SecretsFrom(data string) (Secrets, error)
@@ -215,8 +378,41 @@ func SecretsFrom(data string) (Secrets, error)
 
 
 
+<a name="SecurityContext"></a>
+## type [SecurityContext](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/security.go#L50-L53>)
+
+SecurityContext is the security context configuration of a service.
+
+```go
+type SecurityContext struct {
+    Pod       *PodSecurityContext       `yaml:"pod,omitempty" json:"pod,omitempty"`
+    Container *ContainerSecurityContext `yaml:"container,omitempty" json:"container,omitempty"`
+}
+```
+
+<a name="SecurityContextFrom"></a>
+### func [SecurityContextFrom](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/security.go#L56>)
+
+```go
+func SecurityContextFrom(data string) (*SecurityContext, error)
+```
+
+SecurityContextFrom parses the security\-context label value.
+
+<a name="Sysctl"></a>
+## type [Sysctl](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/security.go#L20-L23>)
+
+Sysctl is a kernel parameter set for the pod.
+
+```go
+type Sysctl struct {
+    Name  string `yaml:"name" json:"name"`
+    Value string `yaml:"value" json:"value"`
+}
+```
+
 <a name="TLS"></a>
-## type TLS
+## type [TLS](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/ingress.go#L11-L13>)
 
 
 
@@ -227,7 +423,7 @@ type TLS struct {
 ```
 
 <a name="ValueFrom"></a>
-## type ValueFrom
+## type [ValueFrom](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/valueFrom.go#L5>)
 
 
 
@@ -236,7 +432,7 @@ type ValueFrom map[string]string
 ```
 
 <a name="GetValueFrom"></a>
-### func GetValueFrom
+### func [GetValueFrom](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels/labelstructs/valueFrom.go#L7>)
 
 ```go
 func GetValueFrom(data string) (*ValueFrom, error)

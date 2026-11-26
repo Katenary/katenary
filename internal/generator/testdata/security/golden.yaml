@@ -1,0 +1,78 @@
+---
+# Source: security/templates/web/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    katenary.io/compose-hash: 98e92705e17c0f4c155ac75b2670cec0de991ca3
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: security
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: security-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: web
+  name: 'release-name-security-web'
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: http
+  selector:
+    app.kubernetes.io/name: security
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/component: web
+
+---
+# Source: security/templates/web/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    katenary.io/compose-hash: 98e92705e17c0f4c155ac75b2670cec0de991ca3
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: security
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: security-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: web
+  name: 'release-name-security-web'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: security
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: web
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: security
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/component: web
+    spec:
+      containers:
+      - image: 'nginx:1.29'
+        imagePullPolicy: IfNotPresent
+        name: web
+        ports:
+        - containerPort: 80
+          name: http
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 1000
+          runAsNonRoot: true
+          runAsUser: 1000
+      securityContext:
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault

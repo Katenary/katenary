@@ -16,18 +16,6 @@ If you want to change or override the write behavior, you can use the HelmChart.
 
 ## Variables
 
-<a name="Annotations"></a>
-
-```go
-var (
-
-    // Standard annotations
-    Annotations = map[string]string{
-        labels.AnnotationName("version"): Version,
-    }
-)
-```
-
 <a name="Version"></a>Version is the version of katenary. It is set at compile time.
 
 ```go
@@ -35,7 +23,7 @@ var Version = "master" // changed at compile time
 ```
 
 <a name="Convert"></a>
-## func Convert
+## func [Convert](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/converter.go#L109>)
 
 ```go
 func Convert(config ConvertOptions, dockerComposeFile ...string) error
@@ -43,8 +31,17 @@ func Convert(config ConvertOptions, dockerComposeFile ...string) error
 
 Convert a compose \(docker, podman...\) project to a helm chart. It calls Generate\(\) to generate the chart and then write it to the disk.
 
+<a name="GetAppSelectorLabels"></a>
+## func [GetAppSelectorLabels](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels.go#L39>)
+
+```go
+func GetAppSelectorLabels(appName string) map[string]string
+```
+
+GetAppSelectorLabels returns the selector labels shared by every pod of the application \(without the component label\). It is used by NetworkPolicies.
+
 <a name="GetLabels"></a>
-## func GetLabels
+## func [GetLabels](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels.go#L13>)
 
 ```go
 func GetLabels(serviceName, appName string) map[string]string
@@ -53,7 +50,7 @@ func GetLabels(serviceName, appName string) map[string]string
 GetLabels returns the labels for a service. It uses the appName to replace the \_\_replace\_\_ in the labels. This is used to generate the labels in the templates.
 
 <a name="GetMatchLabels"></a>
-## func GetMatchLabels
+## func [GetMatchLabels](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/labels.go#L26>)
 
 ```go
 func GetMatchLabels(serviceName, appName string) map[string]string
@@ -62,7 +59,7 @@ func GetMatchLabels(serviceName, appName string) map[string]string
 GetMatchLabels returns the matchLabels for a service. It uses the appName to replace the \_\_replace\_\_ in the labels. This is used to generate the matchLabels in the templates.
 
 <a name="GetVersion"></a>
-## func GetVersion
+## func [GetVersion](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/version.go#L15>)
 
 ```go
 func GetVersion() string
@@ -71,7 +68,7 @@ func GetVersion() string
 GetVersion return the version of katneary. It's important to understand that the version is set at compile time for the github release. But, it the user get katneary using \`go install\`, the version should be different.
 
 <a name="HasExposedPorts"></a>
-## func HasExposedPorts
+## func [HasExposedPorts](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/utils.go#L80>)
 
 ```go
 func HasExposedPorts(service types.ServiceConfig) bool
@@ -80,7 +77,7 @@ func HasExposedPorts(service types.ServiceConfig) bool
 HasExposedPorts returns true if the service exposes ports, either directly in the compose file or through the ports label.
 
 <a name="Helper"></a>
-## func Helper
+## func [Helper](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/helper.go#L14>)
 
 ```go
 func Helper(name string) string
@@ -89,16 +86,16 @@ func Helper(name string) string
 Helper returns the \_helpers.tpl file for a chart.
 
 <a name="NewCronJob"></a>
-## func NewCronJob
+## func [NewCronJob](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/cronJob.go#L30>)
 
 ```go
-func NewCronJob(service types.ServiceConfig, chart *HelmChart, appName string) (*CronJob, *RBAC)
+func NewCronJob(service types.ServiceConfig, chart *HelmChart) (*CronJob, *RBAC)
 ```
 
 NewCronJob creates a new CronJob from a compose service. The appName is the name of the application taken from the project name.
 
 <a name="ToK8SYaml"></a>
-## func ToK8SYaml
+## func [ToK8SYaml](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/utils.go#L105>)
 
 ```go
 func ToK8SYaml(obj any) ([]byte, error)
@@ -107,7 +104,7 @@ func ToK8SYaml(obj any) ([]byte, error)
 
 
 <a name="UnWrapTPL"></a>
-## func UnWrapTPL
+## func [UnWrapTPL](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/utils.go#L101>)
 
 ```go
 func UnWrapTPL(in []byte) []byte
@@ -116,7 +113,7 @@ func UnWrapTPL(in []byte) []byte
 UnWrapTPL removes the line wrapping from a template.
 
 <a name="ChartTemplate"></a>
-## type ChartTemplate
+## type [ChartTemplate](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/chart.go#L22-L25>)
 
 ChartTemplate is a template of a chart. It contains the content of the template and the name of the service. This is used internally to generate the templates.
 
@@ -128,7 +125,7 @@ type ChartTemplate struct {
 ```
 
 <a name="ConfigMap"></a>
-## type ConfigMap
+## type [ConfigMap](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/configMap.go#L38-L43>)
 
 ConfigMap is a kubernetes ConfigMap. Implements the DataMap interface.
 
@@ -140,25 +137,25 @@ type ConfigMap struct {
 ```
 
 <a name="NewConfigMap"></a>
-### func NewConfigMap
+### func [NewConfigMap](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/configMap.go#L47>)
 
 ```go
-func NewConfigMap(service types.ServiceConfig, appName string, forFile bool) *ConfigMap
+func NewConfigMap(service types.ServiceConfig, chart *HelmChart, forFile bool) *ConfigMap
 ```
 
 NewConfigMap creates a new ConfigMap from a compose service. The appName is the name of the application taken from the project name. The ConfigMap is filled by environment variables and labels "map\-env".
 
 <a name="NewConfigMapFromDirectory"></a>
-### func NewConfigMapFromDirectory
+### func [NewConfigMapFromDirectory](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/configMap.go#L121>)
 
 ```go
-func NewConfigMapFromDirectory(service types.ServiceConfig, appName, path string) *ConfigMap
+func NewConfigMapFromDirectory(service types.ServiceConfig, chart *HelmChart, path string) *ConfigMap
 ```
 
 NewConfigMapFromDirectory creates a new ConfigMap from a compose service. This path is the path to the file or directory. If the path is a directory, all files in the directory are added to the ConfigMap. Each subdirectory are ignored. Note that the Generate\(\) function will create the subdirectories ConfigMaps.
 
 <a name="ConfigMap.AddBinaryData"></a>
-### func \(\*ConfigMap\) AddBinaryData
+### func \(\*ConfigMap\) [AddBinaryData](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/configMap.go#L160>)
 
 ```go
 func (c *ConfigMap) AddBinaryData(key string, value []byte)
@@ -167,7 +164,7 @@ func (c *ConfigMap) AddBinaryData(key string, value []byte)
 AddBinaryData adds binary data to the configmap. Append or overwrite the value if the key already exists.
 
 <a name="ConfigMap.AddData"></a>
-### func \(\*ConfigMap\) AddData
+### func \(\*ConfigMap\) [AddData](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/configMap.go#L155>)
 
 ```go
 func (c *ConfigMap) AddData(key, value string)
@@ -176,7 +173,7 @@ func (c *ConfigMap) AddData(key, value string)
 AddData adds a key value pair to the configmap. Append or overwrite the value if the key already exists.
 
 <a name="ConfigMap.AppendDir"></a>
-### func \(\*ConfigMap\) AppendDir
+### func \(\*ConfigMap\) [AppendDir](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/configMap.go#L169>)
 
 ```go
 func (c *ConfigMap) AppendDir(path string) error
@@ -185,7 +182,7 @@ func (c *ConfigMap) AppendDir(path string) error
 AppendDir adds files from given path to the configmap. It is not recursive, to add all files in a directory, you need to call this function for each subdirectory.
 
 <a name="ConfigMap.AppendFile"></a>
-### func \(\*ConfigMap\) AppendFile
+### func \(\*ConfigMap\) [AppendFile](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/configMap.go#L216>)
 
 ```go
 func (c *ConfigMap) AppendFile(path string) error
@@ -194,7 +191,7 @@ func (c *ConfigMap) AppendFile(path string) error
 
 
 <a name="ConfigMap.Filename"></a>
-### func \(\*ConfigMap\) Filename
+### func \(\*ConfigMap\) [Filename](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/configMap.go#L240>)
 
 ```go
 func (c *ConfigMap) Filename() string
@@ -203,7 +200,7 @@ func (c *ConfigMap) Filename() string
 Filename returns the filename of the configmap. If the configmap is used for files, the filename contains the path.
 
 <a name="ConfigMap.SetData"></a>
-### func \(\*ConfigMap\) SetData
+### func \(\*ConfigMap\) [SetData](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/configMap.go#L250>)
 
 ```go
 func (c *ConfigMap) SetData(data map[string]string)
@@ -212,7 +209,7 @@ func (c *ConfigMap) SetData(data map[string]string)
 SetData sets the data of the configmap. It replaces the entire data.
 
 <a name="ConfigMap.Yaml"></a>
-### func \(\*ConfigMap\) Yaml
+### func \(\*ConfigMap\) [Yaml](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/configMap.go#L255>)
 
 ```go
 func (c *ConfigMap) Yaml() ([]byte, error)
@@ -221,7 +218,7 @@ func (c *ConfigMap) Yaml() ([]byte, error)
 Yaml returns the yaml representation of the configmap
 
 <a name="ConfigMapMount"></a>
-## type ConfigMapMount
+## type [ConfigMapMount](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/deployment.go#L31-L34>)
 
 
 
@@ -232,7 +229,7 @@ type ConfigMapMount struct {
 ```
 
 <a name="ConvertOptions"></a>
-## type ConvertOptions
+## type [ConvertOptions](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/chart.go#L28-L37>)
 
 ConvertOptions are the options to convert a compose project to a helm chart.
 
@@ -250,7 +247,7 @@ type ConvertOptions struct {
 ```
 
 <a name="CronJob"></a>
-## type CronJob
+## type [CronJob](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/cronJob.go#L24-L27>)
 
 CronJob is a kubernetes CronJob.
 
@@ -262,7 +259,7 @@ type CronJob struct {
 ```
 
 <a name="CronJob.Filename"></a>
-### func \(\*CronJob\) Filename
+### func \(\*CronJob\) [Filename](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/cronJob.go#L128>)
 
 ```go
 func (c *CronJob) Filename() string
@@ -273,7 +270,7 @@ Filename returns the filename of the cronjob.
 Implements the Yaml interface.
 
 <a name="CronJob.Yaml"></a>
-### func \(\*CronJob\) Yaml
+### func \(\*CronJob\) [Yaml](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/cronJob.go#L135>)
 
 ```go
 func (c *CronJob) Yaml() ([]byte, error)
@@ -284,7 +281,7 @@ Yaml returns the yaml representation of the cronjob.
 Implements the Yaml interface.
 
 <a name="CronJobValue"></a>
-## type CronJobValue
+## type [CronJobValue](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/values.go#L134-L139>)
 
 CronJobValue is a cronjob configuration that will be saved in values.yaml.
 
@@ -298,7 +295,7 @@ type CronJobValue struct {
 ```
 
 <a name="DataMap"></a>
-## type DataMap
+## type [DataMap](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/types.go#L4-L7>)
 
 DataMap is a kubernetes ConfigMap or Secret. It can be used to add data to the ConfigMap or Secret.
 
@@ -310,7 +307,7 @@ type DataMap interface {
 ```
 
 <a name="Deployment"></a>
-## type Deployment
+## type [Deployment](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/deployment.go#L37-L48>)
 
 Deployment is a kubernetes Deployment.
 
@@ -322,7 +319,7 @@ type Deployment struct {
 ```
 
 <a name="NewDeployment"></a>
-### func NewDeployment
+### func [NewDeployment](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/deployment.go#L52>)
 
 ```go
 func NewDeployment(service types.ServiceConfig, chart *HelmChart) *Deployment
@@ -331,7 +328,7 @@ func NewDeployment(service types.ServiceConfig, chart *HelmChart) *Deployment
 NewDeployment creates a new Deployment from a compose service. The appName is the name of the application taken from the project name. It also creates the Values map that will be used to create the values.yaml file.
 
 <a name="Deployment.AddContainer"></a>
-### func \(\*Deployment\) AddContainer
+### func \(\*Deployment\) [AddContainer](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/deployment.go#L121>)
 
 ```go
 func (d *Deployment) AddContainer(service types.ServiceConfig)
@@ -340,7 +337,7 @@ func (d *Deployment) AddContainer(service types.ServiceConfig)
 AddContainer adds a container to the deployment.
 
 <a name="Deployment.AddHealthCheck"></a>
-### func \(\*Deployment\) AddHealthCheck
+### func \(\*Deployment\) [AddHealthCheck](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/deployment.go#L169>)
 
 ```go
 func (d *Deployment) AddHealthCheck(service types.ServiceConfig, container *corev1.Container)
@@ -349,34 +346,34 @@ func (d *Deployment) AddHealthCheck(service types.ServiceConfig, container *core
 
 
 <a name="Deployment.AddIngress"></a>
-### func \(\*Deployment\) AddIngress
+### func \(\*Deployment\) [AddIngress](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/deployment.go#L198>)
 
 ```go
-func (d *Deployment) AddIngress(service types.ServiceConfig, appName string) *Ingress
+func (d *Deployment) AddIngress(service types.ServiceConfig) *Ingress
 ```
 
 AddIngress adds an ingress to the deployment. It creates the ingress object.
 
 <a name="Deployment.AddIngressRoute"></a>
-### func \(\*Deployment\) AddIngressRoute
+### func \(\*Deployment\) [AddIngressRoute](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/deployment.go#L203>)
 
 ```go
-func (d *Deployment) AddIngressRoute(service types.ServiceConfig, appName string) Yaml
+func (d *Deployment) AddIngressRoute(service types.ServiceConfig) Yaml
 ```
 
 AddIngressRoute adds an IngressRoute to the deployment if type is "ingressroute".
 
 <a name="Deployment.AddLegacyVolume"></a>
-### func \(\*Deployment\) AddLegacyVolume
+### func \(\*Deployment\) [AddLegacyVolume](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/deployment.go#L226>)
 
 ```go
-func (d *Deployment) AddLegacyVolume(name, kind string)
+func (d *Deployment) AddLegacyVolume(name, _ string)
 ```
 
 
 
 <a name="Deployment.AddVolumes"></a>
-### func \(\*Deployment\) AddVolumes
+### func \(\*Deployment\) [AddVolumes](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/deployment.go#L209>)
 
 ```go
 func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string)
@@ -385,7 +382,7 @@ func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string)
 AddVolumes adds a volume to the deployment. It does not create the PVC, it only adds the volumes to the deployment. If the volume is a bind volume it will warn the user that it is not supported yet.
 
 <a name="Deployment.BindFrom"></a>
-### func \(\*Deployment\) BindFrom
+### func \(\*Deployment\) [BindFrom](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/deployment.go#L247>)
 
 ```go
 func (d *Deployment) BindFrom(service types.ServiceConfig, binded *Deployment)
@@ -394,7 +391,7 @@ func (d *Deployment) BindFrom(service types.ServiceConfig, binded *Deployment)
 
 
 <a name="Deployment.BindMapFilesToContainer"></a>
-### func \(\*Deployment\) BindMapFilesToContainer
+### func \(\*Deployment\) [BindMapFilesToContainer](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/deployment.go#L427>)
 
 ```go
 func (d *Deployment) BindMapFilesToContainer(service types.ServiceConfig, secrets []string, appName string) (*corev1.Container, int)
@@ -403,7 +400,7 @@ func (d *Deployment) BindMapFilesToContainer(service types.ServiceConfig, secret
 
 
 <a name="Deployment.DependsOn"></a>
-### func \(\*Deployment\) DependsOn
+### func \(\*Deployment\) [DependsOn](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/deployment.go#L275>)
 
 ```go
 func (d *Deployment) DependsOn(to *Deployment, servicename string) error
@@ -412,7 +409,7 @@ func (d *Deployment) DependsOn(to *Deployment, servicename string) error
 DependsOn adds a initContainer to the deployment that will wait for the service to be up.
 
 <a name="Deployment.Filename"></a>
-### func \(\*Deployment\) Filename
+### func \(\*Deployment\) [Filename](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/deployment.go#L352>)
 
 ```go
 func (d *Deployment) Filename() string
@@ -421,7 +418,7 @@ func (d *Deployment) Filename() string
 Filename returns the filename of the deployment.
 
 <a name="Deployment.MountExchangeVolumes"></a>
-### func \(\*Deployment\) MountExchangeVolumes
+### func \(\*Deployment\) [MountExchangeVolumes](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/deployment.go#L478>)
 
 ```go
 func (d *Deployment) MountExchangeVolumes()
@@ -430,7 +427,7 @@ func (d *Deployment) MountExchangeVolumes()
 
 
 <a name="Deployment.SetEnvFrom"></a>
-### func \(\*Deployment\) SetEnvFrom
+### func \(\*Deployment\) [SetEnvFrom](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/deployment.go#L357>)
 
 ```go
 func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string, samePod ...bool)
@@ -439,7 +436,7 @@ func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string, sam
 SetEnvFrom sets the environment variables to a configmap. The configmap is created.
 
 <a name="Deployment.SetServiceAccountName"></a>
-### func \(\*Deployment\) SetServiceAccountName
+### func \(\*Deployment\) [SetServiceAccountName](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/deployment.go#L662>)
 
 ```go
 func (d *Deployment) SetServiceAccountName()
@@ -448,7 +445,7 @@ func (d *Deployment) SetServiceAccountName()
 
 
 <a name="Deployment.Yaml"></a>
-### func \(\*Deployment\) Yaml
+### func \(\*Deployment\) [Yaml](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/deployment.go#L502>)
 
 ```go
 func (d *Deployment) Yaml() ([]byte, error)
@@ -457,7 +454,7 @@ func (d *Deployment) Yaml() ([]byte, error)
 Yaml returns the yaml representation of the deployment.
 
 <a name="FileMapUsage"></a>
-## type FileMapUsage
+## type [FileMapUsage](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/configMap.go#L22>)
 
 FileMapUsage is the usage of the filemap.
 
@@ -475,7 +472,7 @@ const (
 ```
 
 <a name="HelmChart"></a>
-## type HelmChart
+## type [HelmChart](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/chart.go#L41-L55>)
 
 HelmChart is a Helm Chart representation. It contains all the templates, values, versions, helpers...
 
@@ -484,6 +481,7 @@ type HelmChart struct {
     Templates    map[string]*ChartTemplate `yaml:"-"`
     Values       map[string]any            `yaml:"-"`
     VolumeMounts map[string]any            `yaml:"-"`
+    Annotations  map[string]string         `yaml:"-"`
 
     Name         string                    `yaml:"name"`
     Icon         string                    `yaml:"icon,omitempty"`
@@ -498,7 +496,7 @@ type HelmChart struct {
 ```
 
 <a name="Generate"></a>
-### func Generate
+### func [Generate](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/generator.go#L39>)
 
 ```go
 func Generate(project *types.Project) (*HelmChart, error)
@@ -524,7 +522,7 @@ The function performs the following steps:
 14. Generates helper templates.
 
 <a name="NewChart"></a>
-### func NewChart
+### func [NewChart](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/chart.go#L58>)
 
 ```go
 func NewChart(name string) *HelmChart
@@ -533,7 +531,7 @@ func NewChart(name string) *HelmChart
 NewChart creates a new empty chart with the given name.
 
 <a name="HelmChart.SaveTemplates"></a>
-### func \(\*HelmChart\) SaveTemplates
+### func \(\*HelmChart\) [SaveTemplates](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/chart.go#L76>)
 
 ```go
 func (chart *HelmChart) SaveTemplates(templateDir string)
@@ -542,7 +540,7 @@ func (chart *HelmChart) SaveTemplates(templateDir string)
 SaveTemplates the templates of the chart to the given directory.
 
 <a name="Ingress"></a>
-## type Ingress
+## type [Ingress](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/ingress.go#L18-L22>)
 
 
 
@@ -554,16 +552,16 @@ type Ingress struct {
 ```
 
 <a name="NewIngress"></a>
-### func NewIngress
+### func [NewIngress](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/ingress.go#L25>)
 
 ```go
-func NewIngress(service types.ServiceConfig, Chart *HelmChart) *Ingress
+func NewIngress(service types.ServiceConfig, chart *HelmChart) *Ingress
 ```
 
 NewIngress creates a new standard Kubernetes Ingress from a compose service.
 
 <a name="Ingress.Filename"></a>
-### func \(\*Ingress\) Filename
+### func \(\*Ingress\) [Filename](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/ingress.go#L168>)
 
 ```go
 func (ingress *Ingress) Filename() string
@@ -572,7 +570,7 @@ func (ingress *Ingress) Filename() string
 
 
 <a name="Ingress.Yaml"></a>
-### func \(\*Ingress\) Yaml
+### func \(\*Ingress\) [Yaml](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/ingress.go#L172>)
 
 ```go
 func (ingress *Ingress) Yaml() ([]byte, error)
@@ -581,7 +579,7 @@ func (ingress *Ingress) Yaml() ([]byte, error)
 
 
 <a name="IngressRoute"></a>
-## type IngressRoute
+## type [IngressRoute](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/ingressroute.go#L18-L25>)
 
 IngressRoute represents a Traefik IngressRoute CRD
 
@@ -595,16 +593,16 @@ type IngressRoute struct {
 ```
 
 <a name="NewIngressRoute"></a>
-### func NewIngressRoute
+### func [NewIngressRoute](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/ingressroute.go#L59>)
 
 ```go
-func NewIngressRoute(service types.ServiceConfig, Chart *HelmChart, mapping *labelstructs.Ingress, serviceName, appName string) *IngressRoute
+func NewIngressRoute(service types.ServiceConfig, chart *HelmChart, mapping *labelstructs.Ingress, serviceName string) *IngressRoute
 ```
 
 NewIngressRoute creates a new Traefik IngressRoute from a compose service.
 
 <a name="IngressRoute.Filename"></a>
-### func \(\*IngressRoute\) Filename
+### func \(\*IngressRoute\) [Filename](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/ingressroute.go#L122>)
 
 ```go
 func (ir *IngressRoute) Filename() string
@@ -613,7 +611,7 @@ func (ir *IngressRoute) Filename() string
 
 
 <a name="IngressRoute.Yaml"></a>
-### func \(\*IngressRoute\) Yaml
+### func \(\*IngressRoute\) [Yaml](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/ingressroute.go#L126>)
 
 ```go
 func (ir *IngressRoute) Yaml() ([]byte, error)
@@ -622,7 +620,7 @@ func (ir *IngressRoute) Yaml() ([]byte, error)
 
 
 <a name="IngressRouteRoute"></a>
-## type IngressRouteRoute
+## type [IngressRouteRoute](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/ingressroute.go#L35-L39>)
 
 IngressRouteRoute defines a route in the IngressRoute
 
@@ -635,7 +633,7 @@ type IngressRouteRoute struct {
 ```
 
 <a name="IngressRouteService"></a>
-## type IngressRouteService
+## type [IngressRouteService](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/ingressroute.go#L42-L45>)
 
 IngressRouteService defines a service backend in IngressRoute
 
@@ -647,7 +645,7 @@ type IngressRouteService struct {
 ```
 
 <a name="IngressRouteSpec"></a>
-## type IngressRouteSpec
+## type [IngressRouteSpec](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/ingressroute.go#L28-L32>)
 
 IngressRouteSpec defines the spec for Traefik IngressRoute
 
@@ -660,7 +658,7 @@ type IngressRouteSpec struct {
 ```
 
 <a name="IngressRouteTLS"></a>
-## type IngressRouteTLS
+## type [IngressRouteTLS](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/ingressroute.go#L48-L51>)
 
 IngressRouteTLS defines TLS configuration for IngressRoute
 
@@ -672,7 +670,7 @@ type IngressRouteTLS struct {
 ```
 
 <a name="IngressRouteTLSDomain"></a>
-## type IngressRouteTLSDomain
+## type [IngressRouteTLSDomain](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/ingressroute.go#L54-L56>)
 
 IngressRouteTLSDomain defines a domain for TLS
 
@@ -683,7 +681,7 @@ type IngressRouteTLSDomain struct {
 ```
 
 <a name="IngressValue"></a>
-## type IngressValue
+## type [IngressValue](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/values.go#L32-L41>)
 
 IngressValue is a ingress configuration that will be saved in values.yaml.
 
@@ -700,8 +698,58 @@ type IngressValue struct {
 }
 ```
 
+<a name="NetworkPolicy"></a>
+## type [NetworkPolicy](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/networkpolicy.go#L21-L24>)
+
+NetworkPolicy is a Kubernetes NetworkPolicy generated from a compose service.
+
+```go
+type NetworkPolicy struct {
+    *networkingv1.NetworkPolicy `yaml:",inline"`
+    // contains filtered or unexported fields
+}
+```
+
+<a name="NewNetworkPolicy"></a>
+### func [NewNetworkPolicy](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/networkpolicy.go#L28>)
+
+```go
+func NewNetworkPolicy(service types.ServiceConfig, chart *HelmChart, project *types.Project) *NetworkPolicy
+```
+
+NewNetworkPolicy creates a NetworkPolicy from the network\-policy label. It returns nil when the policy is not enabled.
+
+<a name="NetworkPolicy.Filename"></a>
+### func \(\*NetworkPolicy\) [Filename](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/networkpolicy.go#L176>)
+
+```go
+func (p *NetworkPolicy) Filename() string
+```
+
+Filename returns the filename of the NetworkPolicy template.
+
+<a name="NetworkPolicy.Yaml"></a>
+### func \(\*NetworkPolicy\) [Yaml](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/networkpolicy.go#L181>)
+
+```go
+func (p *NetworkPolicy) Yaml() ([]byte, error)
+```
+
+Yaml returns the YAML representation of the NetworkPolicy.
+
+<a name="NetworkPolicyValue"></a>
+## type [NetworkPolicyValue](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/values.go#L44-L46>)
+
+Value will be saved in values.yaml. It contains configuration for all deployment and services.
+
+```go
+type NetworkPolicyValue struct {
+    Enabled bool `yaml:"enabled"`
+}
+```
+
 <a name="PersistenceValue"></a>
-## type PersistenceValue
+## type [PersistenceValue](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/values.go#L19-L24>)
 
 PersistenceValue is a persistence configuration that will be saved in values.yaml.
 
@@ -715,7 +763,7 @@ type PersistenceValue struct {
 ```
 
 <a name="RBAC"></a>
-## type RBAC
+## type [RBAC](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/rbac.go#L20-L24>)
 
 RBAC is a kubernetes RBAC containing a role, a rolebinding and an associated serviceaccount.
 
@@ -728,16 +776,16 @@ type RBAC struct {
 ```
 
 <a name="NewRBAC"></a>
-### func NewRBAC
+### func [NewRBAC](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/rbac.go#L27>)
 
 ```go
-func NewRBAC(service types.ServiceConfig, appName string) *RBAC
+func NewRBAC(service types.ServiceConfig, chart *HelmChart) *RBAC
 ```
 
 NewRBAC creates a new RBAC from a compose service. The appName is the name of the application taken from the project name.
 
 <a name="RepositoryValue"></a>
-## type RepositoryValue
+## type [RepositoryValue](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/values.go#L13-L16>)
 
 RepositoryValue is a docker repository image and tag that will be saved in values.yaml.
 
@@ -749,7 +797,7 @@ type RepositoryValue struct {
 ```
 
 <a name="Role"></a>
-## type Role
+## type [Role](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/rbac.go#L115-L118>)
 
 Role is a kubernetes Role.
 
@@ -761,16 +809,16 @@ type Role struct {
 ```
 
 <a name="NewRestrictedRole"></a>
-### func NewRestrictedRole
+### func [NewRestrictedRole](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/rbac.go#L152>)
 
 ```go
-func NewRestrictedRole(service types.ServiceConfig, appName string) *Role
+func NewRestrictedRole(service types.ServiceConfig, chart *HelmChart) *Role
 ```
 
 NewRestrictedRole creates a Role with minimal permissions for init containers.
 
 <a name="Role.Filename"></a>
-### func \(\*Role\) Filename
+### func \(\*Role\) [Filename](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/rbac.go#L120>)
 
 ```go
 func (r *Role) Filename() string
@@ -779,7 +827,7 @@ func (r *Role) Filename() string
 
 
 <a name="Role.Yaml"></a>
-### func \(\*Role\) Yaml
+### func \(\*Role\) [Yaml](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/rbac.go#L124>)
 
 ```go
 func (r *Role) Yaml() ([]byte, error)
@@ -788,7 +836,7 @@ func (r *Role) Yaml() ([]byte, error)
 
 
 <a name="RoleBinding"></a>
-## type RoleBinding
+## type [RoleBinding](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/rbac.go#L101-L104>)
 
 RoleBinding is a kubernetes RoleBinding.
 
@@ -800,16 +848,16 @@ type RoleBinding struct {
 ```
 
 <a name="NewRestrictedRoleBinding"></a>
-### func NewRestrictedRoleBinding
+### func [NewRestrictedRoleBinding](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/rbac.go#L178>)
 
 ```go
-func NewRestrictedRoleBinding(service types.ServiceConfig, appName string) *RoleBinding
+func NewRestrictedRoleBinding(service types.ServiceConfig, chart *HelmChart) *RoleBinding
 ```
 
 NewRestrictedRoleBinding creates a RoleBinding that binds the restricted role to the ServiceAccount.
 
 <a name="RoleBinding.Filename"></a>
-### func \(\*RoleBinding\) Filename
+### func \(\*RoleBinding\) [Filename](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/rbac.go#L106>)
 
 ```go
 func (r *RoleBinding) Filename() string
@@ -818,7 +866,7 @@ func (r *RoleBinding) Filename() string
 
 
 <a name="RoleBinding.Yaml"></a>
-### func \(\*RoleBinding\) Yaml
+### func \(\*RoleBinding\) [Yaml](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/rbac.go#L110>)
 
 ```go
 func (r *RoleBinding) Yaml() ([]byte, error)
@@ -827,7 +875,7 @@ func (r *RoleBinding) Yaml() ([]byte, error)
 
 
 <a name="Secret"></a>
-## type Secret
+## type [Secret](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/secret.go#L23-L26>)
 
 Secret is a kubernetes Secret.
 
@@ -841,16 +889,16 @@ type Secret struct {
 ```
 
 <a name="NewSecret"></a>
-### func NewSecret
+### func [NewSecret](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/secret.go#L29>)
 
 ```go
-func NewSecret(service types.ServiceConfig, appName string) *Secret
+func NewSecret(service types.ServiceConfig, chart *HelmChart) *Secret
 ```
 
 NewSecret creates a new Secret from a compose service
 
 <a name="Secret.AddData"></a>
-### func \(\*Secret\) AddData
+### func \(\*Secret\) [AddData](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/secret.go#L72>)
 
 ```go
 func (s *Secret) AddData(key, value string)
@@ -859,7 +907,7 @@ func (s *Secret) AddData(key, value string)
 AddData adds a key value pair to the secret.
 
 <a name="Secret.Filename"></a>
-### func \(\*Secret\) Filename
+### func \(\*Secret\) [Filename](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/secret.go#L88>)
 
 ```go
 func (s *Secret) Filename() string
@@ -868,7 +916,7 @@ func (s *Secret) Filename() string
 Filename returns the filename of the secret.
 
 <a name="Secret.SetData"></a>
-### func \(\*Secret\) SetData
+### func \(\*Secret\) [SetData](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/secret.go#L93>)
 
 ```go
 func (s *Secret) SetData(data map[string]string)
@@ -877,7 +925,7 @@ func (s *Secret) SetData(data map[string]string)
 SetData sets the data of the secret.
 
 <a name="Secret.Yaml"></a>
-### func \(\*Secret\) Yaml
+### func \(\*Secret\) [Yaml](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/secret.go#L100>)
 
 ```go
 func (s *Secret) Yaml() ([]byte, error)
@@ -886,7 +934,7 @@ func (s *Secret) Yaml() ([]byte, error)
 Yaml returns the yaml representation of the secret.
 
 <a name="Service"></a>
-## type Service
+## type [Service](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/service.go#L19-L22>)
 
 Service is a kubernetes Service.
 
@@ -898,25 +946,25 @@ type Service struct {
 ```
 
 <a name="NewService"></a>
-### func NewService
+### func [NewService](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/service.go#L25>)
 
 ```go
-func NewService(service types.ServiceConfig, appName string) *Service
+func NewService(service types.ServiceConfig, chart *HelmChart) *Service
 ```
 
 NewService creates a new Service from a compose service.
 
 <a name="Service.AddPort"></a>
-### func \(\*Service\) AddPort
+### func \(\*Service\) [AddPort](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/service.go#L55>)
 
 ```go
-func (s *Service) AddPort(port types.ServicePortConfig, serviceName ...string)
+func (s *Service) AddPort(port types.ServicePortConfig)
 ```
 
 AddPort adds a port to the service.
 
 <a name="Service.Filename"></a>
-### func \(\*Service\) Filename
+### func \(\*Service\) [Filename](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/service.go#L76>)
 
 ```go
 func (s *Service) Filename() string
@@ -925,7 +973,7 @@ func (s *Service) Filename() string
 Filename returns the filename of the service.
 
 <a name="Service.Yaml"></a>
-### func \(\*Service\) Yaml
+### func \(\*Service\) [Yaml](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/service.go#L81>)
 
 ```go
 func (s *Service) Yaml() ([]byte, error)
@@ -934,7 +982,7 @@ func (s *Service) Yaml() ([]byte, error)
 Yaml returns the yaml representation of the service.
 
 <a name="ServiceAccount"></a>
-## type ServiceAccount
+## type [ServiceAccount](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/rbac.go#L209-L212>)
 
 ServiceAccount is a kubernetes ServiceAccount.
 
@@ -946,16 +994,16 @@ type ServiceAccount struct {
 ```
 
 <a name="NewServiceAccount"></a>
-### func NewServiceAccount
+### func [NewServiceAccount](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/rbac.go#L133>)
 
 ```go
-func NewServiceAccount(service types.ServiceConfig, appName string) *ServiceAccount
+func NewServiceAccount(service types.ServiceConfig, chart *HelmChart) *ServiceAccount
 ```
 
 NewServiceAccount creates a new ServiceAccount from a compose service.
 
 <a name="ServiceAccount.Filename"></a>
-### func \(\*ServiceAccount\) Filename
+### func \(\*ServiceAccount\) [Filename](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/rbac.go#L214>)
 
 ```go
 func (r *ServiceAccount) Filename() string
@@ -964,7 +1012,7 @@ func (r *ServiceAccount) Filename() string
 
 
 <a name="ServiceAccount.Yaml"></a>
-### func \(\*ServiceAccount\) Yaml
+### func \(\*ServiceAccount\) [Yaml](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/rbac.go#L218>)
 
 ```go
 func (r *ServiceAccount) Yaml() ([]byte, error)
@@ -973,7 +1021,7 @@ func (r *ServiceAccount) Yaml() ([]byte, error)
 
 
 <a name="TLS"></a>
-## type TLS
+## type [TLS](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/values.go#L26-L29>)
 
 
 
@@ -985,13 +1033,14 @@ type TLS struct {
 ```
 
 <a name="Value"></a>
-## type Value
+## type [Value](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/values.go#L48-L60>)
 
-Value will be saved in values.yaml. It contains configuration for all deployment and services.
+
 
 ```go
 type Value struct {
     Repository      *RepositoryValue             `yaml:"repository,omitempty"`
+    NetworkPolicy   *NetworkPolicyValue          `yaml:"networkPolicy,omitempty"`
     Persistence     map[string]*PersistenceValue `yaml:"persistence,omitempty"`
     Ingress         *IngressValue                `yaml:"ingress,omitempty"`
     Environment     map[string]any               `yaml:"environment,omitempty"`
@@ -1005,7 +1054,7 @@ type Value struct {
 ```
 
 <a name="NewValue"></a>
-### func NewValue
+### func [NewValue](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/values.go#L67>)
 
 ```go
 func NewValue(service types.ServiceConfig, main ...bool) *Value
@@ -1016,7 +1065,7 @@ NewValue creates a new Value from a compose service. The value contains the nece
 If \`main\` is true, the tag will be empty because it will be set in the helm chart appVersion.
 
 <a name="Value.AddIngress"></a>
-### func \(\*Value\) AddIngress
+### func \(\*Value\) [AddIngress](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/values.go#L105>)
 
 ```go
 func (v *Value) AddIngress(host, path string)
@@ -1025,7 +1074,7 @@ func (v *Value) AddIngress(host, path string)
 
 
 <a name="Value.AddPersistence"></a>
-### func \(\*Value\) AddPersistence
+### func \(\*Value\) [AddPersistence](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/values.go#L120>)
 
 ```go
 func (v *Value) AddPersistence(volumeName string)
@@ -1034,7 +1083,7 @@ func (v *Value) AddPersistence(volumeName string)
 AddPersistence adds persistence configuration to the Value.
 
 <a name="VolumeClaim"></a>
-## type VolumeClaim
+## type [VolumeClaim](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/volume.go#L19-L24>)
 
 VolumeClaim is a kubernetes VolumeClaim. This is a PersistentVolumeClaim.
 
@@ -1046,16 +1095,16 @@ type VolumeClaim struct {
 ```
 
 <a name="NewVolumeClaim"></a>
-### func NewVolumeClaim
+### func [NewVolumeClaim](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/volume.go#L27>)
 
 ```go
-func NewVolumeClaim(service types.ServiceConfig, volumeName, appName string) *VolumeClaim
+func NewVolumeClaim(service types.ServiceConfig, volumeName string, chart *HelmChart) *VolumeClaim
 ```
 
 NewVolumeClaim creates a new VolumeClaim from a compose service.
 
 <a name="VolumeClaim.Filename"></a>
-### func \(\*VolumeClaim\) Filename
+### func \(\*VolumeClaim\) [Filename](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/volume.go#L64>)
 
 ```go
 func (v *VolumeClaim) Filename() string
@@ -1064,7 +1113,7 @@ func (v *VolumeClaim) Filename() string
 Filename returns the suggested filename for a VolumeClaim.
 
 <a name="VolumeClaim.Yaml"></a>
-### func \(\*VolumeClaim\) Yaml
+### func \(\*VolumeClaim\) [Yaml](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/volume.go#L69>)
 
 ```go
 func (v *VolumeClaim) Yaml() ([]byte, error)
@@ -1073,7 +1122,7 @@ func (v *VolumeClaim) Yaml() ([]byte, error)
 Yaml marshals a VolumeClaim into yaml.
 
 <a name="Yaml"></a>
-## type Yaml
+## type [Yaml](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/types.go#L10-L13>)
 
 Yaml is a kubernetes object that can be converted to yaml.
 
@@ -1085,10 +1134,10 @@ type Yaml interface {
 ```
 
 <a name="NewIngressRouteFromService"></a>
-### func NewIngressRouteFromService
+### func [NewIngressRouteFromService](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/ingress.go#L82>)
 
 ```go
-func NewIngressRouteFromService(service types.ServiceConfig, Chart *HelmChart) Yaml
+func NewIngressRouteFromService(service types.ServiceConfig, chart *HelmChart) Yaml
 ```
 
 NewIngressRouteFromService creates a Traefik IngressRoute from the same service config. This is called separately to generate the IngressRoute file in addition to Ingress.

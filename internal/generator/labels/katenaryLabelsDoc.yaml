@@ -408,4 +408,78 @@
           - 3306
   type: "string"
 
+"security-context":
+  short: "Pod and container security context."
+  long: |-
+    Configure the pod and container security contexts. The container
+    `allowPrivilegeEscalation` is set to `false` by default, and privileged
+    containers (compose `privileged: true`) get it set to `true`.
+
+    The label has two sections:
+
+    - `pod`: `fsGroup`, `fsGroupChangePolicy`, `supplementalGroups`,
+      `runAsUser`, `runAsGroup`, `runAsNonRoot`, `seccompProfile`, `sysctls`
+    - `container`: `allowPrivilegeEscalation`, `privileged`,
+      `readOnlyRootFilesystem`, `runAsUser`, `runAsGroup`, `runAsNonRoot`,
+      `capabilities`, `seccompProfile`
+  example: |-
+    web:
+      image: nginx
+      read_only: true
+      labels:
+        {{ .KatenaryPrefix }}/security-context: |-
+          pod:
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+          container:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
+  type: "object"
+
+"network-policy":
+  short: "Generate a NetworkPolicy for the service."
+  long: |-
+    Generate a Kubernetes NetworkPolicy that denies ingress and egress by
+    default, then allows the expected flows:
+
+    - ingress from the other pods of the chart (`fromSameApp`, default `true`)
+    - ingress from the ingress controller when the service has an ingress
+      (`fromIngress`, default `true`); list the controller namespaces in
+      `ingressNamespaces`, otherwise any pod of the chart namespace is allowed
+    - egress to the cluster DNS (`allowDNS`, default `true`, in `kube-system`
+      unless `dnsNamespace` is set)
+    - egress to the other pods of the chart (`allowSameApp`, default `true`)
+    - egress to the services declared in `depends_on`
+      (`allowDependencies`, default `true`)
+    - HTTPS egress for the Kubernetes API used by `depends_on`
+      (`allowKubernetesAPI`, default `true`)
+    - internet egress only when `allowInternet: true`
+
+    `extraPeers` accepts raw NetworkPolicy peers (`podSelector`,
+    `namespaceSelector`, `ipBlock`) for both directions.
+
+    See the [Network policies](network-policies.md) page for a complete
+    explanation and example.
+  example: |-
+    web:
+      image: nginx
+      depends_on:
+        - database
+      labels:
+        {{ .KatenaryPrefix }}/ingress: |-
+          hostname: my.test.tld
+          port: 80
+          enabled: true
+        {{ .KatenaryPrefix }}/network-policy: |-
+          enabled: true
+          ingress:
+            ingressNamespaces: [traefik]
+          egress:
+            allowInternet: true
+  type: "object"
+
 # vim: ft=gotmpl.yaml

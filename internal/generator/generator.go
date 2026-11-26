@@ -242,6 +242,25 @@ func Generate(project *types.Project) (*HelmChart, error) {
 		}
 	}
 
+	// generate the network policies, one per non-merged service
+	for _, name := range slices.Sorted(maps.Keys(project.Services)) {
+		if _, isSamePod := podToMerge[name]; isSamePod {
+			continue
+		}
+		policy := NewNetworkPolicy(project.Services[name], chart, project)
+		if policy == nil {
+			continue
+		}
+		y, err := policy.Yaml()
+		if err != nil {
+			return nil, err
+		}
+		chart.Templates[policy.Filename()] = &ChartTemplate{
+			Content:     y,
+			Servicename: name,
+		}
+	}
+
 	// compute all needed resplacements in YAML templates
 	for n, v := range chart.Templates {
 		v.Content = removeReplaceString(v.Content)

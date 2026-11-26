@@ -77,6 +77,8 @@ spec:
         image: 'postgres:17'
         imagePullPolicy: IfNotPresent
         name: db
+        securityContext:
+          allowPrivilegeEscalation: false
 
 ---
 # Source: values/templates/web/deployment.yaml
@@ -116,3 +118,5 @@ spec:
         image: 'nginx:1.29'
         imagePullPolicy: IfNotPresent
         name: web
+        securityContext:
+          allowPrivilegeEscalation: false

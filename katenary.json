@@ -1,11 +1,59 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$defs": {
+    "Capabilities": {
+      "properties": {
+        "add": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "drop": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
     "ConfigMapFiles": {
       "items": {
         "type": "string"
       },
       "type": "array"
+    },
+    "ContainerSecurityContext": {
+      "properties": {
+        "allowPrivilegeEscalation": {
+          "type": "boolean"
+        },
+        "privileged": {
+          "type": "boolean"
+        },
+        "readOnlyRootFilesystem": {
+          "type": "boolean"
+        },
+        "runAsUser": {
+          "type": "integer"
+        },
+        "runAsGroup": {
+          "type": "integer"
+        },
+        "runAsNonRoot": {
+          "type": "boolean"
+        },
+        "capabilities": {
+          "$ref": "#/$defs/Capabilities"
+        },
+        "seccompProfile": {
+          "$ref": "#/$defs/SeccompProfile"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
     },
     "CronJob": {
       "properties": {
@@ -189,6 +237,9 @@
         "class": {
           "type": "string"
         },
+        "type": {
+          "type": "string"
+        },
         "enabled": {
           "type": "boolean"
         },
@@ -213,6 +264,187 @@
       "additionalProperties": {
         "type": "string"
       },
+      "type": "object"
+    },
+    "NetworkPolicy": {
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "ingress": {
+          "$ref": "#/$defs/NetworkPolicyIngress"
+        },
+        "egress": {
+          "$ref": "#/$defs/NetworkPolicyEgress"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "enabled"
+      ]
+    },
+    "NetworkPolicyEgress": {
+      "properties": {
+        "allowDNS": {
+          "type": "boolean"
+        },
+        "allowSameApp": {
+          "type": "boolean"
+        },
+        "allowDependencies": {
+          "type": "boolean"
+        },
+        "allowInternet": {
+          "type": "boolean"
+        },
+        "allowKubernetesAPI": {
+          "type": "boolean"
+        },
+        "dnsNamespace": {
+          "type": "string"
+        },
+        "extraPeers": {
+          "items": {
+            "$ref": "#/$defs/NetworkPolicyPeer"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "NetworkPolicyIPBlock": {
+      "properties": {
+        "cidr": {
+          "type": "string"
+        },
+        "except": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "cidr"
+      ]
+    },
+    "NetworkPolicyIngress": {
+      "properties": {
+        "fromSameApp": {
+          "type": "boolean"
+        },
+        "fromIngress": {
+          "type": "boolean"
+        },
+        "ingressNamespaces": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "extraPeers": {
+          "items": {
+            "$ref": "#/$defs/NetworkPolicyPeer"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "NetworkPolicyLabelSelector": {
+      "properties": {
+        "matchLabels": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "matchExpressions": {
+          "items": {
+            "$ref": "#/$defs/NetworkPolicyLabelSelectorRequirement"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "NetworkPolicyLabelSelectorRequirement": {
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "operator": {
+          "type": "string"
+        },
+        "values": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "key",
+        "operator"
+      ]
+    },
+    "NetworkPolicyPeer": {
+      "properties": {
+        "podSelector": {
+          "$ref": "#/$defs/NetworkPolicyLabelSelector"
+        },
+        "namespaceSelector": {
+          "$ref": "#/$defs/NetworkPolicyLabelSelector"
+        },
+        "ipBlock": {
+          "$ref": "#/$defs/NetworkPolicyIPBlock"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "PodSecurityContext": {
+      "properties": {
+        "runAsUser": {
+          "type": "integer"
+        },
+        "runAsGroup": {
+          "type": "integer"
+        },
+        "runAsNonRoot": {
+          "type": "boolean"
+        },
+        "fsGroup": {
+          "type": "integer"
+        },
+        "fsGroupChangePolicy": {
+          "type": "string"
+        },
+        "supplementalGroups": {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        },
+        "seccompProfile": {
+          "$ref": "#/$defs/SeccompProfile"
+        },
+        "sysctls": {
+          "items": {
+            "$ref": "#/$defs/Sysctl"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
       "type": "object"
     },
     "Ports": {
@@ -257,11 +489,38 @@
       "additionalProperties": false,
       "type": "object"
     },
+    "SeccompProfile": {
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "localhostProfile": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "type"
+      ]
+    },
     "Secrets": {
       "items": {
         "type": "string"
       },
       "type": "array"
+    },
+    "SecurityContext": {
+      "properties": {
+        "pod": {
+          "$ref": "#/$defs/PodSecurityContext"
+        },
+        "container": {
+          "$ref": "#/$defs/ContainerSecurityContext"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
     },
     "Service": {
       "properties": {
@@ -349,6 +608,16 @@
           "$ref": "#/$defs/ValueFrom",
           "title": "Values From",
           "description": "Inject values from another service (secret or configmap environment variables)"
+        },
+        "security-context": {
+          "$ref": "#/$defs/SecurityContext",
+          "title": "Security Context",
+          "description": "Pod and container security context"
+        },
+        "network-policy": {
+          "$ref": "#/$defs/NetworkPolicy",
+          "title": "Network Policy",
+          "description": "Network policy configuration"
         }
       },
       "additionalProperties": false,
@@ -365,6 +634,22 @@
           },
           "type": "object"
         }
+      ]
+    },
+    "Sysctl": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name",
+        "value"
       ]
     },
     "TCPSocketAction": {

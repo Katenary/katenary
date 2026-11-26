@@ -67,9 +67,13 @@ spec:
         ports:
         - containerPort: 80
           name: http
+        securityContext:
+          allowPrivilegeEscalation: false
       - image: 'php:fpm'
         imagePullPolicy: IfNotPresent
         name: fpm
         ports:
         - containerPort: 9000
           name: port-9000
+        securityContext:
+          allowPrivilegeEscalation: false

@@ -12,7 +12,7 @@ A katenary file, named "katenary.yml" or "katenary.yaml", is a file where you ca
 
 Formely, the file describe the same structure as in labels, and so that can be validated and completed by LSP. It also ease the use of katenary.
 
-## func GenerateSchema
+## func [GenerateSchema](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/katenaryfile/main.go#L165>)
 
 ```go
 func GenerateSchema() string
@@ -21,7 +21,7 @@ func GenerateSchema() string
 GenerateSchema generates the schema for the katenary.yaml file.
 
 <a name="OverrideWithConfig"></a>
-## func OverrideWithConfig
+## func [OverrideWithConfig](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/katenaryfile/main.go#L51>)
 
 ```go
 func OverrideWithConfig(project *types.Project) error
@@ -30,7 +30,7 @@ func OverrideWithConfig(project *types.Project) error
 OverrideWithConfig overrides the project with the katenary.yaml file. It will set the labels of the services with the values from the katenary.yaml file. It work in memory, so it will not modify the original project.
 
 <a name="Service"></a>
-## type Service
+## type [Service](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/katenaryfile/main.go#L27-L46>)
 
 Service is a struct that contains the service configuration for katenary
 
@@ -52,11 +52,13 @@ type Service struct {
     EnvFrom         *labelstructs.EnvFrom          `yaml:"env-from,omitempty" json:"env-from,omitempty" jsonschema:"title=Env From,description=Inject environment variables from another service"`
     ExchangeVolumes []*labelstructs.ExchangeVolume `yaml:"exchange-volumes,omitempty" json:"exchange-volumes,omitempty" jsonschema:"title=Exchange Volumes,description=Exchange volumes between services"`
     ValuesFrom      *labelstructs.ValueFrom        `yaml:"values-from,omitempty" json:"values-from,omitempty" jsonschema:"title=Values From,description=Inject values from another service (secret or configmap environment variables)"`
+    SecurityContext *labelstructs.SecurityContext  `yaml:"security-context,omitempty" json:"security-context,omitempty" jsonschema:"title=Security Context,description=Pod and container security context"`
+    NetworkPolicy   *labelstructs.NetworkPolicy    `yaml:"network-policy,omitempty" json:"network-policy,omitempty" jsonschema:"title=Network Policy,description=Network policy configuration"`
 }
 ```
 
 <a name="StringOrMap"></a>
-## type StringOrMap
+## type [StringOrMap](<https://repo.katenary.io/Katenary/katenary/blob/feature/security-network-policies/internal/generator/katenaryfile/main.go#L24>)
 
 StringOrMap is a struct that can be either a string or a map of strings. It's a helper struct to unmarshal the katenary.yaml file and produce the schema
 

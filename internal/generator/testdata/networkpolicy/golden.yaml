@@ -1,0 +1,386 @@
+---
+# Source: networkpolicy/templates/database/networkpolicy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  annotations:
+    katenary.io/compose-hash: f89a31b1e299ddd1e0d2036428c549b3c5350719
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: networkpolicy
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: networkpolicy-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: database
+  name: 'release-name-networkpolicy-database'
+spec:
+  egress:
+  - ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+    to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: networkpolicy
+          app.kubernetes.io/instance: release-name
+  - ports:
+    - port: 443
+      protocol: TCP
+    to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    - ipBlock:
+        cidr: ::/0
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: networkpolicy
+          app.kubernetes.io/instance: release-name
+    ports:
+    - port: 5432
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: networkpolicy
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: database
+  policyTypes:
+  - Ingress
+  - Egress
+---
+# Source: networkpolicy/templates/web/networkpolicy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  annotations:
+    katenary.io/compose-hash: f89a31b1e299ddd1e0d2036428c549b3c5350719
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: networkpolicy
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: networkpolicy-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: web
+  name: 'release-name-networkpolicy-web'
+spec:
+  egress:
+  - ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+    to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: networkpolicy
+          app.kubernetes.io/instance: release-name
+  - ports:
+    - port: 5432
+      protocol: TCP
+    to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: networkpolicy
+          app.kubernetes.io/instance: release-name
+          app.kubernetes.io/component: database
+  - ports:
+    - port: 443
+      protocol: TCP
+    to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    - ipBlock:
+        cidr: ::/0
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: networkpolicy
+          app.kubernetes.io/instance: release-name
+    ports:
+    - port: 80
+      protocol: TCP
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: traefik
+    ports:
+    - port: 80
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: networkpolicy
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: web
+  policyTypes:
+  - Ingress
+  - Egress
+---
+# Source: networkpolicy/templates/web/depends-on.rbac.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    katenary.io/compose-hash: f89a31b1e299ddd1e0d2036428c549b3c5350719
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: networkpolicy
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: networkpolicy-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: web
+  name: 'release-name-networkpolicy-web-dependency'
+---
+# Source: networkpolicy/templates/web/depends-on.rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    katenary.io/compose-hash: f89a31b1e299ddd1e0d2036428c549b3c5350719
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: networkpolicy
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: networkpolicy-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: web
+  name: 'release-name-networkpolicy-web-dependency'
+rules:
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - get
+---
+# Source: networkpolicy/templates/web/depends-on.rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    katenary.io/compose-hash: f89a31b1e299ddd1e0d2036428c549b3c5350719
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: networkpolicy
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: networkpolicy-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: web
+  name: 'release-name-networkpolicy-web-dependency'
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: 'release-name-networkpolicy-web-dependency'
+subjects:
+- kind: ServiceAccount
+  name: 'release-name-networkpolicy-web-dependency'
+  namespace: 'default'
+
+---
+# Source: networkpolicy/templates/database/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    katenary.io/compose-hash: f89a31b1e299ddd1e0d2036428c549b3c5350719
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: networkpolicy
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: networkpolicy-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: database
+  name: 'release-name-networkpolicy-database'
+spec:
+  ports:
+  - name: postgresql
+    port: 5432
+    protocol: TCP
+    targetPort: postgresql
+  selector:
+    app.kubernetes.io/name: networkpolicy
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/component: database
+
+---
+# Source: networkpolicy/templates/web/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    katenary.io/compose-hash: f89a31b1e299ddd1e0d2036428c549b3c5350719
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: networkpolicy
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: networkpolicy-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: web
+  name: 'release-name-networkpolicy-web'
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: http
+  selector:
+    app.kubernetes.io/name: networkpolicy
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/component: web
+
+---
+# Source: networkpolicy/templates/database/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    katenary.io/compose-hash: f89a31b1e299ddd1e0d2036428c549b3c5350719
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: networkpolicy
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: networkpolicy-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: database
+  name: 'release-name-networkpolicy-database'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: networkpolicy
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: database
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: networkpolicy
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/component: database
+    spec:
+      containers:
+      - image: 'postgres:17'
+        imagePullPolicy: IfNotPresent
+        name: database
+        ports:
+        - containerPort: 5432
+          name: postgresql
+        securityContext:
+          allowPrivilegeEscalation: false
+
+---
+# Source: networkpolicy/templates/web/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    katenary.io/compose-hash: f89a31b1e299ddd1e0d2036428c549b3c5350719
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: networkpolicy
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: networkpolicy-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: web
+  name: 'release-name-networkpolicy-web'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: networkpolicy
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: web
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: networkpolicy
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/component: web
+    spec:
+      containers:
+      - image: 'nginx:1.29'
+        imagePullPolicy: IfNotPresent
+        name: web
+        ports:
+        - containerPort: 80
+          name: http
+        securityContext:
+          allowPrivilegeEscalation: false
+      initContainers:
+      - command:
+        - /bin/sh
+        - -c
+        - |-
+          NAMESPACE=${NAMESPACE:-default}
+          DEPLOYMENT_NAME=release-name-networkpolicy-database
+          KUBERNETES_SERVICE_HOST=${KUBERNETES_SERVICE_HOST:-kubernetes.default.svc}
+          KUBERNETES_SERVICE_PORT=${KUBERNETES_SERVICE_PORT:-443}
+
+          until curl -s -o- --header="Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+            --cacert=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+            "https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}/apis/apps/v1/namespaces/${NAMESPACE}/deployments/${DEPLOYMENT_NAME}" \
+            | grep -q '"readyReplicas":\s*[1-9][0-9]*'; do
+            sleep 2
+          done
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        image: quay.io/curl/curl:latest
+        name: wait-for-database
+      serviceAccountName: 'release-name-networkpolicy-web-dependency'
+
+---
+# Source: networkpolicy/templates/web/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    katenary.io/compose-hash: f89a31b1e299ddd1e0d2036428c549b3c5350719
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: networkpolicy
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: networkpolicy-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: web
+  name: 'release-name-networkpolicy-web'
+spec:
+  rules:
+  - host: 'my.test.tld'
+    http:
+      paths:
+      - backend:
+          service:
+            name: 'release-name-networkpolicy-web'
+            port:
+              name: http
+        path: '/'
+        pathType: ImplementationSpecific
+  tls:
+  - hosts:
+    - 'my.test.tld'
+    secretName: 'release-name-networkpolicy-web-tls'

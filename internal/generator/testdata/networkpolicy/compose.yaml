@@ -1,0 +1,26 @@
+name: networkpolicy
+
+services:
+  web:
+    image: nginx:1.29
+    ports:
+      - "80:80"
+    depends_on:
+      - database
+    labels:
+      katenary.v4/ingress: |-
+        hostname: my.test.tld
+        port: 80
+        enabled: true
+      katenary.v4/network-policy: |-
+        enabled: true
+        ingress:
+          ingressNamespaces: [traefik]
+
+  database:
+    image: postgres:17
+    ports:
+      - "5432:5432"
+    labels:
+      katenary.v4/network-policy: |-
+        enabled: true

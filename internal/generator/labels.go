@@ -33,3 +33,11 @@ func GetMatchLabels(serviceName, appName string) map[string]string {
 
 	return labels
 }
+
+// GetAppSelectorLabels returns the selector labels shared by every pod of the
+// application (without the component label). It is used by NetworkPolicies.
+func GetAppSelectorLabels(appName string) map[string]string {
+	return map[string]string{
+		`__replace_app`: fmt.Sprintf(`{{- include "%s.selectorLabels" . | nindent __indent__ }}`, appName),
+	}
+}

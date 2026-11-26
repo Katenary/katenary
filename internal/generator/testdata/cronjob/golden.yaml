@@ -101,6 +101,8 @@ spec:
       - image: 'fedora:latest'
         imagePullPolicy: IfNotPresent
         name: cron
+        securityContext:
+          allowPrivilegeEscalation: false
 
 ---
 # Source: cronjob/templates/cron/cronjob.yaml

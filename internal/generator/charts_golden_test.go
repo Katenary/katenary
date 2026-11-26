@@ -14,7 +14,9 @@ func TestChartFixtures(t *testing.T) {
 		"depends-on",
 		"ingress",
 		"ingressroute",
+		"networkpolicy",
 		"cronjob",
+		"security",
 		"values",
 	}
 

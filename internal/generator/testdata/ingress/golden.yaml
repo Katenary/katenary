@@ -69,6 +69,8 @@ spec:
           name: http
         - containerPort: 443
           name: https
+        securityContext:
+          allowPrivilegeEscalation: false
 
 ---
 # Source: ingress/templates/web/ingress.yaml

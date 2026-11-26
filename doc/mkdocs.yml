@@ -46,6 +46,7 @@ nav:
   - "Home": index.md
   - usage.md
   - labels.md
+  - Network policies: network-policies.md
   - Migrating to v4: migrate-v4.md
   - Behind the scene:
       - coding.md

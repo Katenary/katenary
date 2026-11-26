@@ -102,6 +102,8 @@ func NewDeployment(service types.ServiceConfig, chart *HelmChart) *Deployment {
 		boundEnvVar:      []string{},
 	}
 
+	dep.Spec.Template.Spec.SecurityContext = podSecurityContext(service)
+
 	// add containers
 	dep.AddContainer(service)
 
@@ -140,8 +142,9 @@ func (d *Deployment) AddContainer(service types.ServiceConfig) {
 		Resources: corev1.ResourceRequirements{
 			Requests: corev1.ResourceList{},
 		},
-		Command: service.Entrypoint,
-		Args:    service.Command,
+		Command:         service.Entrypoint,
+		Args:            service.Command,
+		SecurityContext: containerSecurityContext(service),
 	}
 	if _, ok := d.chart.Values[service.Name]; !ok {
 		d.chart.Values[service.Name] = NewValue(service, d.isMainApp)

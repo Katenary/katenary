@@ -35,9 +35,11 @@ Katenary will try to _Unmarshal_ these labels.
 | `katenary.v4/ingress`          | Ingress rules to be added to the service.                        | `object`                         |
 | `katenary.v4/main-app`         | Mark the service as the main app.                                | `bool`                           |
 | `katenary.v4/map-env`          | Map env vars from the service to the deployment.                 | `map[string]string`              |
+| `katenary.v4/network-policy`   | Generate a NetworkPolicy for the service.                        | `object`                         |
 | `katenary.v4/ports`            | Ports to be added to the service.                                | `[]uint32`                       |
 | `katenary.v4/same-pod`         | Move the same-pod deployment to the target deployment.           | `string`                         |
 | `katenary.v4/secrets`          | Env vars to be set as secrets.                                   | `[]string`                       |
+| `katenary.v4/security-context` | Pod and container security context.                              | `object`                         |
 | `katenary.v4/values`           | Environment variables to be added to the values.yaml             | `[]string or map[string]string`  |
 | `katenary.v4/values-from`      | Add values from another service.                                 | `map[string]string`              |
 
@@ -406,6 +408,55 @@ labels:
 ```
 
 
+### katenary.v4/network-policy
+
+Generate a NetworkPolicy for the service.
+
+**Type**:  `object`
+
+Generate a Kubernetes NetworkPolicy that denies ingress and egress by
+default, then allows the expected flows:
+
+- ingress from the other pods of the chart (`fromSameApp`, default `true`)
+- ingress from the ingress controller when the service has an ingress
+  (`fromIngress`, default `true`); list the controller namespaces in
+  `ingressNamespaces`, otherwise any pod of the chart namespace is allowed
+- egress to the cluster DNS (`allowDNS`, default `true`, in `kube-system`
+  unless `dnsNamespace` is set)
+- egress to the other pods of the chart (`allowSameApp`, default `true`)
+- egress to the services declared in `depends_on`
+  (`allowDependencies`, default `true`)
+- HTTPS egress for the Kubernetes API used by `depends_on`
+  (`allowKubernetesAPI`, default `true`)
+- internet egress only when `allowInternet: true`
+
+`extraPeers` accepts raw NetworkPolicy peers (`podSelector`,
+`namespaceSelector`, `ipBlock`) for both directions.
+
+See the [Network policies](network-policies.md) page for a complete
+explanation and example.
+
+**Example:**
+
+```yaml
+web:
+  image: nginx
+  depends_on:
+    - database
+  labels:
+    katenary.v4/ingress: |-
+      hostname: my.test.tld
+      port: 80
+      enabled: true
+    katenary.v4/network-policy: |-
+      enabled: true
+      ingress:
+        ingressNamespaces: [traefik]
+      egress:
+        allowInternet: true
+```
+
+
 ### katenary.v4/ports
 
 Ports to be added to the service.
@@ -476,6 +527,45 @@ env:
 labels:
   katenary.v4/secrets: |-
     - PASSWORD
+```
+
+
+### katenary.v4/security-context
+
+Pod and container security context.
+
+**Type**:  `object`
+
+Configure the pod and container security contexts. The container
+`allowPrivilegeEscalation` is set to `false` by default, and privileged
+containers (compose `privileged: true`) get it set to `true`.
+
+The label has two sections:
+
+- `pod`: `fsGroup`, `fsGroupChangePolicy`, `supplementalGroups`,
+  `runAsUser`, `runAsGroup`, `runAsNonRoot`, `seccompProfile`, `sysctls`
+- `container`: `allowPrivilegeEscalation`, `privileged`,
+  `readOnlyRootFilesystem`, `runAsUser`, `runAsGroup`, `runAsNonRoot`,
+  `capabilities`, `seccompProfile`
+
+**Example:**
+
+```yaml
+web:
+  image: nginx
+  read_only: true
+  labels:
+    katenary.v4/security-context: |-
+      pod:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      container:
+        runAsNonRoot: true
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: [ALL]
+        seccompProfile:
+          type: RuntimeDefault
 ```
 
 
