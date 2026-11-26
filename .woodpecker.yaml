@@ -166,7 +166,7 @@ steps:
         mv nsis/katenary-windows-setup.exe dist/katenary-windows-setup.exe
 
   - name: release-upload
-    image: curlimages/curl:8
+    image: curlimages/curl:8.23.0
     when:
       - event: tag
     environment:
@@ -246,7 +246,7 @@ steps:
   # `latest`/`stable`/`develop` are RTD version slugs; a branch name also works.
   # Check the project's versions page: /projects/katenary/versions/
   - name: trigger-readthedocs
-    image: curlimages/curl:8
+    image: curlimages/curl:8.23.0
     when:
       - event: push
         branch: [master, develop]
