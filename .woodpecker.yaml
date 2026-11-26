@@ -237,3 +237,35 @@ steps:
         from_secret: registry_user
       password:
         from_secret: registry_password
+
+  # ---------------------------------------------------------------------------
+  # Read the Docs (push + tag only; never pull requests)
+  # ---------------------------------------------------------------------------
+  # RTD's generic API integration takes the integration token in the POST body
+  # (`token=...`) and the branch/version to build in `branches=...`.
+  # `latest`/`stable`/`develop` are RTD version slugs; a branch name also works.
+  # Check the project's versions page: /projects/katenary/versions/
+  - name: trigger-readthedocs
+    image: curlimages/curl:8
+    when:
+      - event: push
+        branch: [master, develop]
+      - event: tag
+    environment:
+      RTD_TOKEN:
+        from_secret: rtd_secret
+    commands:
+      - |
+        set -eu
+        if [ -n "$${CI_COMMIT_TAG:-}" ]; then
+          RTD_VERSION=stable
+        elif [ "$${CI_COMMIT_BRANCH:-}" = "master" ]; then
+          RTD_VERSION=latest
+        else
+          RTD_VERSION="$${CI_COMMIT_BRANCH:-}"
+        fi
+        echo "Read the Docs: build version $${RTD_VERSION}"
+        curl -fsS -X POST \
+          --data-urlencode "token=$${RTD_TOKEN}" \
+          --data-urlencode "branches=$${RTD_VERSION}" \
+          https://app.readthedocs.org/api/v2/webhook/katenary/336933/
