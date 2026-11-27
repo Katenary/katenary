@@ -1,0 +1,10 @@
+name: e2e-cronjob
+
+services:
+  cron:
+    image: busybox:1.38.0
+    labels:
+      katenary.v4/cronjob: |-
+        command: echo cronjob-ok
+        schedule: "*/5 * * * *"
+        rbac: true

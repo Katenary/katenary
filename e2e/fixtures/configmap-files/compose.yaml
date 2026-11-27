@@ -8,7 +8,9 @@ services:
     volumes:
       - ./conf/default.conf:/etc/nginx/conf.d/default.conf
       - ./message.txt:/usr/share/nginx/html/message.txt
+      - ./static:/usr/share/nginx/html/static
     labels:
       katenary.v4/configmap-files: |-
         - ./conf/default.conf
         - ./message.txt
+        - ./static

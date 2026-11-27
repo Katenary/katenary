@@ -1,0 +1,24 @@
+name: e2e-exchange-volumes
+
+services:
+  web:
+    image: nginx:1.29
+    ports:
+      - "80:80"
+    labels:
+      katenary.v4/exchange-volumes: |-
+        - name: shared
+          mountPath: /usr/share/nginx/html
+          init: echo from-exchange > /usr/share/nginx/html/index.html
+
+  sidecar:
+    image: busybox:1.38.0
+    command:
+      - sh
+      - -c
+      - sleep 3600
+    labels:
+      katenary.v4/same-pod: web
+      katenary.v4/exchange-volumes: |-
+        - name: shared
+          mountPath: /shared

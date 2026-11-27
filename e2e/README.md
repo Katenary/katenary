@@ -94,11 +94,13 @@ Environment variables:
 | `20-depends-on` | Kubernetes API method: RBAC objects, init container waits for the dependency readiness, pod starts after it |
 | `21-depends-on-legacy` | Legacy method: `busybox` + `nc` init container waits for a delayed TCP service |
 | `30-same-pod` | One deployment for both services, merged containers, shared volume and PVC, merged service ports |
-| `40-configmap-files` | ConfigMap generated from a root file and a nested file, `subPath` mounts, content served by nginx |
+| `40-configmap-files` | ConfigMaps generated from a nested file, a root file and a directory, `subPath` and directory mounts, content served by nginx |
 | `50-networkpolicy` | NetworkPolicies generated, depends-on init container reaches the Kubernetes API, app reaches its dependency, unlabelled pod is blocked |
 | `60-env-from` | `env-from` injects another service's ConfigMap, `values-from` binds a Secret env var, secret/configmap contents |
 | `70-persistence` | PVC bound, data written to the volume survives a pod recreation |
 | `80-if` | `katenary.v4/if` removes and restores the service resources with `--set feature.enabled=false/true` |
+| `90-exchange-volumes` | Same-pod exchange volume with an init command, shared at different paths by both containers |
+| `95-cronjob` | CronJob schedule, RBAC objects, and a manually triggered job that runs the command |
 
 ## Cluster layout
 
