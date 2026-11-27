@@ -496,8 +496,9 @@
     - egress to the other pods of the chart (`allowSameApp`, default `true`)
     - egress to the services declared in `depends_on`
       (`allowDependencies`, default `true`)
-    - HTTPS egress for the Kubernetes API used by `depends_on`
-      (`allowKubernetesAPI`, default `true`)
+    - TCP 443 and the backend API server port 6443 for the Kubernetes API
+      used by `depends_on` init containers (some CNIs evaluate the policy
+      after the service DNAT)
     - internet egress only when `allowInternet: true`
 
     `extraPeers` accepts raw NetworkPolicy peers (`podSelector`,

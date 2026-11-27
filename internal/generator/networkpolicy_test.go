@@ -81,8 +81,10 @@ egress:
 		t.Errorf("unexpected dependency ports: %+v", policy.Spec.Egress[2].Ports)
 	}
 	api := policy.Spec.Egress[3]
-	if len(api.Ports) != 1 || api.Ports[0].Port.IntValue() != 443 {
-		t.Errorf("expected the Kubernetes API HTTPS rule, got %+v", api)
+	if len(api.Ports) != 2 ||
+		api.Ports[0].Port.IntValue() != 443 ||
+		api.Ports[1].Port.IntValue() != 6443 {
+		t.Errorf("expected the Kubernetes API rules on 443 and 6443, got %+v", api.Ports)
 	}
 	internet := policy.Spec.Egress[4].To
 	if len(internet) != 2 || internet[0].IPBlock == nil || internet[0].IPBlock.CIDR != "0.0.0.0/0" {

@@ -137,9 +137,11 @@ func NewNetworkPolicy(service types.ServiceConfig, chart *HelmChart, project *ty
 	}
 
 	if boolValue(config.Egress.AllowKubernetesAPI, true) {
-		// The depends_on init containers call the Kubernetes API. Allow HTTPS
-		// egress so those checks keep working; disable it when explicit peers
-		// are configured.
+		// The depends_on init containers call the Kubernetes API. Allow the
+		// service port (443) and the backend API server port (6443 with
+		// kubeadm/kind): some CNIs evaluate the egress policy after the
+		// service DNAT, so only allowing 443 would block the init container.
+		// Disable it when explicit peers are configured.
 		policy.Spec.Egress = append(policy.Spec.Egress, networkingv1.NetworkPolicyEgressRule{
 			To: []networkingv1.NetworkPolicyPeer{
 				{IPBlock: &networkingv1.IPBlock{CIDR: "0.0.0.0/0"}},
@@ -147,6 +149,7 @@ func NewNetworkPolicy(service types.ServiceConfig, chart *HelmChart, project *ty
 			},
 			Ports: []networkingv1.NetworkPolicyPort{
 				{Port: &intstr.IntOrString{Type: intstr.Int, IntVal: 443}, Protocol: protocolPtr(corev1.ProtocolTCP)},
+				{Port: &intstr.IntOrString{Type: intstr.Int, IntVal: 6443}, Protocol: protocolPtr(corev1.ProtocolTCP)},
 			},
 		})
 	}

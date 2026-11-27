@@ -53,7 +53,7 @@ With the default configuration, a policy selects the service pod and:
 | Egress | cluster DNS (`kube-system`, UDP/TCP 53) |
 | Egress | other pods of the chart |
 | Egress | the services declared in `depends_on`, on their ports |
-| Egress | HTTPS (TCP 443) for the Kubernetes API used by `depends_on` init containers |
+| Egress | TCP 443 and the backend API server port 6443 for the Kubernetes API used by `depends_on` init containers |
 | Egress | internet **only** with `allowInternet: true` |
 
 The ingress controller namespaces are configured with `ingressNamespaces`
@@ -116,14 +116,14 @@ chart (including `web` and `api`), not just the same service.
 | Direction | Allowed | Blocked (examples) |
 | --- | --- | --- |
 | Ingress | chart pods to `web:80`; pods of the `traefik` namespace to `web:80` | Internet directly to `web:80`; other namespaces; any other port |
-| Egress | DNS (`kube-dns:53`); chart pods (all ports); `api:8080` (`depends_on`); Kubernetes API `:443`; `203.0.113.0/24:443` | Internet on `:80`/`:443`; `api` on another port; any other external network |
+| Egress | DNS (`kube-dns:53`); chart pods (all ports); `api:8080` (`depends_on`); Kubernetes API `:443`/`:6443`; `203.0.113.0/24:443` | Internet on `:80`/`:443`; `api` on another port; any other external network |
 
 **`api` policy**
 
 | Direction | Allowed | Blocked (examples) |
 | --- | --- | --- |
 | Ingress | chart pods to `api:8080` | Traefik to `api:8080`; Internet; other namespaces; any other port |
-| Egress | DNS (`kube-dns:53`); chart pods (all ports); Kubernetes API `:443` | Internet; `203.0.113.0/24`; any other external network |
+| Egress | DNS (`kube-dns:53`); chart pods (all ports); Kubernetes API `:443`/`:6443` | Internet; `203.0.113.0/24`; any other external network |
 
 Concrete checks:
 
@@ -137,7 +137,7 @@ Concrete checks:
 | `api` → `203.0.113.0/24:443` | ❌ blocked (only `web` has that peer) |
 | `web` → `database:5432` | ❌ blocked, unless `database` is in `depends_on` or listed in `extraPeers` |
 | DNS resolution from `web` or `api` | ✅ allowed (kube-dns:53) |
-| `web` → Kubernetes API `:443` | ✅ allowed (`depends_on` init container) |
+| `web` → Kubernetes API `:443`/`:6443` | ✅ allowed (`depends_on` init container) |
 
 Containers of a `same-pod` service share their network namespace, so their
 localhost traffic is not filtered by the policy.
@@ -161,7 +161,7 @@ labels:
       dnsNamespace: kube-system
       allowSameApp: true
       allowDependencies: true
-      allowKubernetesAPI: true   # TCP 443; disable if explicit API peers are used
+      allowKubernetesAPI: true   # TCP 443 and 6443; disable if explicit API peers are used
       allowInternet: false
       extraPeers:
         - ipBlock:
@@ -169,9 +169,11 @@ labels:
             except: [198.51.100.42/32]
 ```
 
-A `depends_on` init container calls the Kubernetes API by default. If you
-disable `allowKubernetesAPI`, add an `ipBlock` (or the appropriate peer) for
-your API server, otherwise the dependency wait will fail.
+A `depends_on` init container calls the Kubernetes API by default. The backend
+API server port (6443 with kubeadm/kind) is allowed in addition to the service
+port 443, because some CNIs evaluate the egress policy after the service DNAT.
+If you disable `allowKubernetesAPI`, add an `ipBlock` (or the appropriate peer)
+for your API server, otherwise the dependency wait will fail.
 
 ### Same-pod services
 
