@@ -1,0 +1,14 @@
+name: e2e-configmap-files
+
+services:
+  web:
+    image: nginx:1.29
+    ports:
+      - "80:80"
+    volumes:
+      - ./conf/default.conf:/etc/nginx/conf.d/default.conf
+      - ./message.txt:/usr/share/nginx/html/message.txt
+    labels:
+      katenary.v4/configmap-files: |-
+        - ./conf/default.conf
+        - ./message.txt

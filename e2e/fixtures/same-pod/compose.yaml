@@ -1,0 +1,25 @@
+name: e2e-same-pod
+
+services:
+  web:
+    image: nginx:1.29
+    ports:
+      - "80:80"
+    volumes:
+      - shared:/usr/share/nginx/html
+
+  writer:
+    image: busybox:1.38.0
+    command:
+      - sh
+      - -c
+      - echo same-pod > /shared/index.html; sleep 3600
+    ports:
+      - "9000:9000"
+    volumes:
+      - shared:/shared
+    labels:
+      katenary.v4/same-pod: web
+
+volumes:
+  shared:

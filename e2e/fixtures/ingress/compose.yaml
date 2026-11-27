@@ -1,0 +1,27 @@
+name: e2e-ingress
+
+services:
+  web:
+    image: nginx:1.29
+    ports:
+      - "80:80"
+    labels:
+      katenary.v4/ingress: |-
+        hostname: web.127.0.0.1.nip.io
+        port: 80
+        enabled: true
+        tls:
+          enabled: false
+
+  api:
+    image: nginx:1.29
+    ports:
+      - "80:80"
+    labels:
+      katenary.v4/ingress: |-
+        hostname: api.127.0.0.1.nip.io
+        port: 80
+        enabled: true
+        type: ingressroute
+        tls:
+          enabled: false

@@ -1,0 +1,23 @@
+name: e2e-depends-on
+
+services:
+  db:
+    image: busybox:1.38.0
+    command:
+      - sh
+      - -c
+      - sleep 12; touch /tmp/ready; sleep 3600
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /tmp/ready"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+      start_period: 1s
+
+  web:
+    image: nginx:1.29
+    ports:
+      - "80:80"
+    depends_on:
+      db:
+        condition: service_healthy

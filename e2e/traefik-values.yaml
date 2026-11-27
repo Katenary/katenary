@@ -1,0 +1,29 @@
+# Traefik values for the local kind cluster.
+#
+# DaemonSet + hostPort is the simplest way to expose the entrypoints on the
+# kind node: run.sh maps the host ports to the node ports declared in kind.yaml.
+deployment:
+  kind: DaemonSet
+
+ports:
+  web:
+    hostPort: 80
+  websecure:
+    hostPort: 443
+
+ingressClass:
+  enabled: true
+  isDefaultClass: true
+
+providers:
+  kubernetesCRD:
+    enabled: true
+  kubernetesIngress:
+    enabled: true
+
+api:
+  dashboard: false
+
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false

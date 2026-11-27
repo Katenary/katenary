@@ -1,0 +1,24 @@
+# kind cluster used by `make e2e`.
+#
+# The host ports are mapped to the control plane node. On rootless podman they
+# must be greater than or equal to net.ipv4.ip_unprivileged_port_start. When
+# needed, run.sh generates a temporary copy of this file with other host ports
+# (E2E_HTTP_PORT / E2E_HTTPS_PORT). See e2e/README.md.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: katenary-e2e
+nodes:
+  - role: control-plane
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
+    extraPortMappings:
+      - containerPort: 80
+        hostPort: 80
+        protocol: TCP
+      - containerPort: 443
+        hostPort: 443
+        protocol: TCP

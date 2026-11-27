@@ -49,6 +49,7 @@ BROWSER=$(shell command -v epiphany || echo xdg-open)
 include makefiles/build.mk
 include makefiles/containers.mk
 include makefiles/doc.mk
+include makefiles/e2e.mk
 include makefiles/gpg.mk
 include makefiles/packager.mk
 include makefiles/test.mk
