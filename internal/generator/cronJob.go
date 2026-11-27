@@ -98,9 +98,9 @@ func NewCronJob(service types.ServiceConfig, chart *HelmChart) (*CronJob, *RBAC)
 								RestartPolicy: corev1.RestartPolicyOnFailure,
 								Containers: []corev1.Container{
 									{
-										Name:  "cronjob",
-										Image: "{{ .Values." + service.Name + ".cronjob.repository.image }}:{{ default .Values." + service.Name + ".cronjob.repository.tag \"latest\" }}",
-										Args:  commandParts,
+										Name:    "cronjob",
+										Image:   "{{ .Values." + service.Name + ".cronjob.repository.image }}:{{ default .Values." + service.Name + ".cronjob.repository.tag \"latest\" }}",
+										Command: commandParts,
 									},
 								},
 							},

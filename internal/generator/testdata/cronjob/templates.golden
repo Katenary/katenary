@@ -99,7 +99,7 @@ spec:
         metadata: {}
         spec:
           containers:
-          - args:
+          - command:
             - sh
             - -c
             - echo hello

@@ -28,8 +28,11 @@ rbac: false`).build()
 	}
 
 	container := cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers[0]
-	if len(container.Args) != 3 || container.Args[0] != "sh" || container.Args[1] != "-c" || container.Args[2] != "echo hello" {
-		t.Errorf("expected args [sh -c echo hello], got %v", container.Args)
+	if len(container.Command) != 3 || container.Command[0] != "sh" || container.Command[1] != "-c" || container.Command[2] != "echo hello" {
+		t.Errorf("expected command [sh -c echo hello], got %v", container.Command)
+	}
+	if len(container.Args) != 0 {
+		t.Errorf("expected no args, got %v", container.Args)
 	}
 	if cronJob.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy != corev1.RestartPolicyOnFailure {
 		t.Errorf("expected restartPolicy OnFailure, got %s", cronJob.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy)
