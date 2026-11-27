@@ -94,6 +94,16 @@ wait_pod_ready() {
         pod --timeout=180s >/dev/null
 }
 
+# wait_available waits for the deployment of a component to be Available. It
+# ignores terminating pods from a previous revision, unlike a pod selector.
+wait_available() {
+    local component="$1"
+    kubectl_ns wait \
+        --for=condition=Available \
+        --selector="app.kubernetes.io/component=$component" \
+        deployment --timeout=180s >/dev/null
+}
+
 pod_name() {
     local component="$1"
     kubectl_ns get pods \

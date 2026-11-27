@@ -1,0 +1,9 @@
+name: e2e-if
+
+services:
+  web:
+    image: nginx:1.29
+    ports:
+      - "80:80"
+    labels:
+      katenary.v4/if: feature.enabled

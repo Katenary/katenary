@@ -95,6 +95,10 @@ Environment variables:
 | `21-depends-on-legacy` | Legacy method: `busybox` + `nc` init container waits for a delayed TCP service |
 | `30-same-pod` | One deployment for both services, merged containers, shared volume and PVC, merged service ports |
 | `40-configmap-files` | ConfigMap generated from a root file and a nested file, `subPath` mounts, content served by nginx |
+| `50-networkpolicy` | NetworkPolicies generated, depends-on init container reaches the Kubernetes API, app reaches its dependency, unlabelled pod is blocked |
+| `60-env-from` | `env-from` injects another service's ConfigMap, `values-from` binds a Secret env var, secret/configmap contents |
+| `70-persistence` | PVC bound, data written to the volume survives a pod recreation |
+| `80-if` | `katenary.v4/if` removes and restores the service resources with `--set feature.enabled=false/true` |
 
 ## Cluster layout
 

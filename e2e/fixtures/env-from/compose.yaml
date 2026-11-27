@@ -1,0 +1,27 @@
+name: e2e-env-from
+
+services:
+  web:
+    image: busybox:1.38.0
+    command:
+      - sh
+      - -c
+      - sleep 3600
+    environment:
+      FOO: bar
+      PASSWORD: topsecret
+    labels:
+      katenary.v4/secrets: |-
+        - PASSWORD
+
+  db:
+    image: busybox:1.38.0
+    command:
+      - sh
+      - -c
+      - sleep 3600
+    labels:
+      katenary.v4/env-from: |-
+        - web
+      katenary.v4/values-from: |-
+        DB_PASSWORD: web.PASSWORD
