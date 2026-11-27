@@ -9,8 +9,8 @@ export E2E_ROOT REPO_ROOT
 export CACHE_DIR="${CACHE_DIR:-$REPO_ROOT/.cache/e2e}"
 export KATENARY_BIN="${KATENARY_BIN:-$CACHE_DIR/katenary}"
 export E2E_CLUSTER="${E2E_CLUSTER:-katenary-e2e}"
-export E2E_HTTP_PORT="${E2E_HTTP_PORT:-80}"
-export E2E_HTTPS_PORT="${E2E_HTTPS_PORT:-443}"
+export E2E_HTTP_PORT="${E2E_HTTP_PORT:-9080}"
+export E2E_HTTPS_PORT="${E2E_HTTPS_PORT:-9443}"
 export E2E_KEEP="${E2E_KEEP:-0}"
 export E2E_RECREATE="${E2E_RECREATE:-0}"
 export TRAEFIK_REPO="${TRAEFIK_REPO:-https://traefik.github.io/charts}"
@@ -41,7 +41,7 @@ Scenarios can be selected by name or substring, for example:
   $0 depends-on same-pod
 
 Environment:
-  E2E_HTTP_PORT=8080 E2E_HTTPS_PORT=8443   Use unprivileged host ports
+  E2E_HTTP_PORT=9080 E2E_HTTPS_PORT=9443   Override the default host ports
   E2E_KEEP=1                               Keep the namespaces
   E2E_RECREATE=1                           Recreate the cluster
   E2E_CLUSTER=name                         kind cluster name
@@ -93,6 +93,11 @@ check_host_ports() {
 The host port $port cannot be bound by a rootless process:
   net.ipv4.ip_unprivileged_port_start = $port_start
 
+The harness uses unprivileged ports by default:
+  E2E_HTTP_PORT=9080 E2E_HTTPS_PORT=9443 make e2e
+
+If you really want port 80/443, either:
+
 Option A - allow privileged ports (temporary, until reboot):
   sudo sysctl -w net.ipv4.ip_unprivileged_port_start=80
 
@@ -100,9 +105,6 @@ Option A - persistent:
   echo 'net.ipv4.ip_unprivileged_port_start=80' | \\
     sudo tee /etc/sysctl.d/99-kind-katenary.conf
   sudo sysctl --system
-
-Option B - use unprivileged ports:
-  E2E_HTTP_PORT=8080 E2E_HTTPS_PORT=8443 make e2e
 
 Note: lowering the sysctl lets any local user bind ports below 1024.
 EOF
@@ -122,11 +124,11 @@ host_port_in_use() {
 mkdir -p "$CACHE_DIR"
 
 kind_config="$E2E_ROOT/kind.yaml"
-if [[ "$E2E_HTTP_PORT" != 80 || "$E2E_HTTPS_PORT" != 443 ]]; then
+if [[ "$E2E_HTTP_PORT" != 9080 || "$E2E_HTTPS_PORT" != 9443 ]]; then
     kind_config="$CACHE_DIR/kind.yaml"
     sed \
-        -e "s/hostPort: 80\$/hostPort: ${E2E_HTTP_PORT}/" \
-        -e "s/hostPort: 443\$/hostPort: ${E2E_HTTPS_PORT}/" \
+        -e "s/hostPort: 9080\$/hostPort: ${E2E_HTTP_PORT}/" \
+        -e "s/hostPort: 9443\$/hostPort: ${E2E_HTTPS_PORT}/" \
         "$E2E_ROOT/kind.yaml" >"$kind_config"
 fi
 

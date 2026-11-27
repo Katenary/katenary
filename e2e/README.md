@@ -13,19 +13,19 @@ generated resources with `kubectl`, `helm` and `curl`.
 - `kind`, `kubectl`, `helm`, `go` and `curl` in `PATH`
 - a working DNS resolver for `*.127.0.0.1.nip.io` (used as ingress hostnames)
 
-### Rootless podman and the 80/443 ports
+### Rootless podman and the ports
 
-kind maps host ports to the node. With rootless podman, the kernel refuses to
-bind ports below `net.ipv4.ip_unprivileged_port_start` (usually `1024`):
+The harness maps host ports **9080** and **9443** to the node by default. These
+are unprivileged, so rootless podman works without changing anything on the
+system.
+
+If you want clean URLs without `:9080`, you can use ports 80/443. Rootless
+podman cannot bind them unless `net.ipv4.ip_unprivileged_port_start` is lowered:
 
 ```console
 $ sysctl net.ipv4.ip_unprivileged_port_start
 net.ipv4.ip_unprivileged_port_start = 1024
 ```
-
-You have two options.
-
-**Option A — allow privileged ports (default in `kind.yaml`).**
 
 Temporary, until the next reboot:
 
@@ -41,21 +41,15 @@ echo 'net.ipv4.ip_unprivileged_port_start=80' |
 sudo sysctl --system
 ```
 
-This lets any local user bind ports below 1024. Use option B if you do not want
-that.
-
-**Option B — use unprivileged host ports.**
+Then run:
 
 ```bash
-E2E_HTTP_PORT=8080 E2E_HTTPS_PORT=8443 make e2e
+E2E_HTTP_PORT=80 E2E_HTTPS_PORT=443 make e2e
 ```
 
-The generated URLs then use `:8080`, and `e2e/run.sh` generates a temporary
-kind configuration with the right `extraPortMappings`. The Traefik entrypoints
-inside the node stay on 80/443.
-
-The runner checks the sysctl before creating the cluster and prints these
-instructions when the selected ports cannot be bound.
+This lets any local user bind ports below 1024; this is why it is **not** the
+default. `e2e/run.sh` checks the sysctl before creating the cluster and prints
+these instructions when a selected port cannot be bound.
 
 ## Usage
 
@@ -85,8 +79,8 @@ Environment variables:
 | Variable | Default | Description |
 |---|---|---|
 | `E2E_CLUSTER` | `katenary-e2e` | kind cluster name |
-| `E2E_HTTP_PORT` | `80` | host port mapped to the node HTTP port |
-| `E2E_HTTPS_PORT` | `443` | host port mapped to the node HTTPS port |
+| `E2E_HTTP_PORT` | `9080` | host port mapped to the node HTTP port |
+| `E2E_HTTPS_PORT` | `9443` | host port mapped to the node HTTPS port |
 | `E2E_KEEP` | `0` | keep the scenario namespaces |
 | `E2E_RECREATE` | `0` | delete and recreate the cluster |
 | `TRAEFIK_CHART_VERSION` | latest | pin the Traefik chart version |
@@ -105,11 +99,11 @@ Environment variables:
 ## Cluster layout
 
 - Cluster name: `katenary-e2e`, context `kind-katenary-e2e`.
-- One control-plane node with host ports 80/443 (or `E2E_HTTP_PORT` /
+- One control-plane node with host ports 9080/9443 (or `E2E_HTTP_PORT` /
   `E2E_HTTPS_PORT`) mapped to the node.
 - Traefik installed in the `traefik` namespace as a DaemonSet with
-  `hostPort` 80/443, both Ingress and CRD providers enabled, and a default
-  `IngressClass`.
+  `hostPort` 80/443 inside the node, both Ingress and CRD providers enabled,
+  and a default `IngressClass`.
 - Ingress hostnames use `*.127.0.0.1.nip.io`, which resolves to `127.0.0.1`.
 - Fixtures live in `e2e/fixtures/<name>/compose.yaml`.
 - Scenarios are executable scripts in `e2e/scenarios/`, sourced with

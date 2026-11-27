@@ -9,8 +9,8 @@ REPO_ROOT="${REPO_ROOT:-$(cd "$E2E_ROOT/.." && pwd)}"
 CACHE_DIR="${CACHE_DIR:-$REPO_ROOT/.cache/e2e}"
 KATENARY_BIN="${KATENARY_BIN:-$CACHE_DIR/katenary}"
 
-: "${E2E_HTTP_PORT:=80}"
-: "${E2E_HTTPS_PORT:=443}"
+: "${E2E_HTTP_PORT:=9080}"
+: "${E2E_HTTPS_PORT:=9443}"
 
 RELEASE="${RELEASE:-rel}"
 
