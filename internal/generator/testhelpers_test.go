@@ -176,6 +176,12 @@ func testGolden(name string) string {
 	return testdataPath(name, "golden.yaml")
 }
 
+// testTemplatesGolden returns the golden file path of the unrendered template
+// sources for a test case: testdata/<name>/templates.golden.
+func testTemplatesGolden(name string) string {
+	return testdataPath(name, "templates.golden")
+}
+
 // convertFixture converts a compose fixture into chartDir.
 func convertFixture(t *testing.T, composeFile, chartDir string) {
 	t.Helper()

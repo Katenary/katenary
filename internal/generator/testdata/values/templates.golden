@@ -1,0 +1,214 @@
+# Source: templates/NOTES.txt
+Thanks to have installed {{ .Chart.Name }} {{ .Chart.Version }} as {{ .Release.Name }} ({{.Chart.AppVersion }}).
+
+# Get release information
+
+To learn more about the release, try:
+
+  $ helm -n {{ .Release.Namespace }} status {{ .Release.Name }}
+  $ helm -n {{ .Release.Namespace }} get values {{ .Release.Name }}
+  $ helm -n {{ .Release.Namespace }} get all {{ .Release.Name }}
+
+# To delete the release
+
+Use helm uninstall command to delete the release. 
+
+  $ helm -n {{ .Release.Namespace }} uninstall {{ .Release.Name }}
+
+Note that some resources may still be in use after a release is deleted. For exemple, PersistentVolumeClaims are not deleted by default for some storage classes or if some annotations are set.
+
+# More information
+
+You can see this notes again by running:
+
+  $ helm -n {{ .Release.Namespace }} get notes {{ .Release.Name }}
+
+{{- $count := 0 -}}
+{{- $listOfURL := "" -}}
+{{- if and .Values.db.ingress .Values.db.ingress.enabled }}
+{{- $count = add1 $count -}}{{- $listOfURL = printf "%s\n- http://%s" $listOfURL (tpl .Values.db.ingress.host .) -}}
+{{- end }}
+{{- if and .Values.web.ingress .Values.web.ingress.enabled }}
+{{- $count = add1 $count -}}{{- $listOfURL = printf "%s\n- http://%s" $listOfURL (tpl .Values.web.ingress.host .) -}}
+{{- end }}
+{{- if gt $count 0 }}
+
+# List of activated ingresses URL:
+{{ $listOfURL }}
+
+You can get these urls with kubectl:
+
+    kubeclt get ingress -n {{ .Release.Namespace }}
+
+{{- end }}
+
+Thanks for using Helm!
+
+# Source: templates/_helpers.tpl
+{{- define "values.fullname" -}}
+{{- if .Values.fullnameOverride -}}
+{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- $name := default .Chart.Name .Values.nameOverride -}}
+{{- if contains $name .Release.Name -}}
+{{- .Release.Name | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "values.name" -}}
+{{- if .Values.nameOverride -}}
+{{- .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "values.labels" -}}
+{{ include "values.selectorLabels" .}}
+{{- if .Chart.Version }}
+{{ printf "helm.sh/chart: %s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- if .Chart.AppVersion }}
+{{ printf "app.kubernetes.io/version: '%s'" .Chart.AppVersion }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end -}}
+
+{{- define "values.selectorLabels" -}}
+{{- $name := default .Chart.Name .Values.nameOverride -}}
+{{ printf "app.kubernetes.io/name: %s" $name }}
+{{ printf "app.kubernetes.io/instance: %s" .Release.Name }}
+{{- end -}}
+
+# Source: templates/db/configmap.yaml
+apiVersion: v1
+data:
+  DB_USER: myuser
+kind: ConfigMap
+metadata:
+  annotations:
+    katenary.io/compose-hash: 88a5d466b9b52d55fe3dc096e0d148c3ec6959c0
+    katenary.io/version: master
+  labels:
+    {{- include "values.labels" . | nindent 4 }}
+    app.kubernetes.io/component: db
+  name: '{{ include "values.fullname" . }}-db'
+
+# Source: templates/db/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    katenary.io/compose-hash: 88a5d466b9b52d55fe3dc096e0d148c3ec6959c0
+    katenary.io/version: master
+  labels:
+    {{- include "values.labels" . | nindent 4 }}
+    app.kubernetes.io/component: db
+  name: '{{ include "values.fullname" . }}-db'
+spec:
+  replicas: {{ .Values.db.replicas }}
+  selector:
+    matchLabels:
+      {{- include "values.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: db
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        {{- include "values.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: db
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: '{{ include "values.fullname" . }}-db'
+        - configMapRef:
+            name: '{{ include "values.fullname" . }}-web'
+        image: '{{ tpl .Values.db.repository.image $ }}:{{ tpl .Values.db.repository.tag $ | default "latest" }}'
+        imagePullPolicy: {{ .Values.db.imagePullPolicy }}
+        name: db
+        {{- if .Values.db.resources }}
+        resources:
+          {{ .Values.db.resources | toYaml | nindent 10 }}
+        {{- end }}
+        securityContext:
+          allowPrivilegeEscalation: false
+      {{- if .Values.pullSecrets }}
+      imagePullSecrets:
+      {{- .Values.pullSecrets | toYaml | nindent 6 }}
+      {{- end }}
+      {{- if .Values.db.nodeSelector }}
+      nodeSelector:
+        {{- .Values.db.nodeSelector | toYaml | nindent 8 }}
+      {{- end }}
+      {{- if ne .Values.db.serviceAccount "" }}
+      serviceAccountName: {{ .Values.db.serviceAccount | quote }}
+      {{- end }}
+
+# Source: templates/web/configmap.yaml
+apiVersion: v1
+data:
+  BAZ: mapped
+  FOO: '{{ tpl .Values.web.environment.FOO $ }}'
+kind: ConfigMap
+metadata:
+  annotations:
+    katenary.io/compose-hash: 88a5d466b9b52d55fe3dc096e0d148c3ec6959c0
+    katenary.io/version: master
+  labels:
+    {{- include "values.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+  name: '{{ include "values.fullname" . }}-web'
+
+# Source: templates/web/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    katenary.io/compose-hash: 88a5d466b9b52d55fe3dc096e0d148c3ec6959c0
+    katenary.io/version: master
+  labels:
+    {{- include "values.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+  name: '{{ include "values.fullname" . }}-web'
+spec:
+  replicas: {{ .Values.web.replicas }}
+  selector:
+    matchLabels:
+      {{- include "values.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: web
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        {{- include "values.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: web
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: '{{ include "values.fullname" . }}-web'
+        image: '{{ tpl .Values.web.repository.image $ }}:{{ tpl .Values.web.repository.tag $ | default "latest" }}'
+        imagePullPolicy: {{ .Values.web.imagePullPolicy }}
+        name: web
+        {{- if .Values.web.resources }}
+        resources:
+          {{ .Values.web.resources | toYaml | nindent 10 }}
+        {{- end }}
+        securityContext:
+          allowPrivilegeEscalation: false
+      {{- if .Values.pullSecrets }}
+      imagePullSecrets:
+      {{- .Values.pullSecrets | toYaml | nindent 6 }}
+      {{- end }}
+      {{- if .Values.web.nodeSelector }}
+      nodeSelector:
+        {{- .Values.web.nodeSelector | toYaml | nindent 8 }}
+      {{- end }}
+      {{- if ne .Values.web.serviceAccount "" }}
+      serviceAccountName: {{ .Values.web.serviceAccount | quote }}
+      {{- end }}
+

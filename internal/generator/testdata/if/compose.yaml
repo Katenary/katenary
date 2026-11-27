@@ -1,0 +1,24 @@
+name: conditional
+
+services:
+  traefik:
+    image: traefik:3.1
+    ports:
+      - "80:80"
+    labels:
+      katenary.v4/if: proxy.enabled
+
+  api:
+    image: my/api:1.0
+    ports:
+      - "8080:8080"
+    labels:
+      katenary.v4/if: |-
+        condition: proxy.enabled && !maintenance.enabled
+        defaults:
+          proxy.enabled: true
+          maintenance.enabled: false
+      katenary.v4/ingress: |-
+        hostname: api.test.tld
+        port: 8080
+        enabled: true

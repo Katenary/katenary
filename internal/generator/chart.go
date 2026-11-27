@@ -52,6 +52,10 @@ type HelmChart struct {
 	Description  string                    `yaml:"description"`
 	Helper       string                    `yaml:"-"`
 	Dependencies []labelstructs.Dependency `yaml:"dependencies,omitempty"`
+
+	// ConditionFlags are the values.yaml flags referenced by katenary.v4/if
+	// labels. They are used to document the generated values.
+	ConditionFlags map[string]bool `yaml:"-"`
 }
 
 // NewChart creates a new empty chart with the given name.
@@ -69,6 +73,14 @@ func NewChart(name string) *HelmChart {
 		Annotations: map[string]string{
 			labels.AnnotationName("version"): Version,
 		},
+	}
+}
+
+// AddTemplate adds or replaces a template owned by the given service.
+func (chart *HelmChart) AddTemplate(name, servicename string, content []byte) {
+	chart.Templates[name] = &ChartTemplate{
+		Content:     content,
+		Servicename: servicename,
 	}
 }
 
@@ -171,10 +183,7 @@ func (chart *HelmChart) generateConfigMapsAndSecrets(project *types.Project) err
 			sec := NewSecret(s, chart)
 			y, _ := sec.Yaml()
 			name := sec.service.Name
-			chart.Templates[name+".secret.yaml"] = &ChartTemplate{
-				Content:     y,
-				Servicename: s.Name,
-			}
+			chart.AddTemplate(name+".secret.yaml", s.Name, y)
 		}
 
 		// remove secrets from env
@@ -186,10 +195,7 @@ func (chart *HelmChart) generateConfigMapsAndSecrets(project *types.Project) err
 			cm := NewConfigMap(s, chart, false)
 			y, _ := cm.Yaml()
 			name := cm.service.Name
-			chart.Templates[name+".configmap.yaml"] = &ChartTemplate{
-				Content:     y,
-				Servicename: s.Name,
-			}
+			chart.AddTemplate(name+".configmap.yaml", s.Name, y)
 		}
 	}
 	return nil
@@ -249,19 +255,13 @@ func (chart *HelmChart) generateDeployment(service types.ServiceConfig, deployme
 	// create all ingresses
 	if ingress := d.AddIngress(service); ingress != nil {
 		y, _ := ingress.Yaml()
-		chart.Templates[ingress.Filename()] = &ChartTemplate{
-			Content:     y,
-			Servicename: service.Name,
-		}
+		chart.AddTemplate(ingress.Filename(), service.Name, y)
 	}
 
 	// create IngressRoute (Traefik CRD) if specified
 	if ingressRoute := d.AddIngressRoute(service); ingressRoute != nil {
 		y, _ := ingressRoute.Yaml()
-		chart.Templates[ingressRoute.Filename()] = &ChartTemplate{
-			Content:     y,
-			Servicename: service.Name,
-		}
+		chart.AddTemplate(ingressRoute.Filename(), service.Name, y)
 	}
 
 	return nil
@@ -287,27 +287,15 @@ func (chart *HelmChart) setCronJob(service types.ServiceConfig) *CronJob {
 	}
 	cronjob, rbac := NewCronJob(service, chart)
 	y, _ := cronjob.Yaml()
-	chart.Templates[cronjob.Filename()] = &ChartTemplate{
-		Content:     y,
-		Servicename: service.Name,
-	}
+	chart.AddTemplate(cronjob.Filename(), service.Name, y)
 
 	if rbac != nil {
 		y, _ := rbac.RoleBinding.Yaml()
-		chart.Templates[rbac.RoleBinding.Filename()] = &ChartTemplate{
-			Content:     y,
-			Servicename: service.Name,
-		}
+		chart.AddTemplate(rbac.RoleBinding.Filename(), service.Name, y)
 		y, _ = rbac.Role.Yaml()
-		chart.Templates[rbac.Role.Filename()] = &ChartTemplate{
-			Content:     y,
-			Servicename: service.Name,
-		}
+		chart.AddTemplate(rbac.Role.Filename(), service.Name, y)
 		y, _ = rbac.ServiceAccount.Yaml()
-		chart.Templates[rbac.ServiceAccount.Filename()] = &ChartTemplate{
-			Content:     y,
-			Servicename: service.Name,
-		}
+		chart.AddTemplate(rbac.ServiceAccount.Filename(), service.Name, y)
 	}
 
 	return cronjob

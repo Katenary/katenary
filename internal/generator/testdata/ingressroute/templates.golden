@@ -1,0 +1,225 @@
+# Source: templates/NOTES.txt
+Thanks to have installed {{ .Chart.Name }} {{ .Chart.Version }} as {{ .Release.Name }} ({{.Chart.AppVersion }}).
+
+# Get release information
+
+To learn more about the release, try:
+
+  $ helm -n {{ .Release.Namespace }} status {{ .Release.Name }}
+  $ helm -n {{ .Release.Namespace }} get values {{ .Release.Name }}
+  $ helm -n {{ .Release.Namespace }} get all {{ .Release.Name }}
+
+# To delete the release
+
+Use helm uninstall command to delete the release. 
+
+  $ helm -n {{ .Release.Namespace }} uninstall {{ .Release.Name }}
+
+Note that some resources may still be in use after a release is deleted. For exemple, PersistentVolumeClaims are not deleted by default for some storage classes or if some annotations are set.
+
+# More information
+
+You can see this notes again by running:
+
+  $ helm -n {{ .Release.Namespace }} get notes {{ .Release.Name }}
+
+{{- $count := 0 -}}
+{{- $listOfURL := "" -}}
+{{- if and .Values.web.ingress .Values.web.ingress.enabled }}
+{{- $count = add1 $count -}}{{- $listOfURL = printf "%s\n- http://%s" $listOfURL (tpl .Values.web.ingress.host .) -}}
+{{- end }}
+{{- if gt $count 0 }}
+
+# List of activated ingresses URL:
+{{ $listOfURL }}
+
+You can get these urls with kubectl:
+
+    kubeclt get ingress -n {{ .Release.Namespace }}
+
+{{- end }}
+
+Thanks for using Helm!
+
+# Source: templates/_helpers.tpl
+{{- define "ingressroute.fullname" -}}
+{{- if .Values.fullnameOverride -}}
+{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- $name := default .Chart.Name .Values.nameOverride -}}
+{{- if contains $name .Release.Name -}}
+{{- .Release.Name | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "ingressroute.name" -}}
+{{- if .Values.nameOverride -}}
+{{- .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "ingressroute.labels" -}}
+{{ include "ingressroute.selectorLabels" .}}
+{{- if .Chart.Version }}
+{{ printf "helm.sh/chart: %s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- if .Chart.AppVersion }}
+{{ printf "app.kubernetes.io/version: '%s'" .Chart.AppVersion }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end -}}
+
+{{- define "ingressroute.selectorLabels" -}}
+{{- $name := default .Chart.Name .Values.nameOverride -}}
+{{ printf "app.kubernetes.io/name: %s" $name }}
+{{ printf "app.kubernetes.io/instance: %s" .Release.Name }}
+{{- end -}}
+
+# Source: templates/web/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    katenary.io/compose-hash: b181c3cf03c4ad2367db303974abefc6e44c3cd3
+    katenary.io/version: master
+  labels:
+    {{- include "ingressroute.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+  name: '{{ include "ingressroute.fullname" . }}-web'
+spec:
+  replicas: {{ .Values.web.replicas }}
+  selector:
+    matchLabels:
+      {{- include "ingressroute.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: web
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        {{- include "ingressroute.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: web
+    spec:
+      containers:
+      - image: '{{ tpl .Values.web.repository.image $ }}:{{ tpl .Values.web.repository.tag $ | default "latest" }}'
+        imagePullPolicy: {{ .Values.web.imagePullPolicy }}
+        name: web
+        ports:
+        - containerPort: 80
+          name: http
+        {{- if .Values.web.resources }}
+        resources:
+          {{ .Values.web.resources | toYaml | nindent 10 }}
+        {{- end }}
+        securityContext:
+          allowPrivilegeEscalation: false
+      {{- if .Values.pullSecrets }}
+      imagePullSecrets:
+      {{- .Values.pullSecrets | toYaml | nindent 6 }}
+      {{- end }}
+      {{- if .Values.web.nodeSelector }}
+      nodeSelector:
+        {{- .Values.web.nodeSelector | toYaml | nindent 8 }}
+      {{- end }}
+      {{- if ne .Values.web.serviceAccount "" }}
+      serviceAccountName: {{ .Values.web.serviceAccount | quote }}
+      {{- end }}
+
+# Source: templates/web/ingress.yaml
+{{- if .Values.web.ingress.enabled -}}
+{{- $fullname := include "ingressroute.fullname" . -}}
+{{- $tlsname := printf "%s-%s-tls" $fullname "web" -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    katenary.io/compose-hash: b181c3cf03c4ad2367db303974abefc6e44c3cd3
+    katenary.io/version: master
+  {{- if .Values.web.ingress.annotations -}}
+      {{- toYaml .Values.web.ingress.annotations | nindent 6 }}
+      {{- end }}
+  labels:
+    {{- include "ingressroute.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+  name: '{{ $fullname }}-web'
+spec:
+  {{- if ne .Values.web.ingress.class "-" }}
+  ingressClassName: '{{ tpl .Values.web.ingress.class $ }}'
+  {{- end }}
+  rules:
+  - host: '{{ tpl .Values.web.ingress.host $ }}'
+    http:
+      paths:
+      - backend:
+          service:
+            name: '{{ $fullname }}-web'
+            port:
+              name: http
+        path: '{{ tpl .Values.web.ingress.path $ }}'
+        pathType: ImplementationSpecific
+  {{- if .Values.web.ingress.tls.enabled }}
+  tls:
+  - hosts:
+    - '{{ tpl .Values.web.ingress.host . }}'
+    secretName: '{{ .Values.web.ingress.tls.secretName | default $tlsname }}'
+  {{ end -}}
+
+{{- end -}}
+# Source: templates/web/ingressroute.yaml
+{{- if .Values.web.ingress.ingressRouteEnabled -}}
+{{- $fullname := include "ingressroute.fullname" . -}}
+{{- $tlsname := printf "%s-%s-tls" $fullname "web" -}}
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  annotations:
+    katenary.io/compose-hash: b181c3cf03c4ad2367db303974abefc6e44c3cd3
+    katenary.io/version: master
+  {{- if .Values.web.ingress.annotations -}}
+      {{- toYaml .Values.web.ingress.annotations | nindent 6 }}
+      {{- end }}
+  labels:
+    {{- include "ingressroute.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+  name: '{{ $fullname }}-web'
+spec:
+  entryPoints:
+  - web
+  - websecure
+  routes:
+  - kind: Rule
+    match: Host("{{ tpl .Values.web.ingress.host . }}") && PathPrefix("{{ tpl .Values.web.ingress.path $ }}")
+    services:
+    - name: '{{ $fullname }}-web'
+      port: 80
+  tls:
+    domains:
+    - main: '{{ tpl .Values.web.ingress.host . }}'
+    secretName: '{{ .Values.web.ingress.tls.secretName | default $tlsname }}'
+
+{{- end -}}
+# Source: templates/web/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    katenary.io/compose-hash: b181c3cf03c4ad2367db303974abefc6e44c3cd3
+    katenary.io/version: master
+  labels:
+    {{- include "ingressroute.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+  name: '{{ include "ingressroute.fullname" . }}-web'
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: http
+  selector:
+    {{- include "ingressroute.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+

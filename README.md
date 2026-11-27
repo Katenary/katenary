@@ -242,17 +242,21 @@ e.g. katenary help-label dependencies
 katenary.v4/configmap-files:	[]string			Inject files as Configmap.
 katenary.v4/cronjob:		object				Create a cronjob from the service.
 katenary.v4/dependencies:	[]object			Add Helm dependencies to the service.
+katenary.v4/depends-on:		string				Method to check if a service is ready (for depends_on).
 katenary.v4/description:	string				Description of the service
 katenary.v4/env-from:		[]string			Add environment variables from another service.
 katenary.v4/exchange-volumes:	[]object			Add exchange volumes (empty directory on the node) to share data
 katenary.v4/health-check:	object				Health check to be added to the deployment.
+katenary.v4/if:			string or object		Conditionally enable the resources of a service.
 katenary.v4/ignore:		bool				Ignore the service
 katenary.v4/ingress:		object				Ingress rules to be added to the service.
 katenary.v4/main-app:		bool				Mark the service as the main app.
 katenary.v4/map-env:		map[string]string		Map env vars from the service to the deployment.
+katenary.v4/network-policy:	object				Generate a NetworkPolicy for the service.
 katenary.v4/ports:		[]uint32			Ports to be added to the service.
 katenary.v4/same-pod:		string				Move the same-pod deployment to the target deployment.
 katenary.v4/secrets:		[]string			Env vars to be set as secrets.
+katenary.v4/security-context:	object				Pod and container security context.
 katenary.v4/values:		[]string or map[string]string	Environment variables to be added to the values.yaml
 katenary.v4/values-from:	map[string]string		Add values from another service.
 ```

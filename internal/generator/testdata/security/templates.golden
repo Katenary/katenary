@@ -1,0 +1,163 @@
+# Source: templates/NOTES.txt
+Thanks to have installed {{ .Chart.Name }} {{ .Chart.Version }} as {{ .Release.Name }} ({{.Chart.AppVersion }}).
+
+# Get release information
+
+To learn more about the release, try:
+
+  $ helm -n {{ .Release.Namespace }} status {{ .Release.Name }}
+  $ helm -n {{ .Release.Namespace }} get values {{ .Release.Name }}
+  $ helm -n {{ .Release.Namespace }} get all {{ .Release.Name }}
+
+# To delete the release
+
+Use helm uninstall command to delete the release. 
+
+  $ helm -n {{ .Release.Namespace }} uninstall {{ .Release.Name }}
+
+Note that some resources may still be in use after a release is deleted. For exemple, PersistentVolumeClaims are not deleted by default for some storage classes or if some annotations are set.
+
+# More information
+
+You can see this notes again by running:
+
+  $ helm -n {{ .Release.Namespace }} get notes {{ .Release.Name }}
+
+{{- $count := 0 -}}
+{{- $listOfURL := "" -}}
+{{- if and .Values.web.ingress .Values.web.ingress.enabled }}
+{{- $count = add1 $count -}}{{- $listOfURL = printf "%s\n- http://%s" $listOfURL (tpl .Values.web.ingress.host .) -}}
+{{- end }}
+{{- if gt $count 0 }}
+
+# List of activated ingresses URL:
+{{ $listOfURL }}
+
+You can get these urls with kubectl:
+
+    kubeclt get ingress -n {{ .Release.Namespace }}
+
+{{- end }}
+
+Thanks for using Helm!
+
+# Source: templates/_helpers.tpl
+{{- define "security.fullname" -}}
+{{- if .Values.fullnameOverride -}}
+{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- $name := default .Chart.Name .Values.nameOverride -}}
+{{- if contains $name .Release.Name -}}
+{{- .Release.Name | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "security.name" -}}
+{{- if .Values.nameOverride -}}
+{{- .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "security.labels" -}}
+{{ include "security.selectorLabels" .}}
+{{- if .Chart.Version }}
+{{ printf "helm.sh/chart: %s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- if .Chart.AppVersion }}
+{{ printf "app.kubernetes.io/version: '%s'" .Chart.AppVersion }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end -}}
+
+{{- define "security.selectorLabels" -}}
+{{- $name := default .Chart.Name .Values.nameOverride -}}
+{{ printf "app.kubernetes.io/name: %s" $name }}
+{{ printf "app.kubernetes.io/instance: %s" .Release.Name }}
+{{- end -}}
+
+# Source: templates/web/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    katenary.io/compose-hash: 98e92705e17c0f4c155ac75b2670cec0de991ca3
+    katenary.io/version: master
+  labels:
+    {{- include "security.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+  name: '{{ include "security.fullname" . }}-web'
+spec:
+  replicas: {{ .Values.web.replicas }}
+  selector:
+    matchLabels:
+      {{- include "security.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: web
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        {{- include "security.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: web
+    spec:
+      containers:
+      - image: '{{ tpl .Values.web.repository.image $ }}:{{ tpl .Values.web.repository.tag $ | default "latest" }}'
+        imagePullPolicy: {{ .Values.web.imagePullPolicy }}
+        name: web
+        ports:
+        - containerPort: 80
+          name: http
+        {{- if .Values.web.resources }}
+        resources:
+          {{ .Values.web.resources | toYaml | nindent 10 }}
+        {{- end }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 1000
+          runAsNonRoot: true
+          runAsUser: 1000
+      {{- if .Values.pullSecrets }}
+      imagePullSecrets:
+      {{- .Values.pullSecrets | toYaml | nindent 6 }}
+      {{- end }}
+      {{- if .Values.web.nodeSelector }}
+      nodeSelector:
+        {{- .Values.web.nodeSelector | toYaml | nindent 8 }}
+      {{- end }}
+      securityContext:
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      {{- if ne .Values.web.serviceAccount "" }}
+      serviceAccountName: {{ .Values.web.serviceAccount | quote }}
+      {{- end }}
+
+# Source: templates/web/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    katenary.io/compose-hash: 98e92705e17c0f4c155ac75b2670cec0de991ca3
+    katenary.io/version: master
+  labels:
+    {{- include "security.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+  name: '{{ include "security.fullname" . }}-web'
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: http
+  selector:
+    {{- include "security.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+

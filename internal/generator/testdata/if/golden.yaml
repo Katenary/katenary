@@ -1,0 +1,168 @@
+---
+# Source: conditional/templates/api/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    katenary.io/compose-hash: a8d12e2495fb5800825b958640e126146bb155d8
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: conditional
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: conditional-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: api
+  name: 'release-name-conditional-api'
+spec:
+  ports:
+  - name: http-alt
+    port: 8080
+    protocol: TCP
+    targetPort: http-alt
+  selector:
+    app.kubernetes.io/name: conditional
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/component: api
+
+---
+# Source: conditional/templates/traefik/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    katenary.io/compose-hash: a8d12e2495fb5800825b958640e126146bb155d8
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: conditional
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: conditional-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: traefik
+  name: 'release-name-conditional-traefik'
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: http
+  selector:
+    app.kubernetes.io/name: conditional
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/component: traefik
+
+---
+# Source: conditional/templates/api/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    katenary.io/compose-hash: a8d12e2495fb5800825b958640e126146bb155d8
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: conditional
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: conditional-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: api
+  name: 'release-name-conditional-api'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: conditional
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: api
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: conditional
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/component: api
+    spec:
+      containers:
+      - image: 'my/api:1.0'
+        imagePullPolicy: IfNotPresent
+        name: api
+        ports:
+        - containerPort: 8080
+          name: http-alt
+        securityContext:
+          allowPrivilegeEscalation: false
+
+---
+# Source: conditional/templates/traefik/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    katenary.io/compose-hash: a8d12e2495fb5800825b958640e126146bb155d8
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: conditional
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: conditional-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: traefik
+  name: 'release-name-conditional-traefik'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: conditional
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: traefik
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: conditional
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/component: traefik
+    spec:
+      containers:
+      - image: 'traefik:3.1'
+        imagePullPolicy: IfNotPresent
+        name: traefik
+        ports:
+        - containerPort: 80
+          name: http
+        securityContext:
+          allowPrivilegeEscalation: false
+
+---
+# Source: conditional/templates/api/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    katenary.io/compose-hash: a8d12e2495fb5800825b958640e126146bb155d8
+    katenary.io/version: master
+  labels:
+    app.kubernetes.io/name: conditional
+    app.kubernetes.io/instance: release-name
+    helm.sh/chart: conditional-0.1.0
+    app.kubernetes.io/version: '0.1.0'
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: api
+  name: 'release-name-conditional-api'
+spec:
+  rules:
+  - host: 'api.test.tld'
+    http:
+      paths:
+      - backend:
+          service:
+            name: 'release-name-conditional-api'
+            port:
+              name: http-alt
+        path: '/'
+        pathType: ImplementationSpecific
+  tls:
+  - hosts:
+    - 'api.test.tld'
+    secretName: 'release-name-conditional-api-tls'

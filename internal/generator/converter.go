@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -334,6 +335,36 @@ func addDescriptions(values []byte, project types.Project) []byte {
 	return values
 }
 
+// addConditionValuesDoc documents the values.yaml flags referenced by the
+// katenary.v4/if label above their top-level key.
+func addConditionValuesDoc(values []byte, flags map[string]bool) []byte {
+	if len(flags) == 0 {
+		return values
+	}
+
+	byRoot := map[string][]string{}
+	for path := range flags {
+		root, _, _ := strings.Cut(path, ".")
+		byRoot[root] = append(byRoot[root], path)
+	}
+
+	lines := strings.Split(string(values), "\n")
+	output := make([]string, 0, len(lines)+len(byRoot)*2)
+	for _, line := range lines {
+		if root, ok := strings.CutSuffix(line, ":"); ok {
+			if paths, isFlagRoot := byRoot[root]; isFlagRoot {
+				sort.Strings(paths)
+				output = append(output, "# Conditional activation flags used by the "+labels.LabelIf+" label.")
+				for _, path := range paths {
+					output = append(output, fmt.Sprintf("#   %s (default: %t)", path, flags[path]))
+				}
+			}
+		}
+		output = append(output, line)
+	}
+	return []byte(strings.Join(output, "\n"))
+}
+
 func addDocToVariable(service types.ServiceConfig, lines []string) []string {
 	currentService := ""
 	variables := utils.GetValuesFromLabel(service, labels.LabelValues)
@@ -570,10 +601,12 @@ func buildCharYamlFile(chart *HelmChart, project *types.Project, chartPath strin
 
 func buildNotesFile(project *types.Project, notesPath string) {
 	// get the list of services to write in the notes
-	services := make([]string, 0)
+	services := make([]string, 0, len(project.Services))
 	for _, service := range project.Services {
 		services = append(services, service.Name)
 	}
+	// keep the notes stable between conversions
+	sort.Strings(services)
 	// write the notes to the disk
 	notes := extrafiles.NotesFile(services)
 	writeContent(notesPath, []byte(notes))
@@ -586,6 +619,7 @@ func buildValues(chart *HelmChart, project *types.Project, valuesPath string) {
 		os.Exit(1)
 	}
 	values = addDescriptions(values, *project)
+	values = addConditionValuesDoc(values, chart.ConditionFlags)
 	values = addDependencyDescription(values, chart.Dependencies)
 	values = addCommentsToValues(values)
 	values = addStorageClassHelp(values)

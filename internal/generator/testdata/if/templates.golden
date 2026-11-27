@@ -1,0 +1,312 @@
+# Source: templates/NOTES.txt
+Thanks to have installed {{ .Chart.Name }} {{ .Chart.Version }} as {{ .Release.Name }} ({{.Chart.AppVersion }}).
+
+# Get release information
+
+To learn more about the release, try:
+
+  $ helm -n {{ .Release.Namespace }} status {{ .Release.Name }}
+  $ helm -n {{ .Release.Namespace }} get values {{ .Release.Name }}
+  $ helm -n {{ .Release.Namespace }} get all {{ .Release.Name }}
+
+# To delete the release
+
+Use helm uninstall command to delete the release. 
+
+  $ helm -n {{ .Release.Namespace }} uninstall {{ .Release.Name }}
+
+Note that some resources may still be in use after a release is deleted. For exemple, PersistentVolumeClaims are not deleted by default for some storage classes or if some annotations are set.
+
+# More information
+
+You can see this notes again by running:
+
+  $ helm -n {{ .Release.Namespace }} get notes {{ .Release.Name }}
+
+{{- $count := 0 -}}
+{{- $listOfURL := "" -}}
+{{- if and .Values.api.ingress .Values.api.ingress.enabled }}
+{{- $count = add1 $count -}}{{- $listOfURL = printf "%s\n- http://%s" $listOfURL (tpl .Values.api.ingress.host .) -}}
+{{- end }}
+{{- if and .Values.traefik.ingress .Values.traefik.ingress.enabled }}
+{{- $count = add1 $count -}}{{- $listOfURL = printf "%s\n- http://%s" $listOfURL (tpl .Values.traefik.ingress.host .) -}}
+{{- end }}
+{{- if gt $count 0 }}
+
+# List of activated ingresses URL:
+{{ $listOfURL }}
+
+You can get these urls with kubectl:
+
+    kubeclt get ingress -n {{ .Release.Namespace }}
+
+{{- end }}
+
+Thanks for using Helm!
+
+# Source: templates/_helpers.tpl
+{{- define "conditional.fullname" -}}
+{{- if .Values.fullnameOverride -}}
+{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- $name := default .Chart.Name .Values.nameOverride -}}
+{{- if contains $name .Release.Name -}}
+{{- .Release.Name | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "conditional.name" -}}
+{{- if .Values.nameOverride -}}
+{{- .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "conditional.labels" -}}
+{{ include "conditional.selectorLabels" .}}
+{{- if .Chart.Version }}
+{{ printf "helm.sh/chart: %s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- if .Chart.AppVersion }}
+{{ printf "app.kubernetes.io/version: '%s'" .Chart.AppVersion }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end -}}
+
+{{- define "conditional.selectorLabels" -}}
+{{- $name := default .Chart.Name .Values.nameOverride -}}
+{{ printf "app.kubernetes.io/name: %s" $name }}
+{{ printf "app.kubernetes.io/instance: %s" .Release.Name }}
+{{- end -}}
+
+# Source: templates/api/deployment.yaml
+{{- if and .Values.proxy.enabled (not .Values.maintenance.enabled) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    katenary.io/compose-hash: a8d12e2495fb5800825b958640e126146bb155d8
+    katenary.io/version: master
+  labels:
+    {{- include "conditional.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+  name: '{{ include "conditional.fullname" . }}-api'
+spec:
+  replicas: {{ .Values.api.replicas }}
+  selector:
+    matchLabels:
+      {{- include "conditional.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        {{- include "conditional.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: api
+    spec:
+      containers:
+      - image: '{{ tpl .Values.api.repository.image $ }}:{{ tpl .Values.api.repository.tag $ | default "latest" }}'
+        imagePullPolicy: {{ .Values.api.imagePullPolicy }}
+        name: api
+        ports:
+        - containerPort: 8080
+          name: http-alt
+        {{- if .Values.api.resources }}
+        resources:
+          {{ .Values.api.resources | toYaml | nindent 10 }}
+        {{- end }}
+        securityContext:
+          allowPrivilegeEscalation: false
+      {{- if .Values.pullSecrets }}
+      imagePullSecrets:
+      {{- .Values.pullSecrets | toYaml | nindent 6 }}
+      {{- end }}
+      {{- if .Values.api.nodeSelector }}
+      nodeSelector:
+        {{- .Values.api.nodeSelector | toYaml | nindent 8 }}
+      {{- end }}
+      {{- if ne .Values.api.serviceAccount "" }}
+      serviceAccountName: {{ .Values.api.serviceAccount | quote }}
+      {{- end }}
+{{- end }}
+
+# Source: templates/api/ingress.yaml
+{{- if and .Values.proxy.enabled (not .Values.maintenance.enabled) }}
+{{- if .Values.api.ingress.enabled -}}
+{{- $fullname := include "conditional.fullname" . -}}
+{{- $tlsname := printf "%s-%s-tls" $fullname "api" -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    katenary.io/compose-hash: a8d12e2495fb5800825b958640e126146bb155d8
+    katenary.io/version: master
+  {{- if .Values.api.ingress.annotations -}}
+      {{- toYaml .Values.api.ingress.annotations | nindent 6 }}
+      {{- end }}
+  labels:
+    {{- include "conditional.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+  name: '{{ $fullname }}-api'
+spec:
+  {{- if ne .Values.api.ingress.class "-" }}
+  ingressClassName: '{{ tpl .Values.api.ingress.class $ }}'
+  {{- end }}
+  rules:
+  - host: '{{ tpl .Values.api.ingress.host $ }}'
+    http:
+      paths:
+      - backend:
+          service:
+            name: '{{ $fullname }}-api'
+            port:
+              name: http-alt
+        path: '{{ tpl .Values.api.ingress.path $ }}'
+        pathType: ImplementationSpecific
+  {{- if .Values.api.ingress.tls.enabled }}
+  tls:
+  - hosts:
+    - '{{ tpl .Values.api.ingress.host . }}'
+    secretName: '{{ .Values.api.ingress.tls.secretName | default $tlsname }}'
+  {{ end -}}
+
+{{- end -}}
+{{- end }}
+
+# Source: templates/api/ingressroute.yaml
+{{- if and .Values.proxy.enabled (not .Values.maintenance.enabled) }}
+{{- if .Values.api.ingress.ingressRouteEnabled -}}
+{{- $fullname := include "conditional.fullname" . -}}
+{{- $tlsname := printf "%s-%s-tls" $fullname "api" -}}
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  annotations:
+    katenary.io/compose-hash: a8d12e2495fb5800825b958640e126146bb155d8
+    katenary.io/version: master
+  {{- if .Values.api.ingress.annotations -}}
+      {{- toYaml .Values.api.ingress.annotations | nindent 6 }}
+      {{- end }}
+  labels:
+    {{- include "conditional.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+  name: '{{ $fullname }}-api'
+spec:
+  entryPoints:
+  - web
+  - websecure
+  routes:
+  - kind: Rule
+    match: Host("{{ tpl .Values.api.ingress.host . }}") && PathPrefix("{{ tpl .Values.api.ingress.path $ }}")
+    services:
+    - name: '{{ $fullname }}-api'
+      port: 8080
+  tls:
+    domains:
+    - main: '{{ tpl .Values.api.ingress.host . }}'
+    secretName: '{{ .Values.api.ingress.tls.secretName | default $tlsname }}'
+
+{{- end -}}
+{{- end }}
+
+# Source: templates/api/service.yaml
+{{- if and .Values.proxy.enabled (not .Values.maintenance.enabled) }}
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    katenary.io/compose-hash: a8d12e2495fb5800825b958640e126146bb155d8
+    katenary.io/version: master
+  labels:
+    {{- include "conditional.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+  name: '{{ include "conditional.fullname" . }}-api'
+spec:
+  ports:
+  - name: http-alt
+    port: 8080
+    protocol: TCP
+    targetPort: http-alt
+  selector:
+    {{- include "conditional.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+{{- end }}
+
+# Source: templates/traefik/deployment.yaml
+{{- if .Values.proxy.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    katenary.io/compose-hash: a8d12e2495fb5800825b958640e126146bb155d8
+    katenary.io/version: master
+  labels:
+    {{- include "conditional.labels" . | nindent 4 }}
+    app.kubernetes.io/component: traefik
+  name: '{{ include "conditional.fullname" . }}-traefik'
+spec:
+  replicas: {{ .Values.traefik.replicas }}
+  selector:
+    matchLabels:
+      {{- include "conditional.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: traefik
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        {{- include "conditional.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: traefik
+    spec:
+      containers:
+      - image: '{{ tpl .Values.traefik.repository.image $ }}:{{ tpl .Values.traefik.repository.tag $ | default "latest" }}'
+        imagePullPolicy: {{ .Values.traefik.imagePullPolicy }}
+        name: traefik
+        ports:
+        - containerPort: 80
+          name: http
+        {{- if .Values.traefik.resources }}
+        resources:
+          {{ .Values.traefik.resources | toYaml | nindent 10 }}
+        {{- end }}
+        securityContext:
+          allowPrivilegeEscalation: false
+      {{- if .Values.pullSecrets }}
+      imagePullSecrets:
+      {{- .Values.pullSecrets | toYaml | nindent 6 }}
+      {{- end }}
+      {{- if .Values.traefik.nodeSelector }}
+      nodeSelector:
+        {{- .Values.traefik.nodeSelector | toYaml | nindent 8 }}
+      {{- end }}
+      {{- if ne .Values.traefik.serviceAccount "" }}
+      serviceAccountName: {{ .Values.traefik.serviceAccount | quote }}
+      {{- end }}
+{{- end }}
+
+# Source: templates/traefik/service.yaml
+{{- if .Values.proxy.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    katenary.io/compose-hash: a8d12e2495fb5800825b958640e126146bb155d8
+    katenary.io/version: master
+  labels:
+    {{- include "conditional.labels" . | nindent 4 }}
+    app.kubernetes.io/component: traefik
+  name: '{{ include "conditional.fullname" . }}-traefik'
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: http
+  selector:
+    {{- include "conditional.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: traefik
+{{- end }}
+

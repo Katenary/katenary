@@ -31,6 +31,7 @@ Katenary will try to _Unmarshal_ these labels.
 | `katenary.v4/env-from`         | Add environment variables from another service.                  | `[]string`                       |
 | `katenary.v4/exchange-volumes` | Add exchange volumes (empty directory on the node) to share data | `[]object`                       |
 | `katenary.v4/health-check`     | Health check to be added to the deployment.                      | `object`                         |
+| `katenary.v4/if`               | Conditionally enable the resources of a service.                 | `string or object`               |
 | `katenary.v4/ignore`           | Ignore the service                                               | `bool`                           |
 | `katenary.v4/ingress`          | Ingress rules to be added to the service.                        | `object`                         |
 | `katenary.v4/main-app`         | Mark the service as the main app.                                | `bool`                           |
@@ -299,6 +300,54 @@ labels:
       httpGet:
         path: /health
         port: 8080
+```
+
+
+### katenary.v4/if
+
+Conditionally enable the resources of a service.
+
+**Type**:  `string or object`
+
+Wrap all the resources generated for the service (deployment, service,
+ingress, configmap, secret, PVC, network policy, cronjob and RBAC) in a
+Helm condition. The value is a boolean expression evaluated against
+values.yaml, so the resources can be enabled or disabled with `--set` or
+by editing values.yaml.
+
+The expression supports value paths rooted at values.yaml (for example
+`proxy.enabled`), the `!`, `&&` and `||` operators, parentheses and the
+`not`, `and`, `or` aliases. Each referenced path is added to values.yaml
+with a `true` default, unless the object form provides explicit
+`defaults`.
+
+The condition applies to every resource of the service. Helm does not
+propagate the condition to other services: if a service depends on a
+conditioned one, disable both consistently. Katenary emits a warning when
+it detects such a case through `depends_on`, `same-pod`, `env-from` or
+`values-from`.
+
+**Example:**
+
+```yaml
+# Simple form: the flag defaults to true.
+proxy:
+  image: traefik
+  ports:
+    - 80
+  labels:
+    katenary.v4/if: proxy.enabled
+
+# Object form: the flag defaults to false, so "api" is disabled by
+# default and enabled with "--set api.enabled=true".
+api:
+  image: my/api
+  labels:
+    katenary.v4/if: |-
+      condition: api.enabled && !maintenance.enabled
+      defaults:
+        api.enabled: false
+        maintenance.enabled: false
 ```
 
 

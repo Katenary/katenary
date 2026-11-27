@@ -89,12 +89,25 @@ func HasExposedPorts(service types.ServiceConfig) bool {
 	return len(service.Ports) > 0
 }
 
+// isTruthy reports whether a label value represents a true boolean.
+func isTruthy(value string) bool {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "true", "yes", "1":
+		return true
+	default:
+		return false
+	}
+}
+
+// labelIsTrue returns true when the given service label is set to a true value.
+func labelIsTrue(service types.ServiceConfig, label labels.Label) bool {
+	value, ok := service.Labels[label]
+	return ok && isTruthy(value)
+}
+
 // isIgnored returns true if the service is ignored.
 func isIgnored(service types.ServiceConfig) bool {
-	if v, ok := service.Labels[labels.LabelIgnore]; ok {
-		return v == "true" || v == "yes" || v == "1"
-	}
-	return false
+	return labelIsTrue(service, labels.LabelIgnore)
 }
 
 // UnWrapTPL removes the line wrapping from a template.

@@ -46,6 +46,7 @@ const (
 	LabelSamePod         Label = KatenaryLabelPrefix + "/same-pod"
 	LabelDescription     Label = KatenaryLabelPrefix + "/description"
 	LabelIgnore          Label = KatenaryLabelPrefix + "/ignore"
+	LabelIf              Label = KatenaryLabelPrefix + "/if"
 	LabelDependencies    Label = KatenaryLabelPrefix + "/dependencies"
 	LabelConfigMapFiles  Label = KatenaryLabelPrefix + "/configmap-files"
 	LabelCronJob         Label = KatenaryLabelPrefix + "/cronjob"

@@ -19,6 +19,28 @@
       "additionalProperties": false,
       "type": "object"
     },
+    "ConditionLabel": {
+      "properties": {
+        "condition": {
+          "type": "string",
+          "title": "Condition",
+          "description": "Boolean expression evaluated against values.yaml"
+        },
+        "defaults": {
+          "additionalProperties": {
+            "type": "boolean"
+          },
+          "type": "object",
+          "title": "Defaults",
+          "description": "Default value of each flag referenced by the condition"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "condition"
+      ]
+    },
     "ConfigMapFiles": {
       "items": {
         "type": "string"
@@ -567,6 +589,11 @@
           "type": "boolean",
           "title": "Ignore",
           "description": "Ignore the service in the conversion"
+        },
+        "if": {
+          "$ref": "#/$defs/ConditionLabel",
+          "title": "If",
+          "description": "Enable the resources of the service depending on values.yaml flags"
         },
         "dependencies": {
           "items": {

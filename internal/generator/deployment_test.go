@@ -6,9 +6,11 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"katenary.io/internal/generator/labels"
 
+	"github.com/compose-spec/compose-go/v2/types"
 	yaml3 "gopkg.in/yaml.v3"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -172,7 +174,7 @@ func TestHelmDependencies(t *testing.T) {
 	}
 }
 
-func TestLivenessProbesFromHealthCheck(t *testing.T) {
+func TestReadinessProbesFromHealthCheck(t *testing.T) {
 	t.Parallel()
 	project := newProject("testapp",
 		newService("web").
@@ -187,8 +189,123 @@ func TestLivenessProbesFromHealthCheck(t *testing.T) {
 	if err := yaml.Unmarshal(output, &deployment); err != nil {
 		t.Fatalf("%s\n%s", unmarshalError, err)
 	}
-	if deployment.Spec.Template.Spec.Containers[0].LivenessProbe == nil {
-		t.Error("expected a liveness probe")
+	container := deployment.Spec.Template.Spec.Containers[0]
+	if container.ReadinessProbe == nil {
+		t.Fatal("expected a readiness probe")
+	}
+	if container.LivenessProbe != nil {
+		t.Error("a compose healthcheck must not create a liveness probe")
+	}
+	if command := container.ReadinessProbe.Exec.Command; len(command) != 3 || command[0] != "curl" {
+		t.Errorf("unexpected probe command: %v", command)
+	}
+}
+
+func TestReadinessProbeFromShellHealthCheck(t *testing.T) {
+	t.Parallel()
+	project := newProject("testapp",
+		newService("web").
+			image("postgres:17").
+			port(5432).
+			healthcheckTest("CMD-SHELL", "pg_isready -U postgres").
+			build(),
+	)
+
+	output := renderProjectTemplate(t, project, webTemplateOutput)
+	deployment := v1.Deployment{}
+	if err := yaml.Unmarshal(output, &deployment); err != nil {
+		t.Fatalf("%s\n%s", unmarshalError, err)
+	}
+	probe := deployment.Spec.Template.Spec.Containers[0].ReadinessProbe
+	if probe == nil {
+		t.Fatal("expected a readiness probe")
+	}
+	command := probe.Exec.Command
+	if len(command) != 3 || command[0] != "/bin/sh" || command[1] != "-c" || command[2] != "pg_isready -U postgres" {
+		t.Errorf("unexpected probe command: %v", command)
+	}
+}
+
+func TestHealthCheckSettings(t *testing.T) {
+	t.Parallel()
+
+	interval := types.Duration(5 * time.Second)
+	timeout := types.Duration(2 * time.Second)
+	startPeriod := types.Duration(10 * time.Second)
+	retries := uint64(5)
+
+	service := newService("web").
+		image("nginx:1.29").
+		port(80).
+		healthcheckTest("CMD", "true").
+		build()
+	service.HealthCheck.Interval = &interval
+	service.HealthCheck.Timeout = &timeout
+	service.HealthCheck.StartPeriod = &startPeriod
+	service.HealthCheck.Retries = &retries
+
+	output := renderProjectTemplate(t, newProject("testapp", service), webTemplateOutput)
+	deployment := v1.Deployment{}
+	if err := yaml.Unmarshal(output, &deployment); err != nil {
+		t.Fatalf("%s\n%s", unmarshalError, err)
+	}
+
+	probe := deployment.Spec.Template.Spec.Containers[0].ReadinessProbe
+	if probe == nil {
+		t.Fatal("expected a readiness probe")
+	}
+	if probe.PeriodSeconds != 5 {
+		t.Errorf("expected period 5, got %d", probe.PeriodSeconds)
+	}
+	if probe.TimeoutSeconds != 2 {
+		t.Errorf("expected timeout 2, got %d", probe.TimeoutSeconds)
+	}
+	if probe.InitialDelaySeconds != 10 {
+		t.Errorf("expected initial delay 10, got %d", probe.InitialDelaySeconds)
+	}
+	if probe.FailureThreshold != 5 {
+		t.Errorf("expected failure threshold 5, got %d", probe.FailureThreshold)
+	}
+}
+
+func TestHealthCheckDisabledOrNone(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		service types.ServiceConfig
+	}{
+		{
+			name: "none",
+			service: newService("web").
+				image("nginx:1.29").
+				healthcheckTest("NONE").
+				build(),
+		},
+		{
+			name: "disabled",
+			service: func() types.ServiceConfig {
+				service := newService("web").
+					image("nginx:1.29").
+					healthcheckTest("CMD", "true").
+					build()
+				service.HealthCheck.Disable = true
+				return service
+			}(),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			output := renderProjectTemplate(t, newProject("testapp", test.service), webTemplateOutput)
+			deployment := v1.Deployment{}
+			if err := yaml.Unmarshal(output, &deployment); err != nil {
+				t.Fatalf("%s\n%s", unmarshalError, err)
+			}
+			if probe := deployment.Spec.Template.Spec.Containers[0].ReadinessProbe; probe != nil {
+				t.Errorf("expected no readiness probe, got %+v", probe)
+			}
+		})
 	}
 }
 

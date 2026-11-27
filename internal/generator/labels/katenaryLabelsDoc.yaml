@@ -204,6 +204,47 @@
   example: "labels:\n  {{ .KatenaryPrefix }}/ignore: \"true\""
   type: "bool"
 
+"if":
+  short: "Conditionally enable the resources of a service."
+  long: |-
+    Wrap all the resources generated for the service (deployment, service,
+    ingress, configmap, secret, PVC, network policy, cronjob and RBAC) in a
+    Helm condition. The value is a boolean expression evaluated against
+    values.yaml, so the resources can be enabled or disabled with `--set` or
+    by editing values.yaml.
+
+    The expression supports value paths rooted at values.yaml (for example
+    `proxy.enabled`), the `!`, `&&` and `||` operators, parentheses and the
+    `not`, `and`, `or` aliases. Each referenced path is added to values.yaml
+    with a `true` default, unless the object form provides explicit
+    `defaults`.
+
+    The condition applies to every resource of the service. Helm does not
+    propagate the condition to other services: if a service depends on a
+    conditioned one, disable both consistently. Katenary emits a warning when
+    it detects such a case through `depends_on`, `same-pod`, `env-from` or
+    `values-from`.
+  example: |-
+    # Simple form: the flag defaults to true.
+    proxy:
+      image: traefik
+      ports:
+        - 80
+      labels:
+        {{ .KatenaryPrefix }}/if: proxy.enabled
+
+    # Object form: the flag defaults to false, so "api" is disabled by
+    # default and enabled with "--set api.enabled=true".
+    api:
+      image: my/api
+      labels:
+        {{ .KatenaryPrefix }}/if: |-
+          condition: api.enabled && !maintenance.enabled
+          defaults:
+            api.enabled: false
+            maintenance.enabled: false
+  type: "string or object"
+
 "dependencies":
   short: "Add Helm dependencies to the service."
   long: |-

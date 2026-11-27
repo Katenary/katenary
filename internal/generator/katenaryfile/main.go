@@ -34,6 +34,7 @@ type Service struct {
 	SamePod         *string                        `yaml:"same-pod,omitempty" json:"same-pod,omitempty" jsonschema:"title=Same Pod,description=Service that should be in the same pod"`
 	Description     *string                        `yaml:"description,omitempty" json:"description,omitempty" jsonschema:"title=Description,description=Description of the service that will be injected in the values.yaml file"`
 	Ignore          *bool                          `yaml:"ignore,omitempty" json:"ignore,omitempty" jsonschema:"title=Ignore,description=Ignore the service in the conversion"`
+	If              *labelstructs.ConditionLabel   `yaml:"if,omitempty" json:"if,omitempty" jsonschema:"title=If,description=Enable the resources of the service depending on values.yaml flags"`
 	Dependencies    []labelstructs.Dependency      `yaml:"dependencies,omitempty" json:"dependencies,omitempty" jsonschema:"title=Dependencies,description=Services that should be injected in the Chart.yaml file"`
 	ConfigMapFiles  *labelstructs.ConfigMapFiles   `yaml:"configmap-files,omitempty" json:"configmap-files,omitempty" jsonschema:"title=ConfigMap Files,description=Files that should be injected as ConfigMap"`
 	MapEnv          *labelstructs.MapEnv           `yaml:"map-env,omitempty" json:"map-env,omitempty" jsonschema:"title=Map Env,description=Map environment variables to another value"`
@@ -114,6 +115,7 @@ func OverrideWithConfig(project *types.Project) error {
 			mustGetLabelContent(s.SamePod, labels.LabelSamePod)
 			mustGetLabelContent(s.Description, labels.LabelDescription)
 			mustGetLabelContent(s.Ignore, labels.LabelIgnore)
+			mustGetLabelContent(s.If, labels.LabelIf)
 			mustGetLabelContent(s.Dependencies, labels.LabelDependencies)
 			mustGetLabelContent(s.ConfigMapFiles, labels.LabelConfigMapFiles)
 			mustGetLabelContent(s.MapEnv, labels.LabelMapEnv)

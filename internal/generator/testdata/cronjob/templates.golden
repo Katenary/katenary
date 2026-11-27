@@ -1,0 +1,211 @@
+# Source: templates/NOTES.txt
+Thanks to have installed {{ .Chart.Name }} {{ .Chart.Version }} as {{ .Release.Name }} ({{.Chart.AppVersion }}).
+
+# Get release information
+
+To learn more about the release, try:
+
+  $ helm -n {{ .Release.Namespace }} status {{ .Release.Name }}
+  $ helm -n {{ .Release.Namespace }} get values {{ .Release.Name }}
+  $ helm -n {{ .Release.Namespace }} get all {{ .Release.Name }}
+
+# To delete the release
+
+Use helm uninstall command to delete the release. 
+
+  $ helm -n {{ .Release.Namespace }} uninstall {{ .Release.Name }}
+
+Note that some resources may still be in use after a release is deleted. For exemple, PersistentVolumeClaims are not deleted by default for some storage classes or if some annotations are set.
+
+# More information
+
+You can see this notes again by running:
+
+  $ helm -n {{ .Release.Namespace }} get notes {{ .Release.Name }}
+
+{{- $count := 0 -}}
+{{- $listOfURL := "" -}}
+{{- if and .Values.cron.ingress .Values.cron.ingress.enabled }}
+{{- $count = add1 $count -}}{{- $listOfURL = printf "%s\n- http://%s" $listOfURL (tpl .Values.cron.ingress.host .) -}}
+{{- end }}
+{{- if gt $count 0 }}
+
+# List of activated ingresses URL:
+{{ $listOfURL }}
+
+You can get these urls with kubectl:
+
+    kubeclt get ingress -n {{ .Release.Namespace }}
+
+{{- end }}
+
+Thanks for using Helm!
+
+# Source: templates/_helpers.tpl
+{{- define "cronjob.fullname" -}}
+{{- if .Values.fullnameOverride -}}
+{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- $name := default .Chart.Name .Values.nameOverride -}}
+{{- if contains $name .Release.Name -}}
+{{- .Release.Name | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "cronjob.name" -}}
+{{- if .Values.nameOverride -}}
+{{- .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "cronjob.labels" -}}
+{{ include "cronjob.selectorLabels" .}}
+{{- if .Chart.Version }}
+{{ printf "helm.sh/chart: %s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- if .Chart.AppVersion }}
+{{ printf "app.kubernetes.io/version: '%s'" .Chart.AppVersion }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end -}}
+
+{{- define "cronjob.selectorLabels" -}}
+{{- $name := default .Chart.Name .Values.nameOverride -}}
+{{ printf "app.kubernetes.io/name: %s" $name }}
+{{ printf "app.kubernetes.io/instance: %s" .Release.Name }}
+{{- end -}}
+
+# Source: templates/cron/cronjob.yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  annotations:
+    katenary.io/compose-hash: 2dbbb5196e83bf961fdaabeab66ee5b3a2713a40
+    katenary.io/version: master
+  labels:
+    {{- include "cronjob.labels" . | nindent 4 }}
+    app.kubernetes.io/component: cron
+  name: '{{ include "cronjob.fullname" . }}-cron'
+spec:
+  jobTemplate:
+    metadata: {}
+    spec:
+      template:
+        metadata: {}
+        spec:
+          containers:
+          - args:
+            - sh
+            - -c
+            - echo hello
+            image: '{{ .Values.cron.cronjob.repository.image }}:{{ default .Values.cron.cronjob.repository.tag "latest" }}'
+            name: cronjob
+            resources: {}
+          restartPolicy: OnFailure
+          serviceAccountName: '{{ include "cronjob.fullname" . }}-cron'
+  schedule: '{{ .Values.cron.cronjob.schedule }}'
+
+# Source: templates/cron/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    katenary.io/compose-hash: 2dbbb5196e83bf961fdaabeab66ee5b3a2713a40
+    katenary.io/version: master
+  labels:
+    {{- include "cronjob.labels" . | nindent 4 }}
+    app.kubernetes.io/component: cron
+  name: '{{ include "cronjob.fullname" . }}-cron'
+spec:
+  replicas: {{ .Values.cron.replicas }}
+  selector:
+    matchLabels:
+      {{- include "cronjob.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: cron
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        {{- include "cronjob.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: cron
+    spec:
+      containers:
+      - image: '{{ tpl .Values.cron.repository.image $ }}:{{ tpl .Values.cron.repository.tag $ | default "latest" }}'
+        imagePullPolicy: {{ .Values.cron.imagePullPolicy }}
+        name: cron
+        {{- if .Values.cron.resources }}
+        resources:
+          {{ .Values.cron.resources | toYaml | nindent 10 }}
+        {{- end }}
+        securityContext:
+          allowPrivilegeEscalation: false
+      {{- if .Values.pullSecrets }}
+      imagePullSecrets:
+      {{- .Values.pullSecrets | toYaml | nindent 6 }}
+      {{- end }}
+      {{- if .Values.cron.nodeSelector }}
+      nodeSelector:
+        {{- .Values.cron.nodeSelector | toYaml | nindent 8 }}
+      {{- end }}
+      {{- if ne .Values.cron.serviceAccount "" }}
+      serviceAccountName: {{ .Values.cron.serviceAccount | quote }}
+      {{- end }}
+
+# Source: templates/cron/role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    katenary.io/compose-hash: 2dbbb5196e83bf961fdaabeab66ee5b3a2713a40
+    katenary.io/version: master
+  labels:
+    {{- include "cronjob.labels" . | nindent 4 }}
+    app.kubernetes.io/component: cron
+  name: '{{ include "cronjob.fullname" . }}-cron-dependency'
+rules:
+- apiGroups:
+  - ""
+  - extensions
+  - apps
+  resources:
+  - '*'
+  verbs:
+  - '*'
+
+# Source: templates/cron/rolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    katenary.io/compose-hash: 2dbbb5196e83bf961fdaabeab66ee5b3a2713a40
+    katenary.io/version: master
+  labels:
+    {{- include "cronjob.labels" . | nindent 4 }}
+    app.kubernetes.io/component: cron
+  name: '{{ include "cronjob.fullname" . }}-cron'
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: '{{ include "cronjob.fullname" . }}-cron'
+subjects:
+- kind: ServiceAccount
+  name: '{{ include "cronjob.fullname" . }}-cron'
+  namespace: '{{ .Release.Namespace }}'
+
+# Source: templates/cron/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    katenary.io/compose-hash: 2dbbb5196e83bf961fdaabeab66ee5b3a2713a40
+    katenary.io/version: master
+  labels:
+    {{- include "cronjob.labels" . | nindent 4 }}
+    app.kubernetes.io/component: cron
+  name: '{{ include "cronjob.fullname" . }}-cron'
+

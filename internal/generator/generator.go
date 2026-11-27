@@ -215,10 +215,7 @@ func Generate(project *types.Project) (*HelmChart, error) {
 		if err != nil {
 			return nil, err
 		}
-		chart.Templates[d.Filename()] = &ChartTemplate{
-			Content:     y,
-			Servicename: d.service.Name,
-		}
+		chart.AddTemplate(d.Filename(), d.service.Name, y)
 	}
 
 	// generate all services
@@ -228,10 +225,7 @@ func Generate(project *types.Project) (*HelmChart, error) {
 			continue
 		}
 		y, _ := s.Yaml()
-		chart.Templates[s.Filename()] = &ChartTemplate{
-			Content:     y,
-			Servicename: s.service.Name,
-		}
+		chart.AddTemplate(s.Filename(), s.service.Name, y)
 	}
 
 	// drop all "same-pod" service templates (they are merged into target deployments)
@@ -255,10 +249,12 @@ func Generate(project *types.Project) (*HelmChart, error) {
 		if err != nil {
 			return nil, err
 		}
-		chart.Templates[policy.Filename()] = &ChartTemplate{
-			Content:     y,
-			Servicename: name,
-		}
+		chart.AddTemplate(policy.Filename(), name, y)
+	}
+
+	// wrap the resources of services using the "if" label in a Helm condition
+	if err := chart.applyConditions(project); err != nil {
+		return nil, err
 	}
 
 	// compute all needed resplacements in YAML templates
@@ -329,10 +325,7 @@ func fixResourceNames(project *types.Project) error {
 
 // serviceIsMain returns true if the service is the main app.
 func serviceIsMain(service types.ServiceConfig) bool {
-	if main, ok := service.Labels[labels.LabelMainApp]; ok {
-		return main == "true" || main == "yes" || main == "1"
-	}
-	return false
+	return labelIsTrue(service, labels.LabelMainApp)
 }
 
 func addStaticVolumes(deployments map[string]*Deployment, service types.ServiceConfig) {
@@ -356,10 +349,7 @@ func addStaticVolumes(deployments map[string]*Deployment, service types.ServiceC
 		}
 
 		// add the configmap to the chart
-		d.chart.Templates[config.configMap.Filename()] = &ChartTemplate{
-			Content:     y,
-			Servicename: d.service.Name,
-		}
+		d.chart.AddTemplate(config.configMap.Filename(), d.service.Name, y)
 		// add the moint path to the container
 		for _, m := range config.mountPath {
 			// volumeName can be empty, in this case we generate a name
@@ -451,10 +441,7 @@ func buildVolumes(service types.ServiceConfig, chart *HelmChart, deployments map
 				chart.Values[override].(*Value).AddPersistence(v.Source)
 			}
 			y, _ := pvc.Yaml()
-			chart.Templates[pvc.Filename()] = &ChartTemplate{
-				Content:     y,
-				Servicename: service.Name,
-			}
+			chart.AddTemplate(pvc.Filename(), service.Name, y)
 		}
 	}
 
@@ -534,10 +521,7 @@ func (chart *HelmChart) generateRBAC(deployments map[string]*Deployment) error {
 		buf.Write(rbYaml)
 
 		filename := d.service.Name + "/depends-on.rbac.yaml"
-		chart.Templates[filename] = &ChartTemplate{
-			Content:     buf.Bytes(),
-			Servicename: d.service.Name,
-		}
+		chart.AddTemplate(filename, d.service.Name, buf.Bytes())
 
 		serviceMap[d.service.Name] = true
 	}

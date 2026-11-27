@@ -50,11 +50,7 @@ type Deployment struct {
 // NewDeployment creates a new Deployment from a compose service. The appName is the name of the application taken from the project name.
 // It also creates the Values map that will be used to create the values.yaml file.
 func NewDeployment(service types.ServiceConfig, chart *HelmChart) *Deployment {
-	isMainApp := false
-	if mainLabel, ok := service.Labels[labels.LabelMainApp]; ok {
-		main := strings.ToLower(mainLabel)
-		isMainApp = main == "true" || main == "yes" || main == "1"
-	}
+	isMainApp := labelIsTrue(service, labels.LabelMainApp)
 
 	defaultTag := `default "latest"`
 	if isMainApp {
@@ -178,20 +174,68 @@ func (d *Deployment) AddHealthCheck(service types.ServiceConfig, container *core
 		return
 	}
 
-	if service.HealthCheck != nil {
-		period := 30.0
-		if service.HealthCheck.Interval != nil {
-			period = time.Duration(*service.HealthCheck.Interval).Seconds()
+	// A compose healthcheck tells whether a container is ready to serve. It is
+	// used by depends_on to decide when a dependency can be reached, so it maps
+	// to a readiness probe. Docker does not restart unhealthy containers by
+	// itself, unlike a Kubernetes liveness probe.
+	healthcheck := service.HealthCheck
+	if healthcheck == nil || healthcheck.Disable {
+		return
+	}
+	container.ReadinessProbe = composeHealthCheckProbe(*healthcheck)
+}
+
+// composeHealthCheckProbe converts a compose healthcheck to a Kubernetes
+// readiness probe. It returns nil when the healthcheck is not runnable.
+func composeHealthCheckProbe(healthcheck types.HealthCheckConfig) *corev1.Probe {
+	if len(healthcheck.Test) == 0 || healthcheck.Test[0] == "NONE" {
+		return nil
+	}
+
+	command := healthcheck.Test
+	switch command[0] {
+	case "CMD-SHELL":
+		if len(command) < 2 {
+			return nil
 		}
-		container.LivenessProbe = &corev1.Probe{
-			ProbeHandler: corev1.ProbeHandler{
-				Exec: &corev1.ExecAction{
-					Command: service.HealthCheck.Test[1:],
-				},
-			},
-			PeriodSeconds: int32(period),
+		// CMD-SHELL runs the rest of the test as a shell command.
+		command = []string{shCommand, "-c", strings.Join(command[1:], " ")}
+	case "CMD":
+		command = command[1:]
+		if len(command) == 0 {
+			return nil
 		}
 	}
+
+	probe := &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			Exec: &corev1.ExecAction{
+				Command: command,
+			},
+		},
+	}
+	if healthcheck.Interval != nil {
+		probe.PeriodSeconds = probeSeconds(healthcheck.Interval)
+	}
+	if healthcheck.Timeout != nil {
+		probe.TimeoutSeconds = probeSeconds(healthcheck.Timeout)
+	}
+	if healthcheck.Retries != nil {
+		probe.FailureThreshold = max(int32(*healthcheck.Retries), 1)
+	}
+	if healthcheck.StartPeriod != nil {
+		probe.InitialDelaySeconds = probeSeconds(healthcheck.StartPeriod)
+	}
+	return probe
+}
+
+// probeSeconds converts a compose duration to a positive number of seconds.
+func probeSeconds(duration *types.Duration) int32 {
+	seconds := int32(time.Duration(*duration).Seconds())
+	if seconds < 1 {
+		return 1
+	}
+	return seconds
 }
 
 // AddIngress adds an ingress to the deployment. It creates the ingress object.
@@ -307,7 +351,7 @@ func (d *Deployment) dependsOnLegacy(to *Deployment, servicename string) error {
 		command := []string{shCommand, "-c", strings.Join(commands, "\n")}
 		d.Spec.Template.Spec.InitContainers = append(d.Spec.Template.Spec.InitContainers, corev1.Container{
 			Name:    "wait-for-" + to.service.Name,
-			Image:   "busybox:latest",
+			Image:   "busybox:1.38.0",
 			Command: command,
 		})
 	}
@@ -324,14 +368,14 @@ KUBERNETES_SERVICE_PORT=${KUBERNETES_SERVICE_PORT:-443}
 until curl -s -o- --header="Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
   --cacert=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
   "https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}/apis/apps/v1/namespaces/${NAMESPACE}/deployments/${DEPLOYMENT_NAME}" \
-  | grep -q '"readyReplicas":\s*[1-9][0-9]*'; do
+  | grep -q '"readyReplicas":[[:space:]]*[1-9][0-9]*'; do
   sleep 2
 done`
 
 	command := []string{shCommand, "-c", fmt.Sprintf(script, to.Name)}
 	d.Spec.Template.Spec.InitContainers = append(d.Spec.Template.Spec.InitContainers, corev1.Container{
 		Name:    "wait-for-" + to.service.Name,
-		Image:   "quay.io/curl/curl:latest",
+		Image:   "quay.io/curl/curl:8.23.0",
 		Command: command,
 		Env: []corev1.EnvVar{
 			{
