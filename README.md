@@ -1,3 +1,8 @@
+> **⚠️ Project has moved !⚠️**
+>
+> **Project moved to https://repo.katenary.io/katenary/katenary**
+>
+> Please, update your bookmaks. Discussion about the move is here : https://github.com/orgs/Katenary/discussions/162
 <div style="text-align:center; margin: auto 0 4em 0" align="center">
 <img src="./doc/docs/statics/logo-vertical.svg" alt="Katenary Logo" style="max-width: 90%" align="center"/>
 </div>
